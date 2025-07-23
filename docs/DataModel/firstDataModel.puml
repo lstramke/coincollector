@@ -39,7 +39,11 @@ enum CoinCountry {
 }
 
 enum Mint {
-    Berlin, Munich, Stuttgart, Karlsruhe, Hamburg
+    BERLIN, 
+    MUNICH, 
+    STUTTGART, 
+    KARLSRUHE, 
+    HAMBURG
 }
 
 ' DESCRIPTION
