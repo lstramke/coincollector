@@ -1,0 +1,114 @@
+@startuml firstDataModel
+
+' ENUMS
+enum CoinValue {
+    ONE_CENT,
+    TWO_CENTS,
+    FIVE_CENTS,
+    TEN_CENTS,
+    TWENTY_CENTS,
+    FIFTY_CENTS,
+    ONE_EURO,
+    TWO_EUROS
+}
+
+enum CoinCountry {
+    AUSTRIA, 
+    BELGIUM, 
+    CYPRUS, 
+    GERMANY, 
+    ESTONIA, 
+    SPAIN, 
+    FINLAND, 
+    FRANCE,
+    GREECE, 
+    IRELAND, 
+    ITALY, 
+    LITHUANIA, 
+    LUXEMBOURG, 
+    LATVIA, 
+    MALTA,
+    NETHERLANDS, 
+    PORTUGAL, 
+    SLOVENIA, 
+    SLOVAKIA, 
+    SAN_MARINO, 
+    VATICAN_CITY,
+    MONACO, 
+    ANDORRA
+}
+
+enum Mint {
+    BERLIN, 
+    MUNICH, 
+    STUTTGART, 
+    KARLSRUHE, 
+    HAMBURG
+}
+
+' DESCRIPTION
+class CoinDescription {
+    - text : String
+}
+
+' INTERFACES
+interface CoinComponent {
+    + getDescription() : String
+    + isComplete() : boolean
+}
+
+interface CoinCollectionComponent {
+    + add(c : CoinComponent) : void
+    + remove(c : CoinComponent) : void
+    + getChildren() : List<CoinComponent>
+}
+
+CoinCollectionComponent .|> CoinComponent : extends
+
+' COIN
+class EuroCoin {
+    - id : String
+    - year : int
+}
+
+EuroCoin --> "1" CoinValue : -value
+EuroCoin --> "1" CoinCountry : -mintCountry
+EuroCoin --> "1" CoinDescription : -description
+EuroCoin --> "1" Mint : -mint
+EuroCoin ..|> CoinComponent
+
+' BUILDER
+class EuroCoinBuilder {
+    - year : int
+    - value : CoinValue
+    - mintCountry : CoinCountry
+    - description : CoinDescription
+    - mint : Mint
+    
+    + setYear(year : int) : EuroCoinBuilder
+    + setValue(value : CoinValue) : EuroCoinBuilder
+    + setMintCountry(mintCountry : CoinCountry) : EuroCoinBuilder
+    + setDescription(description : CoinDescription) : EuroCoinBuilder
+    + setMint(mint : Mint) : EuroCoinBuilder
+    + build() : EuroCoin
+}
+
+EuroCoinBuilder ..> EuroCoin : builds
+
+' USER & COLLECTION
+class User {
+    - id : String
+    - name : String
+}
+
+class EuroCoinCollection {
+    - id : String
+    - collectionName : String
+    - isComplete : boolean
+}
+
+EuroCoinCollection ..|> CoinCollectionComponent : implements
+User "1" -> "0..*" EuroCoinCollection : List<EuroCoinCollection> collections
+EuroCoinCollection "1" ---> "0..*" CoinComponent : - collectedItems : List<CoinComponent>
+
+@enduml
