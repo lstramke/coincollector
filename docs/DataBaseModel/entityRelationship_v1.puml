@@ -1,0 +1,50 @@
+@startchen er_v1
+
+left to right direction
+
+entity User {
+    user_id : String <<key>>
+    name : String
+}
+
+entity EuroCoinCollectionGroup {
+    group_id : String <<key>>
+    name : String
+    owner_id : String <<foreign_key>>
+}
+
+entity EuroCoinCollection {
+    collection_id : String <<key>>
+    name : String
+    group_id : String <<foreign_key>>
+}
+
+entity EuroCoin {
+    coin_id : String <<key>>
+    year : Integer
+    coin_value : String
+    mint_country : String
+    mint : String
+    description : String
+    collection_id : String <<foreign_key>>
+}
+
+relationship UserOwns {
+}
+
+UserOwns -1- User
+UserOwns -N- EuroCoinCollectionGroup
+
+relationship GroupContains {
+}
+
+GroupContains -1- EuroCoinCollectionGroup
+GroupContains -N- EuroCoinCollection
+
+relationship CollectionHolds {
+}
+
+CollectionHolds -1- EuroCoinCollection
+CollectionHolds -N- EuroCoin
+
+@endchen
