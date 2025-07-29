@@ -1,0 +1,136 @@
+@startuml dataModel_v3
+
+' ENUMS
+enum CoinValue {
+    ONE_CENT,
+    TWO_CENTS,
+    FIVE_CENTS,
+    TEN_CENTS,
+    TWENTY_CENTS,
+    FIFTY_CENTS,
+    ONE_EURO,
+    TWO_EUROS
+}
+
+enum CoinCountry {
+    AUSTRIA, 
+    BELGIUM, 
+    CYPRUS, 
+    GERMANY, 
+    ESTONIA, 
+    SPAIN, 
+    FINLAND, 
+    FRANCE,
+    GREECE, 
+    IRELAND, 
+    ITALY, 
+    LITHUANIA, 
+    LUXEMBOURG, 
+    LATVIA, 
+    MALTA,
+    NETHERLANDS, 
+    PORTUGAL, 
+    SLOVENIA, 
+    SLOVAKIA, 
+    SAN_MARINO, 
+    VATICAN_CITY,
+    MONACO, 
+    ANDORRA
+}
+
+enum Mint {
+    BERLIN, 
+    MUNICH, 
+    STUTTGART, 
+    KARLSRUHE, 
+    HAMBURG
+}
+
+' DESCRIPTION
+class CoinDescription {
+    - text : String
+}
+
+' INTERFACES
+interface CoinCollection{
+    + getId() : String
+    + getName() : String
+    + getCoins() : List<Coin>
+    + addCoin(coin : Coin) : void
+    + removeCoin(coin : Coin) : void
+    + getTotalValue() : int
+    + getCoinCount() : int
+    + isComplete() : boolean
+}
+
+interface CollectionGroup {
+    + getId() : String
+    + getName() : String
+    + getCollections() : List<CoinCollection>
+    + addCollection(collection : CoinCollection) : void
+    + removeCollection(collection : CoinCollection) : void
+    + getTotalCollections() : int
+    + getTotalCoins() : int
+    + getTotalValue() : int
+}
+
+interface Coin {
+    + getId() : String
+    + getValue() : int
+    + getYear() : int
+    + getDescription() : String
+}
+
+' COIN
+class EuroCoin {
+    - id : String
+    - year : int
+}
+
+EuroCoin .|> Coin : implements
+EuroCoin --> "1" CoinValue : -value
+EuroCoin --> "1" CoinCountry : -mintCountry
+EuroCoin --> "1" CoinDescription : -description
+EuroCoin --> "1" Mint : -mint
+
+' COLLECTIONS (KONKRET)
+class EuroCoinCollection {
+    - id : String
+    - name : String
+}
+EuroCoinCollection .|> CoinCollection : implements
+EuroCoinCollection --> "*" EuroCoin : -coins
+
+class EuroCoinCollectionGroup {
+    - id : String
+    - name : String
+}
+EuroCoinCollectionGroup .|> CollectionGroup : implements
+EuroCoinCollectionGroup --> "*" CoinCollection : -collections
+
+' BUILDER
+class EuroCoinBuilder {
+    - year : int
+    - value : CoinValue
+    - mintCountry : CoinCountry
+    - description : CoinDescription
+    - mint : Mint
+
+    + setYear(year : int) : EuroCoinBuilder
+    + setValue(value : CoinValue) : EuroCoinBuilder
+    + setMintCountry(mintCountry : CoinCountry) : EuroCoinBuilder
+    + setDescription(description : CoinDescription) : EuroCoinBuilder
+    + setMint(mint : Mint) : EuroCoinBuilder
+    + build() : EuroCoin
+}
+EuroCoinBuilder ..> EuroCoin : builds
+
+' USER
+class User {
+    - id : String
+    - name : String
+}
+
+User "1" --> "0..*" CollectionGroup : -rootCollections
+
+@enduml
