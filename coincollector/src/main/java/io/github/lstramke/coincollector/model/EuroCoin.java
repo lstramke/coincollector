@@ -1,8 +1,6 @@
 package io.github.lstramke.coincollector.model;
 
-import java.util.List;
-
-public class EuroCoin implements CoinComponent {
+public class EuroCoin implements Coin {
     private final String id;
     private final int year;
     private final CoinValue value;
@@ -25,14 +23,17 @@ public class EuroCoin implements CoinComponent {
             this.id, this.year, this.value, this.mintCountry, this.mint, this.getDescription());
     }
     
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public int getYear() {
         return year;
     }
 
+    @Override
     public CoinValue getValue() {
         return value;
     }
@@ -45,35 +46,12 @@ public class EuroCoin implements CoinComponent {
         return mint;
     }
 
+    @Override
     public CoinDescription getDescription() {
         return description;
     }
 
     public void setDescription(CoinDescription description) {
         this.description = description;
-    }
-
-    @Override
-    public Boolean isComplete() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'isComplete'");
-    }
-
-    @Override
-    public int getTotalValue() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getTotalValue'");
-    }
-
-    @Override
-    public int getCoinCount() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getCoinCount'");
-    }
-
-    @Override
-    public List<EuroCoin> getAllCoins() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAllCoins'");
     }
 }
