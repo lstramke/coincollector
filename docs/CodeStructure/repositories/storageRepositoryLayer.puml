@@ -1,0 +1,53 @@
+@startuml storageRepositoryLayer_v1
+
+interface EuroCoinStorageRepository {
+    + boolean create(EuroCoin coin)
+    + EuroCoin read(String id)
+    + boolean update(EuroCoin coin)
+    + boolean delete(String id)
+    + List<EuroCoin> getAll()
+    + boolean exists(String id)
+}
+
+interface EuroCoinCollectionStorageRepository {
+    + boolean create(EuroCoinCollection collection)
+    + EuroCoinCollection read(String id)
+    + boolean update(EuroCoinCollection collection)
+    + boolean delete(String id)
+    + List<EuroCoinCollection> getAll()
+    + boolean exists(String id)
+}
+
+interface EuroCoinCollectionGroupStorageRepository {
+    + boolean create(EuroCoinCollectionGroup group)
+    + EuroCoinCollectionGroup read(String id)
+    + boolean update(EuroCoinCollectionGroup group)
+    + boolean delete(String id)
+    + List<EuroCoinCollectionGroup> getAllByUser(String userId)
+    + boolean exists(String id)
+}
+
+
+class EuroCoinSqliteRepository {
+    - connection : Connection
+    - static final logger : Logger
+    - tableName : String
+}
+
+class EuroCoinCollectionSqliteRepository {
+    - connection : Connection
+    - static final logger : Logger
+    - tableName : String
+}
+
+class EuroCoinCollectionGroupSqliteRepository {
+    - connection : Connection
+    - static final logger : Logger
+    - tableName : String
+}
+
+EuroCoinStorageRepository <|.. EuroCoinSqliteRepository
+EuroCoinCollectionStorageRepository <|.. EuroCoinCollectionSqliteRepository
+EuroCoinCollectionGroupStorageRepository <|.. EuroCoinCollectionGroupSqliteRepository
+
+@enduml
