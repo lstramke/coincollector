@@ -5,4 +5,6 @@ public interface Coin {
     CoinValue getValue();
     int getYear();
     CoinDescription getDescription();
+    void setDescription(CoinDescription description);
+    String getCollectionId();
 }

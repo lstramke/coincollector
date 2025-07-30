@@ -6,19 +6,21 @@ This document describes the design and structure of the Storage Repository Layer
 
 ## Class Diagram
 
-![Storage Repository Layer v1](storageRepositoryLayer_v1.svg)
+![Storage Repository Layer v1](storageRepositoryLayer_v2.svg)
 
-The model consists of three main repository interfaces and their corresponding concrete SQLite implementations:
+The model consists of four main repository interfaces and their corresponding concrete SQLite implementations:
 
 - **Interfaces:**
   - `EuroCoinStorageRepository`
   - `EuroCoinCollectionStorageRepository`
   - `EuroCoinCollectionGroupStorageRepository`
+  - `UserStorageRepository`
 
 - **Concrete Implementations:**
   - `EuroCoinSqliteRepository`
   - `EuroCoinCollectionSqliteRepository`
   - `EuroCoinCollectionGroupSqliteRepository`
+  - `UserSqliteRepository`
 
 ### Interfaces
 

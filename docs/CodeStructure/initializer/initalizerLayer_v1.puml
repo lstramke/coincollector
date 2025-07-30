@@ -1,0 +1,15 @@
+@startuml initializerLayer_v1
+
+interface StorageInitializer {
+    + init() : void
+}
+
+class SqliteInitializer {
+    - connection : Connection
+    - logger : Logger
+    - tableNames : List<String>
+}
+
+StorageInitializer <|-- SqliteInitializer
+
+@enduml

@@ -1,4 +1,4 @@
-@startuml storageRepositoryLayer_v1
+@startuml storageRepositoryLayer_v2
 
 interface EuroCoinStorageRepository {
     + boolean create(EuroCoin coin)
@@ -27,6 +27,14 @@ interface EuroCoinCollectionGroupStorageRepository {
     + boolean exists(String id)
 }
 
+interface UserStorageRepository {
+    + boolean create(User user)
+    + EuroCoinCollectionGroup read(String userId)
+    + boolean update(User user)
+    + boolean delete(String userId)
+    + boolean exists(String id)
+}
+
 
 class EuroCoinSqliteRepository {
     - connection : Connection
@@ -46,8 +54,15 @@ class EuroCoinCollectionGroupSqliteRepository {
     - tableName : String
 }
 
+class UserSqliteRepository {
+    - connection : Connection
+    - static final logger : Logger
+    - tableName : String
+}
+
 EuroCoinStorageRepository <|.. EuroCoinSqliteRepository
 EuroCoinCollectionStorageRepository <|.. EuroCoinCollectionSqliteRepository
 EuroCoinCollectionGroupStorageRepository <|.. EuroCoinCollectionGroupSqliteRepository
+UserStorageRepository <|.. UserSqliteRepository
 
 @enduml

@@ -7,6 +7,7 @@ public class EuroCoin implements Coin {
     private final CoinCountry mintCountry;
     private final Mint mint;
     private CoinDescription description;
+    private String collectionId;
 
     EuroCoin(EuroCoinBuilder builder){
         this.id = builder.id;
@@ -15,12 +16,13 @@ public class EuroCoin implements Coin {
         this.mintCountry = builder.mintCountry;
         this.mint = builder.mint;
         this.description = builder.description;
+        this.collectionId = builder.collectionId;
     }
 
     @Override
     public String toString() {
-        return String.format("EuroCoin[id='%s', year=%d, value=%s, mintCountry=%s, mint=%s, description='%s']", 
-            this.id, this.year, this.value, this.mintCountry, this.mint, this.getDescription());
+        return "EuroCoin [id=" + id + ", year=" + year + ", value=" + value + ", mintCountry=" + mintCountry + ", mint="
+                + mint + ", description=" + description + ", collectionId=" + collectionId + "]";
     }
     
     @Override
@@ -38,20 +40,26 @@ public class EuroCoin implements Coin {
         return value;
     }
 
+    @Override
+    public CoinDescription getDescription() {
+        return description;
+    }
+
+    @Override
+    public void setDescription(CoinDescription description) {
+        this.description = description;
+    }
+
+    @Override
+    public String getCollectionId() {
+        return collectionId;
+    }
+
     public CoinCountry getMintCountry() {
         return mintCountry;
     }
 
     public Mint getMint() {
         return mint;
-    }
-
-    @Override
-    public CoinDescription getDescription() {
-        return description;
-    }
-
-    public void setDescription(CoinDescription description) {
-        this.description = description;
     }
 }
