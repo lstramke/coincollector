@@ -29,7 +29,11 @@ public enum Mint {
         return mintMark;
     }
 
-    public static Mint fromMintMark(String mintMark) {
-        return MINT_MAP.get(mintMark);
+    public static Mint fromMintMark(String mintMark) throws IllegalArgumentException {
+        Mint mint =  MINT_MAP.get(mintMark);
+        if (mint == null){
+            throw new IllegalArgumentException("Unknown mintmark: " + mintMark);
+        }
+        return mint;
     }
 }

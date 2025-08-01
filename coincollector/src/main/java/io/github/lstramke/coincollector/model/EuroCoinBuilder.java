@@ -41,9 +41,14 @@ public class EuroCoinBuilder {
         return this;
     }
 
+    EuroCoinBuilder setId(String id) {
+        this.id = id;
+        return this;
+    }
+
     public EuroCoin build() throws IllegalStateException {
         if (year < EURO_COIN_START_YEAR) {
-            throw new IllegalStateException("Year must be greater than 0");
+            throw new IllegalStateException("Year must be >= " + EURO_COIN_START_YEAR);
         }
         if (value == null) {
             throw new IllegalStateException("CoinValue cannot be null");
@@ -57,8 +62,9 @@ public class EuroCoinBuilder {
         if (collectionId == null){
             throw new IllegalStateException("CollectionId cannot be null");
         }
-        
-        this.id = generateId();
+        if (id == null){
+            this.id = generateId();
+        }
         
         return new EuroCoin(this);
     }

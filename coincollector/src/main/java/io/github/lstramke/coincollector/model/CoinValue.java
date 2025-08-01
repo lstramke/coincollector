@@ -33,7 +33,11 @@ public enum CoinValue {
         return displayName;
     }
 
-    public static CoinValue fromCentValue(int centValue) {
-        return VALUE_MAP.get(centValue);
+    public static CoinValue fromCentValue(int centValue) throws IllegalArgumentException{
+        CoinValue value = VALUE_MAP.get(centValue);
+        if (value == null) {
+            throw new IllegalArgumentException("Unknown cent value: " + centValue);
+        }
+        return value;
     }
 }
