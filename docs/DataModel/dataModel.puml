@@ -1,4 +1,4 @@
-@startuml dataModel_v6
+@startuml dataModel_v7
 
 ' ENUMS
 enum CoinValue {
@@ -89,6 +89,7 @@ interface Coin {
 interface CoinCollection<T : Coin> {
     + getId() : String
     + getName() : String
+    + setName(newName : String) : void
     + getCoins() : List<T>
     + addCoin(coin : T) : void
     + removeCoin(coin : T) : void
@@ -136,12 +137,13 @@ EuroCoin --> "1" Mint : -mint
 
 ' COLLECTIONS
 class EuroCoinCollection {
-    - id : String
+    - id : String {final}
     - name : String
-    - coins : List<EuroCoin>
+    - coins : List<EuroCoin> {final}
     --
     + getId() : String
     + getName() : String
+    + setName(String newName) : void
     + getCoins() : List<EuroCoin>
     + addCoin(EuroCoin coin) : void
     + removeCoin(EuroCoin coin) : void

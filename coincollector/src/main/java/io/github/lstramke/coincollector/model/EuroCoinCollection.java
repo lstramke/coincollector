@@ -1,11 +1,31 @@
 package io.github.lstramke.coincollector.model;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class EuroCoinCollection implements CoinCollection<EuroCoin>{
-    private String id;
+    private final String id;
     private String name;
-    private List<EuroCoin> coins;
+    private final List<EuroCoin> coins;
+
+    public EuroCoinCollection(String name){
+        this(idFromUUID(), name, List.of());
+    }
+
+    public EuroCoinCollection(String name, List<EuroCoin> coins){
+        this(idFromUUID(), name, coins);
+    }
+
+    private EuroCoinCollection(String id, String name, List<EuroCoin> coins){
+        this.id = id;
+        this.name = name;
+        this.coins = new ArrayList<>(coins == null ? List.of() : coins);
+    }
+
+    private static String idFromUUID() {
+        return UUID.randomUUID().toString();
+    }
 
     @Override
     public String getId() {
@@ -18,17 +38,24 @@ public class EuroCoinCollection implements CoinCollection<EuroCoin>{
     }
 
     @Override
+    public void setName(String newName) {
+        this.name = newName;
+    }
+
+    @Override
     public List<EuroCoin> getCoins() {
-        return coins;
+        return List.copyOf(coins);
     }
 
     @Override
     public void addCoin(EuroCoin coin) {
+        if(coin == null) return;
        this.coins.add(coin);
     }
 
     @Override
     public void removeCoin(EuroCoin coin) {
+        if(coin == null) return;
         this.coins.remove(coin);
     }
 
