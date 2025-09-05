@@ -1,14 +1,15 @@
 package io.github.lstramke.coincollector.repositories;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.github.lstramke.coincollector.model.EuroCoinCollection;
 
 public interface EuroCoinCollectionStorageRepository {
     boolean create(EuroCoinCollection collection);
-    EuroCoinCollection read(String id);
+    Optional<EuroCoinCollection> read(String id);
     boolean update(EuroCoinCollection collection);
     boolean delete(String id);
     List<EuroCoinCollection> getAll();
-    boolean exists(String id);
+    Optional<Boolean> exists(String id);
 }
