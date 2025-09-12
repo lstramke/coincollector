@@ -70,7 +70,7 @@ public class EuroCoinBuilder {
     }
 
     private String generateId() {
-        return String.format("%s_%s_%d_%s_%s", 
+        return String.format("%s_%s_%d_%s", 
             mintCountry != null ? mintCountry.name() : "UNKNOWN",
             value != null ? value.name() : "UNKNOWN", 
             year,

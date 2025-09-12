@@ -55,11 +55,9 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             boolean success = rowsAffected == 1;
 
             if (success) {
-                logger.info("Successfully created EuroCoin with id: {} in collection: {}",
-                        coin.getId(), coin.getCollectionId());
+                logger.info("Successfully created EuroCoin with id: {} in collection: {}", coin.getId(), coin.getCollectionId());
             } else {
-                logger.warn("Failed to create EuroCoin with id: {} in collection: {}", coin.getId(),
-                        coin.getCollectionId());
+                logger.warn("Failed to create EuroCoin with id: {} in collection: {}", coin.getId(), coin.getCollectionId());
             }
 
             return success;
@@ -84,7 +82,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
                 """, tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, id);
             try (ResultSet queryResult = statement.executeQuery()) {
@@ -128,7 +126,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
                 tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, coin.getYear());
             statement.setInt(2, coin.getValue().getCentValue());
@@ -170,7 +168,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
                 """, tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, id);
 
@@ -200,8 +198,8 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         List<EuroCoin> readCoins = new ArrayList<>();
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql);
-                ResultSet rs = statement.executeQuery()) {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            ResultSet rs = statement.executeQuery()) {
 
             while (rs.next()) {
                 String coinId = rs.getString("coin_id");
@@ -209,9 +207,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
                 if (readCoin.isPresent()) {
                     readCoins.add(readCoin.get());
                 } else {
-                    logger.warn(
-                            "Skipping EuroCoin row (coin_id={}) – invalid or incomplete data (validation failed)",
-                            coinId);
+                    logger.warn("Skipping EuroCoin row (coin_id={}) – invalid or incomplete data (validation failed)", coinId);
                 }
             }
             logger.debug("Successfully retrieved {} EuroCoins from database", readCoins.size());
@@ -236,7 +232,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
                 """, tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, id);
             try (ResultSet rs = statement.executeQuery()) {
@@ -281,9 +277,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         }
 
         if (coin.getCollectionId() == null || coin.getCollectionId().isBlank()) {
-            logger.warn(
-                    "Validation failed: CollectionId is required for EuroCoin {} - no standalone readCoins allowed",
-                    coin.getId());
+            logger.warn("Validation failed: CollectionId is required for EuroCoin {} - no standalone readCoins allowed", coin.getId());
             return false;
         }
 

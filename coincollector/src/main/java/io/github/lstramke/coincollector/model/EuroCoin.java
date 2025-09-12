@@ -24,7 +24,42 @@ public class EuroCoin implements Coin {
         return "EuroCoin [id=" + id + ", year=" + year + ", value=" + value + ", mintCountry=" + mintCountry + ", mint="
                 + mint + ", description=" + description + ", collectionId=" + collectionId + "]";
     }
-    
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        EuroCoin other = (EuroCoin) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        if (year != other.year)
+            return false;
+        if (value != other.value)
+            return false;
+        if (mintCountry != other.mintCountry)
+            return false;
+        if (mint != other.mint)
+            return false;
+        if (description == null) {
+            if (other.description != null)
+                return false;
+        } else if (!description.equals(other.description))
+            return false;
+        if (collectionId == null) {
+            if (other.collectionId != null)
+                return false;
+        } else if (!collectionId.equals(other.collectionId))
+            return false;
+        return true;
+    }
+
     @Override
     public String getId() {
         return id;
