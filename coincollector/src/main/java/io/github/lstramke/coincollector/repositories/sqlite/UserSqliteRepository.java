@@ -2,6 +2,8 @@ package io.github.lstramke.coincollector.repositories.sqlite;
 
 import java.sql.Connection;
 
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,12 +12,12 @@ import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.repositories.UserStorageRepository;
 
 public class UserSqliteRepository implements UserStorageRepository{
-    private final Connection connection;
+    private final DataSource dataSource;
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinSqliteRepository.class);
     private final String tableName;
 
-    public UserSqliteRepository(Connection connection, String tableName) {
-        this.connection = connection;
+    public UserSqliteRepository(DataSource dataSource, String tableName) {
+        this.dataSource = dataSource;
         this.tableName = tableName;
     }
 

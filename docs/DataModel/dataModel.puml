@@ -1,4 +1,4 @@
-@startuml dataModel_v7
+@startuml dataModel_v8
 
 ' ENUMS
 enum CoinValue {
@@ -205,6 +205,13 @@ class EuroCoinFactory {
 }
 EuroCoinFactory ..> EuroCoin : creates
 EuroCoinFactory ..> EuroCoinBuilder : uses
+
+class EuroCoinCollectionFactory {
+    - {static} logger : Logger
+    --
+    + fromDataBaseEntry(ResultSet resultSet) : EuroCoinCollection
+}
+EuroCoinCollectionFactory .> EuroCoinCollection : creates
 
 ' USER
 class User {
