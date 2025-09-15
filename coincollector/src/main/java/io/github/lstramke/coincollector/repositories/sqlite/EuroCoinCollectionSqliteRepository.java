@@ -17,13 +17,11 @@ import org.slf4j.LoggerFactory;
 public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionStorageRepository {
 
     private final DataSource dataSource;
-    private static final Logger logger = LoggerFactory
-            .getLogger(EuroCoinCollectionSqliteRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionSqliteRepository.class);
     private final String tableName;
     private final EuroCoinCollectionFactory euroCoinCollectionFactory;
 
-    public EuroCoinCollectionSqliteRepository(DataSource dataSource, String tableName,
-            EuroCoinCollectionFactory euroCoinCollectionFactory) {
+    public EuroCoinCollectionSqliteRepository(DataSource dataSource, String tableName, EuroCoinCollectionFactory euroCoinCollectionFactory) {
         this.dataSource = dataSource;
         this.tableName = tableName;
         this.euroCoinCollectionFactory = euroCoinCollectionFactory;
@@ -37,10 +35,11 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
         }
 
         String sql = String.format(
-                "INSERT INTO %s (collection_id, name, group_id) VALUES (?, ?, ?)", tableName);
+                "INSERT INTO %s (collection_id, name, group_id) VALUES (?, ?, ?)", 
+                tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, collection.getId());
             statement.setString(2, collection.getName());
@@ -79,7 +78,7 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
                 """, tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, id);
             try (ResultSet queryResult = statement.executeQuery()) {
@@ -96,11 +95,9 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
         }
     }
 
-    private Optional<EuroCoinCollection> createEuroCoinCollectionFromResultSet(String id,
-            ResultSet queryResult) {
+    private Optional<EuroCoinCollection> createEuroCoinCollectionFromResultSet(String id, ResultSet queryResult) {
         try {
-            EuroCoinCollection readCollection = euroCoinCollectionFactory
-                    .fromDataBaseEntry(queryResult);
+            EuroCoinCollection readCollection = euroCoinCollectionFactory.fromDataBaseEntry(queryResult);
             if (!validateEuroCoinCollection(readCollection)) {
                 logger.error("not valid EuroCoinCollection in database (id={})", id);
                 return Optional.empty();
@@ -127,7 +124,7 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
                 """, tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, collection.getName());
             statement.setString(2, collection.getGroupId());
@@ -164,7 +161,7 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
                 """, tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, id);
 
@@ -195,23 +192,20 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
         List<EuroCoinCollection> readCollections = new ArrayList<>();
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql);
-                ResultSet rs = statement.executeQuery()) {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            ResultSet rs = statement.executeQuery()) {
 
             while (rs.next()) {
                 String collectionId = rs.getString("collection_id");
-                Optional<EuroCoinCollection> readCollection = createEuroCoinCollectionFromResultSet(
-                        collectionId, rs);
+                Optional<EuroCoinCollection> readCollection = createEuroCoinCollectionFromResultSet(collectionId, rs);
                 if (readCollection.isPresent()) {
                     readCollections.add(readCollection.get());
                 } else {
-                    logger.warn(
-                            "Skipping EuroCoinCollection row (collection_id={}) – invalid or incomplete data (validation failed)",
+                    logger.warn("Skipping EuroCoinCollection row (collection_id={}) – invalid or incomplete data (validation failed)",
                             collectionId);
                 }
             }
-            logger.debug("Successfully retrieved {} EuroCoins from database",
-                    readCollections.size());
+            logger.debug("Successfully retrieved {} EuroCoins from database", readCollections.size());
         } catch (SQLException e) {
             logger.error("Error retrieving all EuroCoins from database", e);
         }
@@ -233,7 +227,7 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
                 """, tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, id);
             try (ResultSet rs = statement.executeQuery()) {
@@ -246,7 +240,7 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
         }
     }
 
-    private boolean validateEuroCoinCollection(EuroCoinCollection collection) {
+    boolean validateEuroCoinCollection(EuroCoinCollection collection) {
         if (collection == null) {
             logger.warn("Validation failed: EuroCoinCollection is null");
             return false;

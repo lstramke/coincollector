@@ -18,8 +18,7 @@ public class EuroCoinCollection implements CoinCollection<EuroCoin> {
         this(idFromUUID(), name, coins, groupId);
     }
 
-    private EuroCoinCollection(String id, String name, List<EuroCoin> coins, String groupId)
-            throws IllegalArgumentException {
+    private EuroCoinCollection(String id, String name, List<EuroCoin> coins, String groupId) throws IllegalArgumentException {
         this.id = id;
         this.name = name;
 
