@@ -33,7 +33,7 @@ public class SqliteInitializer implements StorageInitializer{
         String sql = String.format("""
             CREATE TABLE IF NOT EXISTS %s (
                 user_id TEXT PRIMARY KEY,
-                name TEXT NOT NULL
+                name TEXT
             )
             """, tableName);
         initTable(tableName, sql);
