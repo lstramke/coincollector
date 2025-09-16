@@ -93,7 +93,7 @@ public class UserSqliteRepository implements UserStorageRepository{
 
     private Optional<User> createUserFromResultSet(String userId, ResultSet resultSet){
         try {
-            User readUser = userFactory.fromDatabaseEntry(resultSet);
+            User readUser = userFactory.fromDataBaseEntry(resultSet);
             logger.debug("Successfully read User with userId: {}", userId);
             return Optional.of(readUser);
         } catch (SQLException e) {
