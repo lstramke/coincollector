@@ -7,7 +7,14 @@ public class User {
     private String name;
 
     public User(String name){
-        this.id = UUID.randomUUID().toString();
+        this(UUID.randomUUID().toString(), name);
+    }
+
+    User(String id, String name) throws IllegalArgumentException{
+        if(id == null || id.isBlank()){
+            throw new IllegalArgumentException("userId is null or blank");
+        }
+        this.id = id;
         this.name = name;
     }
 
