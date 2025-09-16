@@ -22,8 +22,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
     private final String tableName;
     private final EuroCoinFactory euroCoinFactory;
 
-    public EuroCoinSqliteRepository(DataSource dataSource, String tableName,
-            EuroCoinFactory euroCoinFactory) {
+    public EuroCoinSqliteRepository(DataSource dataSource, String tableName, EuroCoinFactory euroCoinFactory) {
         this.dataSource = dataSource;
         this.tableName = tableName;
         this.euroCoinFactory = euroCoinFactory;
@@ -41,7 +40,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
                 tableName);
 
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, coin.getId());
             statement.setInt(2, coin.getYear());
@@ -75,11 +74,13 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             return Optional.empty();
         }
 
-        String sql = String.format("""
-                SELECT coin_id, year, coin_value, mint_country, mint, description, collection_id
-                FROM %s
-                WHERE coin_id = ?
-                """, tableName);
+        String sql = String.format(
+            """ 
+            SELECT coin_id, year, coin_value, mint_country, mint, description, collection_id
+            FROM %s
+            WHERE coin_id = ?
+            """, tableName
+        );
 
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -118,12 +119,12 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         }
 
         String sql = String.format(
-                """
-                        UPDATE %s
-                        SET year = ?, coin_value = ?, mint_country = ?, mint = ?, description = ?, collection_id = ?
-                        WHERE coin_id = ?
-                        """,
-                tableName);
+            """
+            UPDATE %s
+            SET year = ?, coin_value = ?, mint_country = ?, mint = ?, description = ?, collection_id = ?
+            WHERE coin_id = ?
+            """, tableName
+        );
 
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -162,10 +163,12 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             return false;
         }
 
-        String sql = String.format("""
-                DELETE FROM %s
-                WHERE coin_id = ?
-                """, tableName);
+        String sql = String.format(
+            """
+            DELETE FROM %s
+            WHERE coin_id = ?
+            """, tableName
+        );
 
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -190,10 +193,12 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     @Override
     public List<EuroCoin> getAll() {
-        String sql = String.format("""
-                SELECT coin_id, year, coin_value, mint_country, mint, description, collection_id
-                FROM %s
-                """, tableName);
+        String sql = String.format(
+            """
+            SELECT coin_id, year, coin_value, mint_country, mint, description, collection_id
+            FROM %s
+            """, tableName
+        );
 
         List<EuroCoin> readCoins = new ArrayList<>();
 
@@ -225,11 +230,13 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             return Optional.of(false);
         }
 
-        String sql = String.format("""
-                SELECT 1
-                FROM %s
-                WHERE coin_id = ?
-                """, tableName);
+        String sql = String.format(
+            """
+            SELECT 1
+            FROM %s
+            WHERE coin_id = ?
+            """, tableName
+        );
 
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {

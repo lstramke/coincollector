@@ -71,11 +71,13 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             return Optional.empty();
         }
 
-        String sql = String.format("""
-                SELECT collection_id, name, group_id
-                FROM %s
-                WHERE collection_id = ?
-                """, tableName);
+        String sql = String.format(
+            """
+            SELECT collection_id, name, group_id
+            FROM %s
+            WHERE collection_id = ?
+            """, tableName
+        );
 
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -98,10 +100,6 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
     private Optional<EuroCoinCollection> createEuroCoinCollectionFromResultSet(String id, ResultSet queryResult) {
         try {
             EuroCoinCollection readCollection = euroCoinCollectionFactory.fromDataBaseEntry(queryResult);
-            if (!validateEuroCoinCollection(readCollection)) {
-                logger.error("not valid EuroCoinCollection in database (id={})", id);
-                return Optional.empty();
-            }
             logger.debug("Successfully read EuroCoinCollection (id={})", id);
             return Optional.of(readCollection);
         } catch (SQLException e) {
@@ -117,11 +115,13 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             return false;
         }
 
-        String sql = String.format("""
-                UPDATE %s
-                SET name = ?, group_id = ?
-                WHERE collection_id = ?
-                """, tableName);
+        String sql = String.format(
+            """
+            UPDATE %s
+            SET name = ?, group_id = ?
+            WHERE collection_id = ?
+            """, tableName
+        );
 
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -155,10 +155,12 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             return false;
         }
 
-        String sql = String.format("""
-                DELETE FROM %s
-                WHERE collection_id = ?
-                """, tableName);
+        String sql = String.format(
+            """
+            DELETE FROM %s
+            WHERE collection_id = ?
+            """, tableName
+        );
 
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -184,10 +186,12 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
 
     @Override
     public List<EuroCoinCollection> getAll() {
-        String sql = String.format("""
-                SELECT collection_id, name, group_id
-                FROM %s
-                """, tableName);
+        String sql = String.format(
+            """
+            SELECT collection_id, name, group_id
+            FROM %s
+            """, tableName
+        );
 
         List<EuroCoinCollection> readCollections = new ArrayList<>();
 
@@ -220,11 +224,13 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             return Optional.of(false);
         }
 
-        String sql = String.format("""
-                SELECT 1
-                FROM %s
-                WHERE collection_id = ?
-                """, tableName);
+        String sql = String.format(
+            """
+            SELECT 1
+            FROM %s
+            WHERE collection_id = ?
+            """, tableName
+        );
 
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {

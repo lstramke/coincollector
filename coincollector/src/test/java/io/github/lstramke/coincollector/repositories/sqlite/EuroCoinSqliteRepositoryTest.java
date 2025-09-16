@@ -39,8 +39,6 @@ class EuroCoinSqliteRepositoryTest {
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("createTestcases")
     void testCreate(CreateTestcase testcase){
-        System.out.println("Testing: " + testcase.description);
-
         DataSource dataSource = mock(DataSource.class);
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(dataSource, tableName, euroCoinFactory);
@@ -101,8 +99,6 @@ class EuroCoinSqliteRepositoryTest {
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("readTestcases")
     void testRead(ReadTestcase testcase){
-        System.out.println("Testing: " + testcase.description);
-
         DataSource dataSource = mock(DataSource.class);
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(dataSource, tableName, euroCoinFactory);
@@ -183,8 +179,6 @@ class EuroCoinSqliteRepositoryTest {
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("updateTestcases")
     void testUpdate(UpdateTestcase testcase){
-        System.out.println("Testing: " + testcase.description);
-
         DataSource dataSource = mock(DataSource.class);
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(dataSource, tableName, euroCoinFactory);
@@ -245,8 +239,6 @@ class EuroCoinSqliteRepositoryTest {
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("deleteTestcases")
     void testDelete(DeleteTestcase testcase){
-        System.out.println("Testing: " + testcase.description);
-
         DataSource dataSource = mock(DataSource.class);
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(dataSource, tableName, euroCoinFactory);
@@ -308,8 +300,6 @@ class EuroCoinSqliteRepositoryTest {
     @ParameterizedTest(name = " {index} - {0}")
     @MethodSource("getAllTestcases")
     void testGetAll(GetAllTestcase testcase){
-        System.out.println("Testing: " + testcase.description);
-
         DataSource dataSource = mock(DataSource.class);
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(dataSource, tableName, euroCoinFactory);
@@ -382,8 +372,6 @@ class EuroCoinSqliteRepositoryTest {
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("existsTestcases")
     void testExists(ExistsTestcase testcase) {
-        System.out.println("Testing: " + testcase.description);
-
         DataSource dataSource = mock(DataSource.class);
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(dataSource, tableName, euroCoinFactory);
@@ -451,8 +439,6 @@ class EuroCoinSqliteRepositoryTest {
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("validateEuroCoinTestcases")
     void testValidateEuroCoin(ValidationTestcase testcase) {
-        System.out.println("Testing: " + testcase.description);
-
         DataSource dataSource = mock(DataSource.class);
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(dataSource, tableName, euroCoinFactory);
