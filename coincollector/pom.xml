@@ -194,6 +194,10 @@
         <version>0.0.8</version>
         <configuration>
           <mainClass>io.github.lstramke.coincollector.App</mainClass>
+          <options>
+            <option>--enable-native-access=javafx.graphics</option>
+            <option>--enable-native-access=javafx.web</option>
+          </options>
         </configuration>
       </plugin>
       <plugin>
