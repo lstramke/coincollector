@@ -19,11 +19,16 @@ public class EuroCoinCollection implements CoinCollection<EuroCoin> {
     }
 
     private EuroCoinCollection(String id, String name, List<EuroCoin> coins, String groupId) throws IllegalArgumentException {
+        if (id == null || id.isBlank()){
+            throw new IllegalArgumentException("id is null or blank");
+        }
         this.id = id;
+        
         this.name = name;
 
-        if (groupId == null || groupId.isBlank())
+        if (groupId == null || groupId.isBlank()){
             throw new IllegalArgumentException("groupId is null or blank");
+        }
         this.groupId = groupId;
 
         final List<EuroCoin> src = (coins == null ? List.of() : coins);
