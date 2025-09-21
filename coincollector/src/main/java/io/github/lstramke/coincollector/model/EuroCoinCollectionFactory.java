@@ -9,11 +9,11 @@ public class EuroCoinCollectionFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionFactory.class);
 
-    public EuroCoinCollection fromDataBaseEntry(ResultSet rs) throws SQLException {
+    public EuroCoinCollection fromDataBaseEntry(ResultSet resultSet) throws SQLException {
         try {
-            String id = rs.getString("collection_id");
-            String name = rs.getString("name");
-            String groupId = rs.getString("group_id");
+            String id = resultSet.getString("collection_id");
+            String name = resultSet.getString("name");
+            String groupId = resultSet.getString("group_id");
 
             return new EuroCoinCollection(id, name, groupId);
         } catch (IllegalArgumentException e) {

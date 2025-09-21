@@ -35,8 +35,8 @@ public class EuroCoinCollectionSqliteRepositoryTest {
     @MethodSource("createTestcases")
     void testCreate(CreateTestcase testcase){
         DataSource dataSource = mock(DataSource.class);
-        EuroCoinCollectionFactory euroCoinFactory = mock(EuroCoinCollectionFactory.class);
-        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, euroCoinFactory);
+        EuroCoinCollectionFactory collectionFactory = mock(EuroCoinCollectionFactory.class);
+        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, collectionFactory);
 
         Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
@@ -95,8 +95,8 @@ public class EuroCoinCollectionSqliteRepositoryTest {
     @MethodSource("readTestcases")
     void testRead(ReadTestcase testcase){
         DataSource dataSource = mock(DataSource.class);
-        EuroCoinCollectionFactory euroCoinFactory = mock(EuroCoinCollectionFactory.class);
-        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, euroCoinFactory);
+        EuroCoinCollectionFactory collectionFactory = mock(EuroCoinCollectionFactory.class);
+        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, collectionFactory);
 
         Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
@@ -115,11 +115,11 @@ public class EuroCoinCollectionSqliteRepositoryTest {
 
                     if(testcase.hitInDB){
                         if(testcase.factoryThrowsSQLException){
-                            when(euroCoinFactory.fromDataBaseEntry(resultSet))
+                            when(collectionFactory.fromDataBaseEntry(resultSet))
                                 .thenThrow(new SQLException("Factory error"));
                         }
                         else if(testcase.expectedEuroCoinCollection.isPresent()){
-                            when(euroCoinFactory.fromDataBaseEntry(resultSet))
+                            when(collectionFactory.fromDataBaseEntry(resultSet))
                                 .thenReturn(testcase.expectedEuroCoinCollection.get());
                         }
                     }
@@ -138,14 +138,12 @@ public class EuroCoinCollectionSqliteRepositoryTest {
                 verify(preparedStatement).executeQuery();
                 verify(resultSet).next();
                 if (!testcase.factoryThrowsSQLException) {
-                    verify(euroCoinFactory).fromDataBaseEntry(resultSet);
+                    verify(collectionFactory).fromDataBaseEntry(resultSet);
                     }
             }
         } catch (SQLException e) {
             fail("SQLException should not occur with mocks: " + e.getMessage());
-        }
-
-        
+        }       
     }
 
     record ReadTestcase(
@@ -177,8 +175,8 @@ public class EuroCoinCollectionSqliteRepositoryTest {
     @MethodSource("updateTestcases")
     void testUpdate(UpdateTestcase testcase){
         DataSource dataSource = mock(DataSource.class);
-        EuroCoinCollectionFactory euroCoinFactory = mock(EuroCoinCollectionFactory.class);
-        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, euroCoinFactory);
+        EuroCoinCollectionFactory collectionFactory = mock(EuroCoinCollectionFactory.class);
+        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, collectionFactory);
 
         Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
@@ -237,8 +235,8 @@ public class EuroCoinCollectionSqliteRepositoryTest {
     @MethodSource("deleteTestcases")
     void testDelete(DeleteTestcase testcase){
         DataSource dataSource = mock(DataSource.class);
-        EuroCoinCollectionFactory euroCoinFactory = mock(EuroCoinCollectionFactory.class);
-        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, euroCoinFactory);
+        EuroCoinCollectionFactory collectionFactory = mock(EuroCoinCollectionFactory.class);
+        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, collectionFactory);
 
         Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
@@ -298,8 +296,8 @@ public class EuroCoinCollectionSqliteRepositoryTest {
     @MethodSource("getAllTestcases")
     void testGetAll(GetAllTestcase testcase){
         DataSource dataSource = mock(DataSource.class);
-        EuroCoinCollectionFactory euroCoinFactory = mock(EuroCoinCollectionFactory.class);
-        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, euroCoinFactory);
+        EuroCoinCollectionFactory collectionFactory = mock(EuroCoinCollectionFactory.class);
+        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, collectionFactory);
 
         Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
@@ -317,7 +315,7 @@ public class EuroCoinCollectionSqliteRepositoryTest {
                 AtomicInteger row = new AtomicInteger(-1);
                 lenient().when(resultSet.next()).then(hasNext -> row.incrementAndGet() < testcase.collectionsInDB.size());
                 lenient().when(resultSet.getString(eq("collection_id"))).then(collectionId -> testcase.collectionsInDB.get(row.get()).getId());
-                lenient().when(euroCoinFactory.fromDataBaseEntry(resultSet)).then(collection -> {
+                lenient().when(collectionFactory.fromDataBaseEntry(resultSet)).then(collection -> {
                     int i = row.get();
                     if(testcase.factoryThrowsOnRow == i){
                         throw new SQLException("factory exception");
@@ -367,8 +365,8 @@ public class EuroCoinCollectionSqliteRepositoryTest {
     @MethodSource("existsTestcases")
     void testExists(ExistsTestcase testcase){
         DataSource dataSource = mock(DataSource.class);
-        EuroCoinCollectionFactory euroCoinFactory = mock(EuroCoinCollectionFactory.class);
-        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, euroCoinFactory);
+        EuroCoinCollectionFactory collectionFactory = mock(EuroCoinCollectionFactory.class);
+        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, collectionFactory);
 
         Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
@@ -434,8 +432,8 @@ public class EuroCoinCollectionSqliteRepositoryTest {
     @MethodSource("validationTestcases")
     void testValidateEuroCoinCollection(ValidationTestcase testcase){
         DataSource dataSource = mock(DataSource.class);
-        EuroCoinCollectionFactory euroCoinFactory = mock(EuroCoinCollectionFactory.class);
-        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, euroCoinFactory);
+        EuroCoinCollectionFactory collectionFactory = mock(EuroCoinCollectionFactory.class);
+        EuroCoinCollectionSqliteRepository repository = new EuroCoinCollectionSqliteRepository(dataSource, tableName, collectionFactory);
 
         EuroCoinCollection collection = null;
         if(!testcase.description.contains("null collection")){

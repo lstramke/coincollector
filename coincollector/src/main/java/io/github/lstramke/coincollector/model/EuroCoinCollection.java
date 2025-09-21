@@ -11,11 +11,11 @@ public class EuroCoinCollection implements CoinCollection<EuroCoin> {
     private String groupId;
 
     public EuroCoinCollection(String name, String groupId) {
-        this(idFromUUID(), name, List.of(), groupId);
+        this(createCollectionId(), name, List.of(), groupId);
     }
 
     public EuroCoinCollection(String name, List<EuroCoin> coins, String groupId) {
-        this(idFromUUID(), name, coins, groupId);
+        this(createCollectionId(), name, coins, groupId);
     }
 
     private EuroCoinCollection(String id, String name, List<EuroCoin> coins, String groupId) throws IllegalArgumentException {
@@ -42,7 +42,7 @@ public class EuroCoinCollection implements CoinCollection<EuroCoin> {
         this(id, name, List.of(), groupId);
     }
 
-    private static String idFromUUID() {
+    private static String createCollectionId() {
         return UUID.randomUUID().toString();
     }
 

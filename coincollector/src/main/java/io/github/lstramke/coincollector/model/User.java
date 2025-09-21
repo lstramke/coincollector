@@ -7,7 +7,7 @@ public class User {
     private String name;
 
     public User(String name){
-        this(UUID.randomUUID().toString(), name);
+        this(createUserId(), name);
     }
 
     User(String id, String name) throws IllegalArgumentException{
@@ -16,6 +16,10 @@ public class User {
         }
         this.id = id;
         this.name = name;
+    }
+
+    private static String createUserId() {
+        return UUID.randomUUID().toString();
     }
 
     public String getId() {

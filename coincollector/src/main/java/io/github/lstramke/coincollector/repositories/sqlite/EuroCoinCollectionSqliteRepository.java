@@ -57,7 +57,6 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             }
 
             return success;
-
         } catch (SQLException e) {
             logger.error("Error creating EuroCoinCollection id={}", collection.getId(), e);
             return false;
@@ -141,7 +140,6 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             }
 
             return success;
-
         } catch (SQLException e) {
             logger.error("Error updating EuroCoinCollection with id: {}", collection.getId(), e);
             return false;
@@ -177,7 +175,6 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             }
 
             return success;
-
         } catch (SQLException e) {
             logger.warn("Error deleting EuroCoinCollection with id: {}", id, e);
             return false;
@@ -209,9 +206,9 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
                             collectionId);
                 }
             }
-            logger.debug("Successfully retrieved {} EuroCoins from database", readCollections.size());
+            logger.debug("Successfully retrieved {} EuroCoinCollection(s) from database", readCollections.size());
         } catch (SQLException e) {
-            logger.error("Error retrieving all EuroCoins from database", e);
+            logger.error("Error retrieving all EuroCoinCollection(s) from database", e);
         }
 
         return readCollections;
