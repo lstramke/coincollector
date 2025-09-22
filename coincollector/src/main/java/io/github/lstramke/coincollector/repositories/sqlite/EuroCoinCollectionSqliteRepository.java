@@ -10,63 +10,53 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionStorageRepository {
 
-    private final DataSource dataSource;
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionSqliteRepository.class);
     private final String tableName;
     private final EuroCoinCollectionFactory euroCoinCollectionFactory;
 
-    public EuroCoinCollectionSqliteRepository(DataSource dataSource, String tableName, EuroCoinCollectionFactory euroCoinCollectionFactory) {
-        this.dataSource = dataSource;
+    public EuroCoinCollectionSqliteRepository(String tableName, EuroCoinCollectionFactory euroCoinCollectionFactory) {
         this.tableName = tableName;
         this.euroCoinCollectionFactory = euroCoinCollectionFactory;
     }
 
     @Override
-    public boolean create(EuroCoinCollection collection) {
+    public void create(Connection connection, EuroCoinCollection collection) throws SQLException{
         if (!validateEuroCoinCollection(collection)) {
-            logger.warn("Cannot create EuroCoinCollection - validation failed");
-            return false;
+            logger.warn("EuroCoinCollection create aborted: validation failed");
+            throw new IllegalArgumentException("EuroCoinCollection validation failed (create)");
         }
 
         String sql = String.format(
                 "INSERT INTO %s (collection_id, name, group_id) VALUES (?, ?, ?)", 
                 tableName);
 
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, collection.getId());
             statement.setString(2, collection.getName());
             statement.setString(3, collection.getGroupId());
 
             int rowsAffected = statement.executeUpdate();
-            boolean success = rowsAffected == 1;
-
-            if (success) {
-                logger.info("Successfully created EuroCoinCollection id={} name='{}' groupId={}",
-                        collection.getId(), collection.getName(), collection.getGroupId());
+            if (rowsAffected == 1) {
+                logger.info("EuroCoinCollection created: id={}, groupId={}", collection.getId(), collection.getGroupId());
             } else {
-                logger.warn("Failed to create EuroCoinCollection id={} name='{}' groupId={}",
-                        collection.getId(), collection.getName(), collection.getGroupId());
+                logger.warn("EuroCoinCollection not created (rowsAffected={}): id={}, groupId={}", rowsAffected, collection.getId(), collection.getGroupId());
+                throw new SQLException("EuroCoinCollection create affected unexpected number of rows: " + rowsAffected);
             }
-
-            return success;
         } catch (SQLException e) {
-            logger.error("Error creating EuroCoinCollection id={}", collection.getId(), e);
-            return false;
+            logger.error("EuroCoinCollection create failed: id={}, groupId={}", collection.getId(), collection.getGroupId(), e);
+            throw e;
         }
     }
 
     @Override
-    public Optional<EuroCoinCollection> read(String id) {
+    public Optional<EuroCoinCollection> read(Connection connection, String id) throws SQLException {
         if (id == null || id.isBlank()) {
-            logger.warn("Cannot read EuroCoinCollection - id is null or blank");
+            logger.warn("EuroCoinCollection read aborted: id null/blank");
             return Optional.empty();
         }
 
@@ -78,40 +68,38 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             """, tableName
         );
 
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, id);
             try (ResultSet queryResult = statement.executeQuery()) {
                 if (queryResult.next()) {
                     return createEuroCoinCollectionFromResultSet(id, queryResult);
                 } else {
-                    logger.debug("EuroCoinCollection with id: {} not found", id);
+                    logger.debug("EuroCoinCollection not found: id={}", id);
                     return Optional.empty();
                 }
             }
         } catch (SQLException e) {
-            logger.error("Error reading EuroCoinCollection with id: {}", id, e);
-            return Optional.empty();
+            logger.error("EuroCoinCollection read failed: id={}", id, e);
+            throw e;
         }
     }
 
     private Optional<EuroCoinCollection> createEuroCoinCollectionFromResultSet(String id, ResultSet queryResult) {
         try {
             EuroCoinCollection readCollection = euroCoinCollectionFactory.fromDataBaseEntry(queryResult);
-            logger.debug("Successfully read EuroCoinCollection (id={})", id);
+            logger.debug("EuroCoinCollection read: id={}, groupId={}", id, readCollection.getGroupId());
             return Optional.of(readCollection);
         } catch (SQLException e) {
-            logger.warn("Invalid data for EuroCoinCollection row: {}", e.getMessage(), e);
+            logger.warn("EuroCoinCollection read produced invalid data: id={}", id);
             return Optional.empty();
         }
     }
 
     @Override
-    public boolean update(EuroCoinCollection collection) {
+    public void update(Connection connection, EuroCoinCollection collection) throws SQLException {
         if (!validateEuroCoinCollection(collection)) {
-            logger.warn("Cannot update EuroCoinCollection - validation failed");
-            return false;
+            logger.warn("EuroCoinCollection update aborted: validation failed");
+            throw new IllegalArgumentException("EuroCoinCollection validation failed (update)");
         }
 
         String sql = String.format(
@@ -122,35 +110,28 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             """, tableName
         );
 
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, collection.getName());
             statement.setString(2, collection.getGroupId());
 
             int rowsAffected = statement.executeUpdate();
-            boolean success = rowsAffected == 1;
-
-            if (success) {
-                logger.info("Successfully updated EuroCoinCollection with id: {} in collection: {}",
-                        collection.getId(), collection.getGroupId());
+            if (rowsAffected == 1) {
+                logger.info("EuroCoinCollection updated: id={}, groupId={}", collection.getId(), collection.getGroupId());
             } else {
-                logger.warn("Failed to update EuroCoinCollection with id: {} in collection: {}",
-                        collection.getId(), collection.getGroupId());
+                logger.warn("EuroCoinCollection not updated (rowsAffected={}): id={}, groupId={}", rowsAffected, collection.getId(), collection.getGroupId());
+                throw new SQLException("EuroCoinCollection update affected unexpected number of rows: " + rowsAffected);
             }
-
-            return success;
         } catch (SQLException e) {
-            logger.error("Error updating EuroCoinCollection with id: {}", collection.getId(), e);
-            return false;
+            logger.error("EuroCoinCollection update failed: id={}, groupId={}", collection.getId(), collection.getGroupId(), e);
+            throw e;
         }
     }
 
     @Override
-    public boolean delete(String id) {
+    public void delete(Connection connection, String id) throws SQLException {
         if (id == null || id.isBlank()) {
-            logger.warn("Cannot delete EuroCoinCollection - id is null or blank");
-            return false;
+            logger.warn("EuroCoinCollection delete aborted: id null/blank");
+            throw new IllegalArgumentException("collectionId must not be null or blank (delete)");
         }
 
         String sql = String.format(
@@ -160,29 +141,24 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             """, tableName
         );
 
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, id);
 
             int rowsAffected = statement.executeUpdate();
-            boolean success = rowsAffected == 1;
-
-            if (success) {
-                logger.info("Successfully deleted EuroCoinCollection with id: {}", id);
+            if (rowsAffected == 1) {
+                logger.info("EuroCoinCollection deleted: id={}", id);
             } else {
-                logger.warn("Failed to delete EuroCoinCollection with id: {}", id);
+                logger.warn("EuroCoinCollection not deleted (rowsAffected={}): id={}", rowsAffected, id);
+                throw new SQLException("EuroCoinCollection delete affected unexpected number of rows: " + rowsAffected);
             }
-
-            return success;
         } catch (SQLException e) {
-            logger.warn("Error deleting EuroCoinCollection with id: {}", id, e);
-            return false;
+            logger.error("EuroCoinCollection delete failed: id={}", id, e);
+            throw e;
         }
     }
 
     @Override
-    public List<EuroCoinCollection> getAll() {
+    public List<EuroCoinCollection> getAll(Connection connection) throws SQLException {
         String sql = String.format(
             """
             SELECT collection_id, name, group_id
@@ -192,13 +168,11 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
 
         List<EuroCoinCollection> readCollections = new ArrayList<>();
 
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql);
-            ResultSet rs = statement.executeQuery()) {
-
-            while (rs.next()) {
-                String collectionId = rs.getString("collection_id");
-                Optional<EuroCoinCollection> readCollection = createEuroCoinCollectionFromResultSet(collectionId, rs);
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            try(ResultSet resultSet = statement.executeQuery()){
+                while (resultSet.next()) {
+                String collectionId = resultSet.getString("collection_id");
+                Optional<EuroCoinCollection> readCollection = createEuroCoinCollectionFromResultSet(collectionId, resultSet);
                 if (readCollection.isPresent()) {
                     readCollections.add(readCollection.get());
                 } else {
@@ -206,19 +180,21 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
                             collectionId);
                 }
             }
-            logger.debug("Successfully retrieved {} EuroCoinCollection(s) from database", readCollections.size());
+            logger.debug("EuroCoinCollection list read: count={}", readCollections.size());
+            }
         } catch (SQLException e) {
-            logger.error("Error retrieving all EuroCoinCollection(s) from database", e);
+            logger.error("EuroCoinCollection list read failed", e);
+            throw e;
         }
 
         return readCollections;
     }
 
     @Override
-    public Optional<Boolean> exists(String id) {
+    public boolean exists(Connection connection, String id) throws SQLException {
         if (id == null || id.isBlank()) {
-            logger.warn("Cannot check existence of EuroCoinCollection - id is null or blank");
-            return Optional.of(false);
+            logger.warn("EuroCoinCollection exists check aborted: id null/blank");
+            throw new IllegalArgumentException("collectionId must not be null or blank (exists)");
         }
 
         String sql = String.format(
@@ -229,37 +205,34 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
             """, tableName
         );
 
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(sql)) {
-
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, id);
-            try (ResultSet rs = statement.executeQuery()) {
-                return Optional.of(rs.next());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
             }
-
         } catch (SQLException e) {
-            logger.error("Error checking existence of EuroCoinCollection with id: {}", id, e);
-            return Optional.empty();
+            logger.error("EuroCoinCollection exists check failed: id={}", id, e);
+            throw e;
         }
     }
 
     boolean validateEuroCoinCollection(EuroCoinCollection collection) {
         if (collection == null) {
-            logger.warn("Validation failed: EuroCoinCollection is null");
             return false;
         }
 
         if (collection.getId() == null || collection.getId().isBlank()) {
-            logger.warn("Validation failed: EuroCoinCollection ID is null or empty");
+            return false;
+        }
+
+        if (collection.getGroupId() == null || collection.getGroupId().isBlank()) {
             return false;
         }
 
         if (collection.getCoins() == null) {
-            logger.warn("Validation failed: EuroCoinCollection coins (Arraylist) is null");
             return false;
         }
 
-        logger.debug("Validation successful for EuroCoinCollection {}", collection.getId());
         return true;
     }
 }
