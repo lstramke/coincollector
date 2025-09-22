@@ -1,63 +1,63 @@
-@startuml storageRepositoryLayer_v2
+@startuml storageRepositoryLayer_v3
 
 interface EuroCoinStorageRepository {
-    + boolean create(EuroCoin coin)
-    + EuroCoin read(String id)
-    + boolean update(EuroCoin coin)
-    + boolean delete(String id)
-    + List<EuroCoin> getAll()
-    + boolean exists(String id)
+    + void create(Connection connection, EuroCoin coin) throws SQLException
+    + Optional<EuroCoin> read(Connection connection, String id) throws SQLException
+    + void update(Connection connection, EuroCoin coin) throws SQLException
+    + void delete(Connection connection, String id) throws SQLException
+    + List<EuroCoin> getAll(Connection connection, ) throws SQLException
+    + boolean exists(Connection connection, String id) throws SQLException
 }
 
 interface EuroCoinCollectionStorageRepository {
-    + boolean create(EuroCoinCollection collection)
-    + EuroCoinCollection read(String id)
-    + boolean update(EuroCoinCollection collection)
-    + boolean delete(String id)
-    + List<EuroCoinCollection> getAll()
-    + boolean exists(String id)
+    + void create(Connection connection, EuroCoinCollection collection) throws SQlException
+    + Optional<EuroCoinCollection> read(Connection connection, String id) throws SQlException
+    + void update(Connection connection, EuroCoinCollection collection) throws SQlException
+    + void delete(Connection connection, String id) throws SQlException
+    + List<EuroCoinCollection> getAll(Connection connection, ) throws SQlException
+    + boolean exists(Connection connection, String id) throws SQlException
 }
 
 interface EuroCoinCollectionGroupStorageRepository {
-    + boolean create(EuroCoinCollectionGroup group)
-    + EuroCoinCollectionGroup read(String id)
-    + boolean update(EuroCoinCollectionGroup group)
-    + boolean delete(String id)
-    + List<EuroCoinCollectionGroup> getAllByUser(String userId)
-    + boolean exists(String id)
+    + void create(Connection connection, EuroCoinCollectionGroup group) throws SQLException
+    + Optional<EuroCoinCollectionGroup> read(Connection connection, String id) throws SQLException
+    + void update(Connection connection, EuroCoinCollectionGroup group) throws SQLException
+    + void delete(Connection connection, String id) throws SQLException
+    + List<EuroCoinCollectionGroup> getAllByUser(Connection connection, String userId) throws SQLException
+    + boolean exists(Connection connection, String id) throws SQLException
 }
 
 interface UserStorageRepository {
-    + boolean create(User user)
-    + EuroCoinCollectionGroup read(String userId)
-    + boolean update(User user)
-    + boolean delete(String userId)
-    + boolean exists(String id)
+    + void create(Connection connection, User user) throws SQLException
+    + Optional<EuroCoinCollectionGroup> read(Connection connection, String userId) throws SQLException
+    + void update(Connection connection, User user) throws SQLException
+    + void delete(Connection connection, String userId) throws SQLException
+    + boolean exists(Connection connection, String id) throws SQLException
 }
 
 
 class EuroCoinSqliteRepository {
-    - connection : Connection
     - static final logger : Logger
     - tableName : String
+    - final euroCoinFactory : EuroCoinFactory
 }
 
 class EuroCoinCollectionSqliteRepository {
-    - connection : Connection
     - static final logger : Logger
     - tableName : String
+    - final euroCoinCollectionFactory : EuroCoinCollectionFactory
 }
 
 class EuroCoinCollectionGroupSqliteRepository {
-    - connection : Connection
     - static final logger : Logger
     - tableName : String
+    - final euroCoinCollectionGroupFactory : EuroCoinCollectionGroupFactory
 }
 
 class UserSqliteRepository {
-    - connection : Connection
     - static final logger : Logger
     - tableName : String
+    - final userFactory : UserFactory
 }
 
 EuroCoinStorageRepository <|.. EuroCoinSqliteRepository
