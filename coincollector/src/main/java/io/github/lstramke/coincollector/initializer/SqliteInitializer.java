@@ -8,7 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.lstramke.coincollector.exceptions.StorageException;
+import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 
 public class SqliteInitializer implements StorageInitializer{
     private Connection connection;
@@ -21,14 +21,14 @@ public class SqliteInitializer implements StorageInitializer{
     }
 
     @Override
-    public void init() throws StorageException {
+    public void init() throws StorageInitializeException  {
         initUserTable();
         initEuroCoinCollectionGroupTable();
         initEuroCoinCollectionTable();
         initEuroCoinTable();
     }
 
-    private void initUserTable() throws StorageException {
+    private void initUserTable() throws StorageInitializeException  {
         String tableName = tableNames.get(0);
         String sql = String.format("""
             CREATE TABLE IF NOT EXISTS %s (
@@ -39,7 +39,7 @@ public class SqliteInitializer implements StorageInitializer{
         initTable(tableName, sql);
     }
 
-    private void initEuroCoinCollectionGroupTable() throws StorageException{
+    private void initEuroCoinCollectionGroupTable() throws StorageInitializeException {
         String tableName = tableNames.get(1);
         String sql = String.format("""
                 CREATE TABLE IF NOT EXISTS %s (
@@ -82,13 +82,13 @@ public class SqliteInitializer implements StorageInitializer{
         initTable(tableName, sql);
     }
 
-    private void initTable(String name, String sql) throws StorageException {
+    private void initTable(String name, String sql) throws StorageInitializeException {
         try (Statement statement = connection.createStatement()) {
             statement.execute(sql);
             logger.info("Table {} initialized successfully", name);
         } catch (SQLException e) {
             logger.error("Failed to initialize table {}", name, e);
-            throw new StorageException("Failed to initialize table '" + name + "': " + e.getMessage(), e);
+            throw new StorageInitializeException("Failed to initialize table '" + name + "': " + e.getMessage(), e);
         }
     }
 }
