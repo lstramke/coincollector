@@ -13,6 +13,20 @@ import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.model.UserFactory;
 import io.github.lstramke.coincollector.repositories.UserStorageRepository;
 
+/**
+ * SQLite-backed implementation of {@link UserStorageRepository} providing simple CRUD
+ * operations on a user table. Responsibilities:
+ * <ul>
+ *   <li>Create / read / update / delete of {@link User} rows</li>
+ *   <li>Lightweight input validation (non-null, non-blank id)</li>
+ *   <li>Entity mapping delegated to {@link UserFactory}</li>
+ * </ul>
+ * This class does NOT manage transactions or connection lifecycle; the caller must
+ * supply an open {@link java.sql.Connection}. All JDBC resources (statements, result
+ * sets) are closed via try-with-resources. Unexpected row counts during write
+ * operations raise a {@link java.sql.SQLException}. 
+ */
+
 public class UserSqliteRepository implements UserStorageRepository{
     private static final Logger logger = LoggerFactory.getLogger(UserSqliteRepository.class);
     private final String tableName;
@@ -23,8 +37,12 @@ public class UserSqliteRepository implements UserStorageRepository{
         this.userFactory = userFactory;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void create(Connection connection, User user) throws SQLException {
+        if (connection == null) {
+            throw new IllegalArgumentException("connection must not be null (create)");
+        }
         if(!validateUser(user)){
             logger.warn("User create aborted: validation failed");
             throw new IllegalArgumentException("User validation failed (create)");
@@ -50,11 +68,15 @@ public class UserSqliteRepository implements UserStorageRepository{
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public Optional<User> read(Connection connection, String userId) throws SQLException {
-        if(userId == null || userId.isBlank()){
+        if (connection == null) {
+            throw new IllegalArgumentException("connection must not be null (read)");
+        }
+        if (userId == null || userId.isBlank()) {
             logger.warn("User read aborted: userId null/blank");
-            return Optional.empty();
+            throw new IllegalArgumentException("userId must not be null or blank (read)");
         }
 
         String sql = String.format(
@@ -81,19 +103,37 @@ public class UserSqliteRepository implements UserStorageRepository{
         }
     }
 
-    private Optional<User> createUserFromResultSet(String userId, ResultSet resultSet){
+    /**
+     * Maps the current row of the given {@link ResultSet} to a {@link User} using the {@link UserFactory}.
+     * <p>Contract:
+     * <ul>
+     *   <li>The {@code resultSet} must already be positioned on a valid row (i.e. after {@code next()} returned true).</li>
+     *   <li>Returns an {@code Optional} that is always present unless a {@link SQLException} is thrown.</li>
+     *   <li>Propagates any {@link SQLException} originating from the factory (invalid / incomplete row data).</li>
+     * </ul>
+     *
+     * @param userId id used only for logging correlation
+     * @param resultSet JDBC result set positioned at the row to map
+     * @return an {@link Optional} containing the mapped {@link User}
+     * @throws SQLException if the mapping fails due to invalid column data or JDBC issues
+     */
+    private Optional<User> createUserFromResultSet(String userId, ResultSet resultSet) throws SQLException{
         try {
             User readUser = userFactory.fromDataBaseEntry(resultSet);
             logger.debug("User read: id={}", userId);
             return Optional.of(readUser);
         } catch (SQLException e) {
             logger.warn("User read produced invalid data: id={}", userId);
-            return Optional.empty();
+            throw e;
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void update(Connection connection, User user) throws SQLException {
+        if (connection == null) {
+            throw new IllegalArgumentException("connection must not be null (update)");
+        }
         if(!validateUser(user)){
             logger.warn("User update aborted: validation failed");
             throw new IllegalArgumentException("User validation failed (update)");
@@ -125,8 +165,12 @@ public class UserSqliteRepository implements UserStorageRepository{
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void delete(Connection connection, String userId) throws SQLException {
+        if (connection == null) {
+            throw new IllegalArgumentException("connection must not be null (delete)");
+        }
         if(userId == null || userId.isBlank()){
             logger.warn("User delete aborted: userId null/blank");
             throw new IllegalArgumentException("userId must not be null or blank (delete)");
@@ -157,8 +201,12 @@ public class UserSqliteRepository implements UserStorageRepository{
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean exists(Connection connection, String userId) throws SQLException {
+        if (connection == null) {
+            throw new IllegalArgumentException("connection must not be null (exists)");
+        }
         if(userId == null || userId.isBlank()){
             logger.warn("User exists check aborted: userId null/blank");
             throw new IllegalArgumentException("userId must not be null or blank (exists)");
@@ -184,6 +232,18 @@ public class UserSqliteRepository implements UserStorageRepository{
         }
     }
 
+    /**
+     * Internal (package-private) minimal validation of a {@link User} instance.
+     * Current rules:
+     * <ul>
+     *   <li>User object must not be {@code null}</li>
+     *   <li>Id must not be {@code null} or blank</li>
+     * </ul>
+     * Extend here if additional invariants (e.g. name constraints) are required.
+     *
+     * @param user user instance to validate
+     * @return {@code true} if all current rules are satisfied, otherwise {@code false}
+     */
     boolean validateUser(User user){
         if (user == null) {
             return false;

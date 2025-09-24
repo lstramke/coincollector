@@ -27,6 +27,7 @@ public class UserSqliteRepositoryTest {
 
     private record CreateTestcase(
         User user,
+        Connection connection,
         boolean shouldThrowSQLException,
         int rowsAffected,
         Class<? extends Exception> expectedException,
@@ -40,10 +41,11 @@ public class UserSqliteRepositoryTest {
 
     private static Stream<CreateTestcase> createTestcases(){
         return Stream.of(
-            new CreateTestcase(dummyUser, false, 1, null, "Valid User - successful insert"),
-            new CreateTestcase(dummyUser, false, 0, SQLException.class, "Valid User - unsuccessful insert"),
-            new CreateTestcase(null, false, 1, IllegalArgumentException.class, "Null User"),
-            new CreateTestcase(dummyUser, true, 1, SQLException.class, "SQLException during create attempt")
+            new CreateTestcase(dummyUser, mock(Connection.class), false, 1, null, "Valid User - successful insert"),
+            new CreateTestcase(dummyUser, mock(Connection.class), false, 0, SQLException.class, "Valid User - unsuccessful insert"),
+            new CreateTestcase(null, mock(Connection.class), false, 1, IllegalArgumentException.class, "Null User"),
+            new CreateTestcase(dummyUser, null, false, 1, IllegalArgumentException.class, "Null Connection"),
+            new CreateTestcase(dummyUser, mock(Connection.class), true, 1, SQLException.class, "SQLException during create attempt")
         );
     }
 
@@ -53,11 +55,10 @@ public class UserSqliteRepositoryTest {
         UserFactory userFactory = mock(UserFactory.class);
         UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         try{
-            if (testcase.user != null) {
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if (testcase.user != null && testcase.connection != null) {
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if (testcase.shouldThrowSQLException()) {
                     when(preparedStatement.executeUpdate()).thenThrow(new SQLException("Insert failed"));
@@ -68,16 +69,16 @@ public class UserSqliteRepositoryTest {
 
             if (testcase.expectedException != null) {
                 assertThrows(testcase.expectedException, () ->
-                    repository.create(connection, testcase.user),
+                    repository.create(testcase.connection, testcase.user),
                     "Expected exception was not thrown for: " + testcase.description
                 );
             } else {
                 assertDoesNotThrow(() ->
-                    repository.create(connection, testcase.user),
+                    repository.create(testcase.connection, testcase.user),
                     "Unexpected exception thrown for: " + testcase.description
                 );
             
-                verify(connection).prepareStatement(anyString());
+                verify(testcase.connection).prepareStatement(anyString());
                 verify(preparedStatement).executeUpdate();
             }
         } catch (SQLException e) {
@@ -87,10 +88,12 @@ public class UserSqliteRepositoryTest {
 
     private record ReadTestcase(
         String id,
+        Connection connection,
         boolean shouldThrowSQLException,
         boolean hitInDB,
         boolean factoryThrowsSQLException,
         Optional<User> expectedUser,
+        Class<? extends Exception> expectedException,
         String description
     ){
         @Override
@@ -101,12 +104,13 @@ public class UserSqliteRepositoryTest {
 
     private static Stream<ReadTestcase> readTestcases(){
         return Stream.of(
-            new ReadTestcase(null, false, false, false, Optional.empty(), "Null id"),
-            new ReadTestcase("", false, false, false, Optional.empty(), "Empty id"),
-            new ReadTestcase("validId", false, true, false, Optional.of(dummyUser), "Valid id - read hit, no SQLException"),
-            new ReadTestcase("validId", false, true, true, Optional.empty(), "Valid id - read hit, SQLException from factory"),
-            new ReadTestcase("validId", true, true, false, Optional.empty(), "SQLException during read attempt"),
-            new ReadTestcase("validId", false, false, false, Optional.empty(), "Valid id - no read hit")
+            new ReadTestcase(null, mock(Connection.class), false, false, false, Optional.empty(), IllegalArgumentException.class, "Null id"),
+            new ReadTestcase("validId", null, false, false, false, Optional.empty(), IllegalArgumentException.class, "Null Connection"),
+            new ReadTestcase("", mock(Connection.class), false, false, false, Optional.empty(), IllegalArgumentException.class, "Empty id"),
+            new ReadTestcase("validId", mock(Connection.class), false, true, false, Optional.of(dummyUser), null, "Valid id - read hit, no SQLException"),
+            new ReadTestcase("validId", mock(Connection.class), false, true, true, Optional.empty(), SQLException.class, "Valid id - read hit, SQLException from factory"),
+            new ReadTestcase("validId", mock(Connection.class), true, true, false, Optional.empty(), SQLException.class, "SQLException during read attempt"),
+            new ReadTestcase("validId", mock(Connection.class), false, false, false, Optional.empty(), null, "Valid id - no read hit")
         ); 
     }
 
@@ -116,12 +120,11 @@ public class UserSqliteRepositoryTest {
         UserFactory userFactory = mock(UserFactory.class);
         UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
         try{
-            if (testcase.id != null && !testcase.id.isBlank()) {
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if (testcase.id != null && !testcase.id.isBlank() && testcase.connection != null) {
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if (testcase.shouldThrowSQLException) {
                     when(preparedStatement.executeQuery()).thenThrow(new SQLException("DB error"));
@@ -141,18 +144,18 @@ public class UserSqliteRepositoryTest {
                 }
             }
 
-            if (testcase.shouldThrowSQLException) {
-                assertThrows(SQLException.class,
-                    () -> repository.read(connection, testcase.id),
+            if (testcase.expectedException != null) {
+                assertThrows(testcase.expectedException,
+                    () -> repository.read(testcase.connection, testcase.id),
                     "Expected SQLException was not thrown for: " + testcase.description
                 );
             } else {
-                Optional<User> result = repository.read(connection, testcase.id);
+                Optional<User> result = repository.read(testcase.connection, testcase.id);
                 assertEquals(testcase.expectedUser, result,
                     "Result value mismatch for: " + testcase.description);
 
-                if (testcase.id != null && !testcase.id.isBlank()) {
-                    verify(connection).prepareStatement(anyString());
+                if (testcase.id != null && !testcase.id.isBlank() && testcase.connection != null) {
+                    verify(testcase.connection).prepareStatement(anyString());
                     verify(preparedStatement).setString(1, testcase.id);
                     verify(preparedStatement).executeQuery();
 
@@ -171,6 +174,7 @@ public class UserSqliteRepositoryTest {
 
     private record UpdateTestcase(
         User user,
+        Connection connection,
         boolean shouldThrowSQLException,
         int rowsAffected,
         Class<? extends Exception> expectedException,
@@ -184,10 +188,11 @@ public class UserSqliteRepositoryTest {
 
     private static Stream<UpdateTestcase> updateTestcases(){
         return Stream.of(
-            new UpdateTestcase(dummyUser, false, 1, null, "Valid user - successful update"),
-            new UpdateTestcase(dummyUser, false, 0, SQLException.class, "Valid user - unsuccessful update"),
-            new UpdateTestcase(dummyUser, true, 0, SQLException.class, "SQLException during update attempt"),
-            new UpdateTestcase(null, false, 0, IllegalArgumentException.class, "Null user")
+            new UpdateTestcase(dummyUser, mock(Connection.class), false, 1, null, "Valid user - successful update"),
+            new UpdateTestcase(dummyUser, mock(Connection.class), false, 0, SQLException.class, "Valid user - unsuccessful update"),
+            new UpdateTestcase(dummyUser, mock(Connection.class), true, 0, SQLException.class, "SQLException during update attempt"),
+            new UpdateTestcase(null, mock(Connection.class), false, 0, IllegalArgumentException.class, "Null user"),
+            new UpdateTestcase(dummyUser, null, false, 0, IllegalArgumentException.class, "Null Connection")
         );
     }
 
@@ -197,12 +202,11 @@ public class UserSqliteRepositoryTest {
         UserFactory userFactory = mock(UserFactory.class);
         UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         try {
-            if(testcase.user != null){
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if(testcase.user != null && testcase.connection != null){
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if (testcase.shouldThrowSQLException()) {
                     when(preparedStatement.executeUpdate()).thenThrow(new SQLException("Update failed"));
@@ -213,17 +217,19 @@ public class UserSqliteRepositoryTest {
 
             if (testcase.expectedException != null) {
                 assertThrows(testcase.expectedException, () ->
-                    repository.update(connection, testcase.user),
+                    repository.update(testcase.connection, testcase.user),
                     "Expected exception was not thrown for: " + testcase.description
                 );
             } else {
                 assertDoesNotThrow(() ->
-                    repository.update(connection, testcase.user),
+                    repository.update(testcase.connection, testcase.user),
                     "Unexpected exception thrown for: " + testcase.description
                 );
             
-                verify(connection).prepareStatement(anyString());
-                verify(preparedStatement).executeUpdate();
+                if(testcase.connection != null){
+                    verify(testcase.connection).prepareStatement(anyString());
+                    verify(preparedStatement).executeUpdate();
+                }
             }
         } catch (SQLException e) {
             fail("SQLException should not occur with mocks: " + e.getMessage());
@@ -232,6 +238,7 @@ public class UserSqliteRepositoryTest {
 
     private record DeleteTestcase(
         String id,
+        Connection connection,
         boolean shouldThrowSQLException,
         int rowsAffected,
         Class<? extends Exception> expectedException,
@@ -245,11 +252,12 @@ public class UserSqliteRepositoryTest {
 
     private static Stream<DeleteTestcase> deleteTestcases(){
         return Stream.of(
-            new DeleteTestcase(null, false, 0, IllegalArgumentException.class, "Null Id"),
-            new DeleteTestcase("", false, 0, IllegalArgumentException.class, "Empty Id"),
-            new DeleteTestcase("validId", false, 1, null, "Valid Id - successful delete"),
-            new DeleteTestcase("validId", false, 0, SQLException.class, "Valid Id - unsuccessful delete"),
-            new DeleteTestcase("validId", true, 0, SQLException.class, "SQLException during delete attempt")
+            new DeleteTestcase(null, mock(Connection.class), false, 0, IllegalArgumentException.class, "Null Id"),
+            new DeleteTestcase("validId", null, false, 0, IllegalArgumentException.class, "Null Connection"),
+            new DeleteTestcase("", mock(Connection.class), false, 0, IllegalArgumentException.class, "Empty Id"),
+            new DeleteTestcase("validId", mock(Connection.class), false, 1, null, "Valid Id - successful delete"),
+            new DeleteTestcase("validId", mock(Connection.class), false, 0, SQLException.class, "Valid Id - unsuccessful delete"),
+            new DeleteTestcase("validId", mock(Connection.class), true, 0, SQLException.class, "SQLException during delete attempt")
         );
     }
 
@@ -259,12 +267,11 @@ public class UserSqliteRepositoryTest {
         UserFactory userFactory = mock(UserFactory.class);
         UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         try {
-            if(testcase.id != null && !testcase.id.isBlank()){
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if(testcase.id != null && !testcase.id.isBlank() && testcase.connection != null){
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if (testcase.shouldThrowSQLException()) {
                     when(preparedStatement.executeUpdate()).thenThrow(new SQLException("Delete failed"));
@@ -275,17 +282,19 @@ public class UserSqliteRepositoryTest {
 
             if(testcase.expectedException != null){
                 assertThrows(testcase.expectedException, () ->
-                    repository.delete(connection, testcase.id),
+                    repository.delete(testcase.connection, testcase.id),
                     "Expected exception was not thrown for: " + testcase.description
                 );
             } else {
                 assertDoesNotThrow(() ->
-                    repository.delete(connection, testcase.id),
+                    repository.delete(testcase.connection, testcase.id),
                     "Unexpected exception thrown for: " + testcase.description
                 );
 
-                verify(connection).prepareStatement(anyString());
-                verify(preparedStatement).executeUpdate();
+                if(testcase.connection != null){
+                    verify(testcase.connection).prepareStatement(anyString());
+                    verify(preparedStatement).executeUpdate();
+                }
             }
 
             
@@ -295,7 +304,8 @@ public class UserSqliteRepositoryTest {
     }
 
     private record ExistsTestcase(
-        String userId, 
+        String userId,
+        Connection connection,
         boolean resultSetHasNext, 
         boolean expectedResult,
         Class<? extends Exception> expectedException,
@@ -310,12 +320,13 @@ public class UserSqliteRepositoryTest {
 
     private static Stream<ExistsTestcase> existsTestcases() {
         return Stream.of(
-            new ExistsTestcase("valid-id", true, true,null, false, "User exists"),
-            new ExistsTestcase("non-existing-id", false, false,null, false, "User does not exist"),
-            new ExistsTestcase(null, false, false,IllegalArgumentException.class, false, "Null ID"),
-            new ExistsTestcase("", false, false,IllegalArgumentException.class, false, "Empty ID"),
-            new ExistsTestcase("  ", false, false,IllegalArgumentException.class, false, "Whitespace-only ID"),
-            new ExistsTestcase("db-error-id", false, false,SQLException.class, true, "Database error")
+            new ExistsTestcase("valid-id", mock(Connection.class), true, true, null, false, "User exists"),
+            new ExistsTestcase("non-existing-id", mock(Connection.class), false, false, null, false, "User does not exist"),
+            new ExistsTestcase(null, mock(Connection.class), false, false, IllegalArgumentException.class, false, "Null ID"),
+            new ExistsTestcase("valid-id", null, false, false, IllegalArgumentException.class, false, "Null Connection"),
+            new ExistsTestcase("", mock(Connection.class), false, false, IllegalArgumentException.class, false, "Empty ID"),
+            new ExistsTestcase("  ", mock(Connection.class), false, false, IllegalArgumentException.class, false, "Whitespace-only ID"),
+            new ExistsTestcase("db-error-id", mock(Connection.class), false, false, SQLException.class, true, "Database error")
         );
     }
 
@@ -325,13 +336,12 @@ public class UserSqliteRepositoryTest {
         UserFactory userFactory = mock(UserFactory.class);
         UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
 
         try {
-            if (testcase.userId() != null && !testcase.userId().trim().isEmpty()) {
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if (testcase.userId() != null && !testcase.userId().isBlank() && testcase.connection != null) {
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
                 if (testcase.shouldThrowSQLException()) {
                     when(preparedStatement.executeQuery())
                             .thenThrow(new SQLException("Database connection failed"));
@@ -343,18 +353,18 @@ public class UserSqliteRepositoryTest {
 
             if(testcase.expectedException != null){
                 assertThrows(testcase.expectedException, () ->
-                    repository.exists(connection, testcase.userId),
+                    repository.exists(testcase.connection, testcase.userId),
                     "Expected exception was not thrown for: " + testcase.description
                 );
             } else {
-                boolean result = repository.exists(connection, testcase.userId);
+                boolean result = repository.exists(testcase.connection, testcase.userId);
 
                 assertEquals(testcase.expectedResult, result, 
                     "Result value mismatch for: " + testcase.description
                 );
 
-                if (testcase.userId != null && !testcase.userId.isBlank()) {
-                    verify(connection).prepareStatement(anyString());
+                if (testcase.userId != null && !testcase.userId.isBlank() && testcase.connection != null) {
+                    verify(testcase.connection).prepareStatement(anyString());
                     verify(preparedStatement).setString(1, testcase.userId());
                     verify(preparedStatement).executeQuery();
                     verify(resultSet).next();
@@ -367,7 +377,7 @@ public class UserSqliteRepositoryTest {
 
     private record ValidationTestcase(
         boolean isNullUser,
-        String userId, 
+        String userId,
         boolean expectedResult,
         String description) {
 
