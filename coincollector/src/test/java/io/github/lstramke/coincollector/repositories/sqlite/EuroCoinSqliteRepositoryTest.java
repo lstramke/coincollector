@@ -38,6 +38,7 @@ class EuroCoinSqliteRepositoryTest {
 
     private record CreateTestcase(
         EuroCoin coin,
+        Connection connection,
         boolean shouldThrowSQLException,
         int rowsAffected,
         Class<? extends Exception> expectedException,
@@ -51,10 +52,11 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<CreateTestcase> createTestcases(){
         return Stream.of(
-            new CreateTestcase(dummyCoin, false, 1, null, "Valid Coin - successful insert"),
-            new CreateTestcase(dummyCoin, false, 0, SQLException.class, "Valid Coin - unsuccessful insert"),
-            new CreateTestcase(null, false, 1, IllegalArgumentException.class, "Null Coin"),
-            new CreateTestcase(dummyCoin, true, 1, SQLException.class, "SQLException during create attempt")
+            new CreateTestcase(dummyCoin, mock(Connection.class), false, 1, null, "Valid Coin - successful insert"),
+            new CreateTestcase(dummyCoin, mock(Connection.class), false, 0, SQLException.class, "Valid Coin - unsuccessful insert"),
+            new CreateTestcase(null, mock(Connection.class), false, 1, IllegalArgumentException.class, "Null Coin"),
+            new CreateTestcase(dummyCoin, null, false, 1, IllegalArgumentException.class, "Null Connection"),
+            new CreateTestcase(dummyCoin, mock(Connection.class), true, 1, SQLException.class, "SQLException during create attempt")
         );
     }
 
@@ -64,12 +66,11 @@ class EuroCoinSqliteRepositoryTest {
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(tableName, euroCoinFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         try{
-            if(testcase.coin != null){
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if(testcase.coin != null && testcase.connection != null){
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if (testcase.shouldThrowSQLException()) {
                     when(preparedStatement.executeUpdate()).thenThrow(new SQLException("Insert failed"));
@@ -80,16 +81,16 @@ class EuroCoinSqliteRepositoryTest {
 
             if(testcase.expectedException != null){
                 assertThrows(testcase.expectedException, () ->
-                    repository.create(connection, testcase.coin),
+                    repository.create(testcase.connection, testcase.coin),
                     "Expected exception was not thrown for: " + testcase.description
                 );
             } else {
                 assertDoesNotThrow(() ->
-                    repository.create(connection, testcase.coin),
+                    repository.create(testcase.connection, testcase.coin),
                     "Unexpected exception thrown for: " + testcase.description
                 );
 
-                verify(connection).prepareStatement(anyString());
+                verify(testcase.connection).prepareStatement(anyString());
                 verify(preparedStatement).executeUpdate();
             }
         } catch (SQLException e) {
@@ -99,10 +100,12 @@ class EuroCoinSqliteRepositoryTest {
 
     private record ReadTestcase(
         String id,
+        Connection connection,
         boolean shouldThrowSQLException,
         boolean hitInDB,
         boolean factoryThrowsSQLException,
         Optional<EuroCoin> expectedEuroCoin,
+        Class<? extends Exception> expectedException,
         String description
 
     ){
@@ -114,12 +117,13 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<ReadTestcase> readTestcases(){
         return Stream.of(
-            new ReadTestcase(null, false, false, false, Optional.empty(), "Null id"),
-            new ReadTestcase("", false, false, false, Optional.empty(), "Empty id"),
-            new ReadTestcase("validId", false, true, false, Optional.of(dummyCoin), "Valid id - read hit, no SQLException"),
-            new ReadTestcase("validId", false, true, true, Optional.empty(), "Valid id - read hit, SQLException from factory"),
-            new ReadTestcase("validId", true, true, false, Optional.empty(), "SQLException during read attempt"),
-            new ReadTestcase("validId", false, false, false, Optional.empty(), "Valid id -  no read hit")
+            new ReadTestcase(null, mock(Connection.class), false, false, false, Optional.empty(), IllegalArgumentException.class, "Null id"),
+            new ReadTestcase("validId", null, false, false, false, Optional.empty(), IllegalArgumentException.class, "Null connection"),
+            new ReadTestcase("",mock(Connection.class), false, false, false, Optional.empty(), IllegalArgumentException.class, "Empty id"),
+            new ReadTestcase("validId",mock(Connection.class), false, true, false, Optional.of(dummyCoin), null, "Valid id - read hit, no SQLException"),
+            new ReadTestcase("validId",mock(Connection.class), false, true, true, Optional.empty(), null, "Valid id - read hit, SQLException from factory"),
+            new ReadTestcase("validId",mock(Connection.class), true, true, false, Optional.empty(), SQLException.class, "SQLException during read attempt"),
+            new ReadTestcase("validId",mock(Connection.class), false, false, false, Optional.empty(), null, "Valid id -  no read hit")
         );
     }
 
@@ -129,13 +133,12 @@ class EuroCoinSqliteRepositoryTest {
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(tableName, euroCoinFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
 
         try {
-            if(testcase.id != null && !testcase.id.isBlank()){
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if(testcase.id != null && !testcase.id.isBlank() && testcase.connection != null){
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if(testcase.shouldThrowSQLException){
                     when(preparedStatement.executeQuery()).thenThrow(new SQLException("DB error"));
@@ -156,18 +159,18 @@ class EuroCoinSqliteRepositoryTest {
                 }
             }
 
-            if (testcase.shouldThrowSQLException) {
-                assertThrows(SQLException.class,
-                    () -> repository.read(connection, testcase.id),
-                    "Expected SQLException was not thrown for: " + testcase.description
+            if (testcase.expectedException != null) {
+                assertThrows(testcase.expectedException,
+                    () -> repository.read(testcase.connection, testcase.id),
+                    "Expected Exception was not thrown for: " + testcase.description
                 );
             } else {
-                Optional<EuroCoin> result = repository.read(connection, testcase.id);
+                Optional<EuroCoin> result = repository.read(testcase.connection, testcase.id);
                 assertEquals(testcase.expectedEuroCoin, result,
                     "Result value mismatch for: " + testcase.description);
 
                 if (testcase.id != null && !testcase.id.isBlank()) {
-                    verify(connection).prepareStatement(anyString());
+                    verify(testcase.connection).prepareStatement(anyString());
                     verify(preparedStatement).setString(1, testcase.id);
                     verify(preparedStatement).executeQuery();
 
@@ -186,6 +189,7 @@ class EuroCoinSqliteRepositoryTest {
 
     private record UpdateTestcase(
         EuroCoin coin,
+        Connection connection,
         boolean shouldThrowSQLException,
         int rowsAffected,
         Class<? extends Exception> expectedException,
@@ -199,10 +203,11 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<UpdateTestcase> updateTestcases(){
         return Stream.of(
-            new UpdateTestcase(dummyCoin, false, 1, null, "Valid coin - successful update"),
-            new UpdateTestcase(dummyCoin, false, 0, SQLException.class, "Valid coin - unsuccessful update"),
-            new UpdateTestcase(dummyCoin, true, 0, SQLException.class, "SQLException during update attempt"),
-            new UpdateTestcase(null, false, 0, IllegalArgumentException.class, "Null coin")
+            new UpdateTestcase(dummyCoin, mock(Connection.class), false, 1, null, "Valid coin - successful update"),
+            new UpdateTestcase(dummyCoin, mock(Connection.class), false, 0, SQLException.class, "Valid coin - unsuccessful update"),
+            new UpdateTestcase(dummyCoin, mock(Connection.class), true, 0, SQLException.class, "SQLException during update attempt"),
+            new UpdateTestcase(null, mock(Connection.class), false, 0, IllegalArgumentException.class, "Null coin"),
+            new UpdateTestcase(dummyCoin, null, false, 0, IllegalArgumentException.class, "Null connection")
         );
     }
 
@@ -212,12 +217,11 @@ class EuroCoinSqliteRepositoryTest {
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(tableName, euroCoinFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         try {
-            if(testcase.coin != null){
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if(testcase.coin != null && testcase.connection != null){
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if (testcase.shouldThrowSQLException()) {
                     when(preparedStatement.executeUpdate()).thenThrow(new SQLException("Update failed"));
@@ -228,16 +232,16 @@ class EuroCoinSqliteRepositoryTest {
 
             if(testcase.expectedException != null){
                 assertThrows(testcase.expectedException, () ->
-                    repository.update(connection, testcase.coin),
+                    repository.update(testcase.connection, testcase.coin),
                     "Expected SQLException was not thrown for: " + testcase.description
                 );
             } else {
                 assertDoesNotThrow(() ->
-                    repository.update(connection, testcase.coin),
+                    repository.update(testcase.connection, testcase.coin),
                     "Unexpected exception thrown for: " + testcase.description
                 );
 
-                verify(connection).prepareStatement(anyString());
+                verify(testcase.connection).prepareStatement(anyString());
                 verify(preparedStatement).executeUpdate();
             }
         } catch (SQLException e) {
@@ -248,6 +252,7 @@ class EuroCoinSqliteRepositoryTest {
 
     private record DeleteTestcase(
         String id,
+        Connection connection,
         boolean shouldThrowSQLException,
         int rowsAffected,
         Class<? extends Exception> expectedException,
@@ -261,11 +266,12 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<DeleteTestcase> deleteTestcases(){
         return Stream.of(
-            new DeleteTestcase(null, false, 0, IllegalArgumentException.class, "Null Id"),
-            new DeleteTestcase("", false, 0, IllegalArgumentException.class, "Empty Id"),
-            new DeleteTestcase("validId", false, 1, null, "Valid Id - successful delete"),
-            new DeleteTestcase("validId", false, 0, SQLException.class, "Valid Id - unsuccessful delete"),
-            new DeleteTestcase("validId", true, 0, SQLException.class, "SQLException during delete attempt")
+            new DeleteTestcase(null, mock(Connection.class), false, 0, IllegalArgumentException.class, "Null Id"),
+            new DeleteTestcase("validId", null, false, 0, IllegalArgumentException.class, "Null Connection"),
+            new DeleteTestcase("", mock(Connection.class), false, 0, IllegalArgumentException.class, "Empty Id"),
+            new DeleteTestcase("validId", mock(Connection.class), false, 1, null, "Valid Id - successful delete"),
+            new DeleteTestcase("validId", mock(Connection.class), false, 0, SQLException.class, "Valid Id - unsuccessful delete"),
+            new DeleteTestcase("validId", mock(Connection.class), true, 0, SQLException.class, "SQLException during delete attempt")
         );
     }
 
@@ -275,12 +281,11 @@ class EuroCoinSqliteRepositoryTest {
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(tableName, euroCoinFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         try {
-            if(testcase.id != null && !testcase.id.isBlank()){
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if(testcase.id != null && !testcase.id.isBlank() && testcase.connection != null){
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if (testcase.shouldThrowSQLException()) {
                     when(preparedStatement.executeUpdate()).thenThrow(new SQLException("Update failed"));
@@ -291,16 +296,16 @@ class EuroCoinSqliteRepositoryTest {
 
             if(testcase.expectedException != null){
                 assertThrows(testcase.expectedException, () ->
-                    repository.delete(connection, testcase.id),
+                    repository.delete(testcase.connection, testcase.id),
                     "Expected SQLException was not thrown for: " + testcase.description
                 );
             } else {
                 assertDoesNotThrow(() -> 
-                    repository.delete(connection, testcase.id),
+                    repository.delete(testcase.connection, testcase.id),
                     "Unexpected exception thrown for: " + testcase.description
                 );
 
-                verify(connection).prepareStatement(anyString());
+                verify(testcase.connection).prepareStatement(anyString());
                 verify(preparedStatement).executeUpdate();
             }
         } catch (SQLException e) {
@@ -309,10 +314,12 @@ class EuroCoinSqliteRepositoryTest {
     }
 
     private record GetAllTestcase(
+        Connection connection,
         boolean shouldThrowSQLException,
         List<EuroCoin> coinsInDB,
         int factoryThrowsOnRow,
         List<EuroCoin> expectedEuroCoins,
+        Class<? extends Exception> expectedException,
         String description
     ){
         @Override
@@ -329,11 +336,12 @@ class EuroCoinSqliteRepositoryTest {
             .setCollectionId("dummy collection2")
             .build();
         return Stream.of(
-            new GetAllTestcase(true, List.of(), -1, List.of(), "SQLException during select all attempt"),
-            new GetAllTestcase(false, List.of(), -1, List.of(), "Empty ResultSet"),
-            new GetAllTestcase(false, List.of(dummyCoin), -1, List.of(dummyCoin), "Single coin"),
-            new GetAllTestcase(false, List.of(dummyCoin, dummyCoin2), -1, List.of(dummyCoin, dummyCoin2), "Multiple coin - all valid"),
-            new GetAllTestcase(false, List.of(dummyCoin, dummyCoin2), 1, List.of(dummyCoin), "Multiple coin - with factory exception")
+            new GetAllTestcase(null, true, List.of(), -1, List.of(), IllegalArgumentException.class, "Null connection"),
+            new GetAllTestcase(mock(Connection.class), true, List.of(), -1, List.of(), SQLException.class, "SQLException during select all attempt"),
+            new GetAllTestcase(mock(Connection.class), false, List.of(), -1, List.of(), null, "Empty ResultSet"),
+            new GetAllTestcase(mock(Connection.class), false, List.of(dummyCoin), -1, List.of(dummyCoin), null, "Single coin"),
+            new GetAllTestcase(mock(Connection.class), false, List.of(dummyCoin, dummyCoin2), -1, List.of(dummyCoin, dummyCoin2), null, "Multiple coin - all valid"),
+            new GetAllTestcase(mock(Connection.class), false, List.of(dummyCoin, dummyCoin2), 1, List.of(dummyCoin), null, "Multiple coin - with factory exception")
         );
     }
 
@@ -344,43 +352,44 @@ class EuroCoinSqliteRepositoryTest {
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(tableName, euroCoinFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
 
         try {
-            when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if(testcase.connection != null){ 
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
-            if(testcase.shouldThrowSQLException){
-                when(preparedStatement.executeQuery()).thenThrow(new SQLException("Select all failed"));
-            } else {
-                when(preparedStatement.executeQuery()).thenReturn(resultSet);
+                if(testcase.shouldThrowSQLException){
+                    when(preparedStatement.executeQuery()).thenThrow(new SQLException("Select all failed"));
+                } else {
+                    when(preparedStatement.executeQuery()).thenReturn(resultSet);
 
-                AtomicInteger row = new AtomicInteger(-1);
-                lenient().when(resultSet.next()).then(hasNext -> row.incrementAndGet() < testcase.coinsInDB.size());
-                lenient().when(resultSet.getString(eq("coin_id"))).then(coinId -> testcase.coinsInDB.get(row.get()).getId());
-                lenient().when(euroCoinFactory.fromDataBaseEntry(resultSet)).then(coin -> {
-                    int i = row.get();
-                    if (testcase.factoryThrowsOnRow == i){
-                        throw new SQLException("factory exception");
-                    } else {
-                        return testcase.coinsInDB.get(i);
-                    }
-                });
+                    AtomicInteger row = new AtomicInteger(-1);
+                    lenient().when(resultSet.next()).then(hasNext -> row.incrementAndGet() < testcase.coinsInDB.size());
+                    lenient().when(resultSet.getString(eq("coin_id"))).then(coinId -> testcase.coinsInDB.get(row.get()).getId());
+                    lenient().when(euroCoinFactory.fromDataBaseEntry(resultSet)).then(coin -> {
+                        int i = row.get();
+                        if (testcase.factoryThrowsOnRow == i){
+                            throw new SQLException("factory exception");
+                        } else {
+                            return testcase.coinsInDB.get(i);
+                        }
+                    });
+                }
             }
 
-            if(testcase.shouldThrowSQLException){
-                assertThrows(SQLException.class, () ->
-                    repository.getAll(connection),
+            if(testcase.expectedException != null){
+                assertThrows(testcase.expectedException, () ->
+                    repository.getAll(testcase.connection),
                     "Expected SQLException was not thrown for: " + testcase.description
                 );
             } else {
-                List<EuroCoin> result = repository.getAll(connection);
+                List<EuroCoin> result = repository.getAll(testcase.connection);
                 assertEquals(testcase.expectedEuroCoins, result,
                     "Result value mismatch for: " + testcase.description
                 );
 
-                verify(connection).prepareStatement(anyString());
+                verify(testcase.connection).prepareStatement(anyString());
                 verify(preparedStatement).executeQuery();
 
                 if (!testcase.coinsInDB.isEmpty()) {
@@ -393,7 +402,8 @@ class EuroCoinSqliteRepositoryTest {
     }
 
     private record ExistsTestcase(
-        String coinId, 
+        String coinId,
+        Connection connection,
         boolean resultSetHasNext, 
         boolean expectedResult,
         Class<? extends Exception> expectedException,
@@ -408,12 +418,13 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<ExistsTestcase> existsTestcases() {
         return Stream.of(
-            new ExistsTestcase("valid-id", true, true, null, false, "Coin exists"),
-            new ExistsTestcase("non-existing-id", false, false,null, false, "Coin does not exist"),
-            new ExistsTestcase(null, false, false, IllegalArgumentException.class, false, "Null ID"),
-            new ExistsTestcase("", false, false, IllegalArgumentException.class, false, "Empty ID"),
-            new ExistsTestcase("  ", false, false, IllegalArgumentException.class, false, "Whitespace-only ID"),
-            new ExistsTestcase("db-error-id", false, false, SQLException.class, true, "Database error")
+            new ExistsTestcase("valid-id", mock(Connection.class), true, true, null, false, "Coin exists"),
+            new ExistsTestcase("non-existing-id", mock(Connection.class), false, false,null, false, "Coin does not exist"),
+            new ExistsTestcase(null, mock(Connection.class), false, false, IllegalArgumentException.class, false, "Null ID"),
+            new ExistsTestcase("validId", null, false, false, IllegalArgumentException.class, false, "Null Connection"),
+            new ExistsTestcase("", mock(Connection.class), false, false, IllegalArgumentException.class, false, "Empty ID"),
+            new ExistsTestcase("  ", mock(Connection.class), false, false, IllegalArgumentException.class, false, "Whitespace-only ID"),
+            new ExistsTestcase("db-error-id", mock(Connection.class), false, false, SQLException.class, true, "Database error")
         );
     }
 
@@ -423,13 +434,12 @@ class EuroCoinSqliteRepositoryTest {
         EuroCoinFactory euroCoinFactory = mock(EuroCoinFactory.class);
         EuroCoinSqliteRepository repository = new EuroCoinSqliteRepository(tableName, euroCoinFactory);
 
-        Connection connection = mock(Connection.class);
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
 
         try {
-            if (testcase.coinId() != null && !testcase.coinId().trim().isEmpty()) {
-                when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+            if (testcase.coinId() != null && !testcase.coinId().isBlank() && testcase.connection != null) {
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
                 if (testcase.shouldThrowSQLException()) {
                     when(preparedStatement.executeQuery())
                             .thenThrow(new SQLException("Database connection failed"));
@@ -441,18 +451,18 @@ class EuroCoinSqliteRepositoryTest {
 
             if(testcase.expectedException != null){
                 assertThrows(testcase.expectedException, () ->
-                    repository.exists(connection, testcase.coinId),
+                    repository.exists(testcase.connection, testcase.coinId),
                     "Expected exception was not thrown for: " + testcase.description
                 );
             } else {
-                boolean result = repository.exists(connection, testcase.coinId);
+                boolean result = repository.exists(testcase.connection, testcase.coinId);
 
                 assertEquals(testcase.expectedResult, result, 
                     "Result value mismatch for: " + testcase.description
                 );
 
                 if (testcase.coinId!= null && !testcase.coinId.isBlank()) {
-                    verify(connection).prepareStatement(anyString());
+                    verify(testcase.connection).prepareStatement(anyString());
                     verify(preparedStatement).setString(1, testcase.coinId);
                     verify(preparedStatement).executeQuery();
                     verify(resultSet).next();

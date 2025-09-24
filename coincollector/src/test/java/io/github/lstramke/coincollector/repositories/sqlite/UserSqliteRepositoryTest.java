@@ -147,7 +147,7 @@ public class UserSqliteRepositoryTest {
             if (testcase.expectedException != null) {
                 assertThrows(testcase.expectedException,
                     () -> repository.read(testcase.connection, testcase.id),
-                    "Expected SQLException was not thrown for: " + testcase.description
+                    "Expected Exception was not thrown for: " + testcase.description
                 );
             } else {
                 Optional<User> result = repository.read(testcase.connection, testcase.id);
