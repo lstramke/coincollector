@@ -12,11 +12,17 @@ import io.github.lstramke.coincollector.model.EuroCoin;
  * relational database. The current design is explicitly tailored to relational backends
  * because every operation requires an externally managed {@link java.sql.Connection}.
  * <p>
- * Lifecycle & transaction management: Implementations MUST NOT open, commit, rollback
- * or close the provided {@link Connection}. That responsibility lies solely in the
+ * <strong>Lifecycle &amp; Transaction Management:</strong> Implementations MUST NOT open, commit,
+ * rollback or close the provided {@link Connection}. That responsibility lies solely in the
  * service (application) layer which orchestrates transactions across multiple repository
  * calls. Each method is therefore expected to be side-effect free regarding the
  * connection lifecycle (no closing / committing / rolling back).
+ * <p>
+ * <strong>Scope:</strong> This repository is responsible ONLY for persistence of individual coin
+ * entities. It does not manage higher-level aggregates (e.g. collections) or relationships
+ * beyond storing the coin's own attributes and any foreign keys it directly carries. Any
+ * multi-entity orchestration (e.g. adding a coin to a collection and updating derived
+ * counters) must occur in a higher service layer within a single transaction.
  */
 public interface EuroCoinStorageRepository {
     /**

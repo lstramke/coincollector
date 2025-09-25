@@ -11,11 +11,17 @@ import io.github.lstramke.coincollector.model.User;
  * relational database. The current design is explicitly tailored to relational backends
  * because every operation requires an externally managed {@link java.sql.Connection}.
  * <p>
- * Lifecycle & transaction management: Implementations MUST NOT open, commit, rollback
- * or close the provided {@link Connection}. That responsibility lies solely in the
+ * <strong>Lifecycle &amp; Transaction Management:</strong> Implementations MUST NOT open, commit,
+ * rollback or close the provided {@link Connection}. That responsibility lies solely in the
  * service (application) layer which orchestrates transactions across multiple repository
  * calls. Each method is therefore expected to be side-effect free regarding the
  * connection lifecycle (no closing / committing / rolling back).
+ * <p>
+ * <strong>Scope:</strong> This repository manages only the persistence of the {@code User}'s
+ * intrinsic attributes (identifier, authentication / profile related fields, ownership
+ * references, etc.). It does not itself cascade into or orchestrate persistence of related
+ * domain concepts (e.g. coins, collections). Such multi-entity operations must be handled
+ * in a coordinating service layer within a single transaction when atomicity is required.
  */
 public interface UserStorageRepository {
 
