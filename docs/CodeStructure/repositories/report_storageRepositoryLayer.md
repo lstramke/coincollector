@@ -11,7 +11,7 @@ The storage repository layer provides JDBC/SQL based persistence (currently SQLi
 
 Design constraints:
 * A repository method never closes, commits, rolls back, or mutates the auto-commit state of the provided `Connection`.
-* Repositories are stateless and reusable (safely shareable singletons).
+* Repositories are stateless and reusable.
 
 ## 3. Diagram
 
