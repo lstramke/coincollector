@@ -7,6 +7,9 @@ public class EuroCoinBuilder {
     CoinDescription description;
     Mint mint;
     String id;
+    String collectionId;
+
+    public static final int EURO_COIN_START_YEAR = 1999;
 
     public EuroCoinBuilder setYear(int year) {
         this.year = year;
@@ -33,9 +36,19 @@ public class EuroCoinBuilder {
         return this;
     }
 
+    public EuroCoinBuilder setCollectionId(String collectionId) {
+        this.collectionId = collectionId;
+        return this;
+    }
+
+    EuroCoinBuilder setId(String id) {
+        this.id = id;
+        return this;
+    }
+
     public EuroCoin build() throws IllegalStateException {
-        if (year <= 0) {
-            throw new IllegalStateException("Year must be greater than 0");
+        if (year < EURO_COIN_START_YEAR) {
+            throw new IllegalStateException("Year must be >= " + EURO_COIN_START_YEAR);
         }
         if (value == null) {
             throw new IllegalStateException("CoinValue cannot be null");
@@ -46,19 +59,22 @@ public class EuroCoinBuilder {
         if (description == null) {
             this.description = new CoinDescription(this.value, this.year, this.mintCountry, this.mint);
         }
-        
-        this.id = generateId();
+        if (collectionId == null){
+            throw new IllegalStateException("CollectionId cannot be null");
+        }
+        if (id == null){
+            this.id = generateId();
+        }
         
         return new EuroCoin(this);
     }
 
     private String generateId() {
-        return String.format("%s_%s_%d_%s_%s", 
+        return String.format("%s_%s_%d_%s", 
             mintCountry != null ? mintCountry.name() : "UNKNOWN",
             value != null ? value.name() : "UNKNOWN", 
             year,
-            mint != null ? mint.name() : "UNKNOWN",
-            description != null ? description.getText().replaceAll("\\s+", "_").toUpperCase() : "NO_DESC"
+            mint != null ? mint.name() : "UNKNOWN"
         );
     }
 }

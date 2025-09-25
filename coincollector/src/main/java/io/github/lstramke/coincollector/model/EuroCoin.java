@@ -7,6 +7,7 @@ public class EuroCoin implements Coin {
     private final CoinCountry mintCountry;
     private final Mint mint;
     private CoinDescription description;
+    private String collectionId;
 
     EuroCoin(EuroCoinBuilder builder){
         this.id = builder.id;
@@ -15,14 +16,50 @@ public class EuroCoin implements Coin {
         this.mintCountry = builder.mintCountry;
         this.mint = builder.mint;
         this.description = builder.description;
+        this.collectionId = builder.collectionId;
     }
 
     @Override
     public String toString() {
-        return String.format("EuroCoin[id='%s', year=%d, value=%s, mintCountry=%s, mint=%s, description='%s']", 
-            this.id, this.year, this.value, this.mintCountry, this.mint, this.getDescription());
+        return "EuroCoin [id=" + id + ", year=" + year + ", value=" + value + ", mintCountry=" + mintCountry + ", mint="
+                + mint + ", description=" + description + ", collectionId=" + collectionId + "]";
     }
-    
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        EuroCoin other = (EuroCoin) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        if (year != other.year)
+            return false;
+        if (value != other.value)
+            return false;
+        if (mintCountry != other.mintCountry)
+            return false;
+        if (mint != other.mint)
+            return false;
+        if (description == null) {
+            if (other.description != null)
+                return false;
+        } else if (!description.equals(other.description))
+            return false;
+        if (collectionId == null) {
+            if (other.collectionId != null)
+                return false;
+        } else if (!collectionId.equals(other.collectionId))
+            return false;
+        return true;
+    }
+
     @Override
     public String getId() {
         return id;
@@ -38,20 +75,26 @@ public class EuroCoin implements Coin {
         return value;
     }
 
+    @Override
+    public CoinDescription getDescription() {
+        return description;
+    }
+
+    @Override
+    public void setDescription(CoinDescription description) {
+        this.description = description;
+    }
+
+    @Override
+    public String getCollectionId() {
+        return collectionId;
+    }
+
     public CoinCountry getMintCountry() {
         return mintCountry;
     }
 
     public Mint getMint() {
         return mint;
-    }
-
-    @Override
-    public CoinDescription getDescription() {
-        return description;
-    }
-
-    public void setDescription(CoinDescription description) {
-        this.description = description;
     }
 }

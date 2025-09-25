@@ -1,0 +1,68 @@
+@startuml storageRepositoryLayer_v3
+
+interface EuroCoinStorageRepository {
+    + void create(Connection connection, EuroCoin coin) throws SQLException
+    + Optional<EuroCoin> read(Connection connection, String id) throws SQLException
+    + void update(Connection connection, EuroCoin coin) throws SQLException
+    + void delete(Connection connection, String id) throws SQLException
+    + List<EuroCoin> getAll(Connection connection, ) throws SQLException
+    + boolean exists(Connection connection, String id) throws SQLException
+}
+
+interface EuroCoinCollectionStorageRepository {
+    + void create(Connection connection, EuroCoinCollection collection) throws SQlException
+    + Optional<EuroCoinCollection> read(Connection connection, String id) throws SQlException
+    + void update(Connection connection, EuroCoinCollection collection) throws SQlException
+    + void delete(Connection connection, String id) throws SQlException
+    + List<EuroCoinCollection> getAll(Connection connection, ) throws SQlException
+    + boolean exists(Connection connection, String id) throws SQlException
+}
+
+interface EuroCoinCollectionGroupStorageRepository {
+    + void create(Connection connection, EuroCoinCollectionGroup group) throws SQLException
+    + Optional<EuroCoinCollectionGroup> read(Connection connection, String id) throws SQLException
+    + void update(Connection connection, EuroCoinCollectionGroup group) throws SQLException
+    + void delete(Connection connection, String id) throws SQLException
+    + List<EuroCoinCollectionGroup> getAllByUser(Connection connection, String userId) throws SQLException
+    + boolean exists(Connection connection, String id) throws SQLException
+}
+
+interface UserStorageRepository {
+    + void create(Connection connection, User user) throws SQLException
+    + Optional<EuroCoinCollectionGroup> read(Connection connection, String userId) throws SQLException
+    + void update(Connection connection, User user) throws SQLException
+    + void delete(Connection connection, String userId) throws SQLException
+    + boolean exists(Connection connection, String id) throws SQLException
+}
+
+
+class EuroCoinSqliteRepository {
+    - static final logger : Logger
+    - tableName : String
+    - final euroCoinFactory : EuroCoinFactory
+}
+
+class EuroCoinCollectionSqliteRepository {
+    - static final logger : Logger
+    - tableName : String
+    - final euroCoinCollectionFactory : EuroCoinCollectionFactory
+}
+
+class EuroCoinCollectionGroupSqliteRepository {
+    - static final logger : Logger
+    - tableName : String
+    - final euroCoinCollectionGroupFactory : EuroCoinCollectionGroupFactory
+}
+
+class UserSqliteRepository {
+    - static final logger : Logger
+    - tableName : String
+    - final userFactory : UserFactory
+}
+
+EuroCoinStorageRepository <|.. EuroCoinSqliteRepository
+EuroCoinCollectionStorageRepository <|.. EuroCoinCollectionSqliteRepository
+EuroCoinCollectionGroupStorageRepository <|.. EuroCoinCollectionGroupSqliteRepository
+UserStorageRepository <|.. UserSqliteRepository
+
+@enduml

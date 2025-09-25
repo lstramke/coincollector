@@ -1,9 +1,8 @@
-
 .vscode/
 .DS_Store
 
 **/target/
-
+**/logs/
 **/main/resources/frontend/
 
 frontend/node
@@ -12,3 +11,4 @@ frontend/dist/
 frontend/.vite/
 
 .env
+*.db

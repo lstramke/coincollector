@@ -48,7 +48,12 @@ public enum CoinCountry {
         return displayName;
     }
 
-    public static CoinCountry fromIsoCode(String code) {
-        return CODE_MAP.get(code);
+    public static CoinCountry fromIsoCode(String code) throws IllegalArgumentException{
+        CoinCountry country = CODE_MAP.get(code);
+        if (country == null) {
+            throw new IllegalArgumentException("Unknown ISO code: " + code);
+        }
+        return country;
     }
+
 }

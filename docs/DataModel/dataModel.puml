@@ -1,0 +1,226 @@
+@startuml dataModel_v8
+
+' ENUMS
+enum CoinValue {
+    ONE_CENT(1, "1 Cent"),
+    TWO_CENTS(2, "2 Cent"),
+    FIVE_CENTS(5, "5 Cent"),
+    TEN_CENTS(10, "10 Cent"),
+    TWENTY_CENTS(20, "20 Cent"),
+    FIFTY_CENTS(50, "50 Cent"),
+    ONE_EURO(100, "1 Euro"),
+    TWO_EUROS(200, "2 Euro")
+    --
+    - centValue : int
+    - displayName : String
+    --
+    + getCentValue() : int
+    + getDisplayName() : String
+    + {static} fromCentValue(int centValue) : CoinValue
+}
+
+enum CoinCountry {
+    AUSTRIA("AT", "Österreich"),
+    BELGIUM("BE", "Belgien"),
+    CYPRUS("CY", "Zypern"),
+    GERMANY("DE", "Deutschland"),
+    ESTONIA("EE", "Estland"),
+    SPAIN("ES", "Spanien"),
+    FINLAND("FI", "Finnland"),
+    FRANCE("FR", "Frankreich"),
+    GREECE("GR", "Griechenland"),
+    IRELAND("IE", "Irland"),
+    ITALY("IT", "Italien"),
+    LITHUANIA("LT", "Litauen"),
+    LUXEMBOURG("LU", "Luxemburg"),
+    LATVIA("LV", "Lettland"),
+    MALTA("MT", "Malta"),
+    NETHERLANDS("NL", "Niederlande"),
+    PORTUGAL("PT", "Portugal"),
+    SLOVENIA("SI", "Slowenien"),
+    SLOVAKIA("SK", "Slowakei"),
+    SAN_MARINO("SM", "San Marino"),
+    VATICAN_CITY("VA", "Vatikanstadt"),
+    MONACO("MC", "Monaco"),
+    ANDORRA("AD", "Andorra")
+    --
+    - isoCode : String
+    - displayName : String
+    --
+    + getIsoCode() : String
+    + getDisplayName() : String
+    + {static} fromIsoCode(String code) : CoinCountry
+}
+
+enum Mint {
+    BERLIN("A"),
+    MUNICH("D"),
+    STUTTGART("F"),
+    KARLSRUHE("G"),
+    HAMBURG("J")
+    --
+    - mintMark : String
+    --
+    + getMintMark() : String
+    + toString() : String
+    + {static} fromMintMark(String mintMark) : Mint
+}
+
+' DESCRIPTION
+class CoinDescription {
+    - text : String
+    --
+    + getText() : String
+    + setText(String text) : void
+    + toString() : String
+    - getGermanCoinDescriptionText(CoinValue value, int year, CoinCountry country, Mint mint) : String
+}
+
+' INTERFACES
+interface Coin {
+    + getId() : String
+    + getValue() : CoinValue
+    + getYear() : int
+    + getDescription() : CoinDescription
+    + setDescription(CoinDescription description) : void
+    + getCollectionId() : String
+}
+
+interface CoinCollection<T : Coin> {
+    + getId() : String
+    + getName() : String
+    + setName(newName : String) : void
+    + getCoins() : List<T>
+    + addCoin(coin : T) : void
+    + removeCoin(coin : T) : void
+    + getTotalValue() : int
+    + getCoinCount() : int
+}
+
+interface CollectionGroup<T : Coin, C : CoinCollection<T>> {
+    + getId() : String
+    + getName() : String
+    + getOwnerId() : String
+    + getCollections() : List<C>
+    + addCollection(collection : C) : void
+    + removeCollection(collection : C) : void
+    + getTotalCollections() : int
+    + getTotalCoins() : int
+    + getTotalValue() : int
+}
+
+' COIN
+class EuroCoin {
+    - id : String {final}
+    - year : int {final}
+    - value : CoinValue {final}
+    - mintCountry : CoinCountry {final}
+    - mint : Mint {final}
+    - description : CoinDescription
+    - collectionId : String
+    --
+    + getId() : String
+    + getYear() : int
+    + getValue() : CoinValue
+    + getDescription() : CoinDescription
+    + setDescription(CoinDescription description) : void
+    + getCollectionId() : String
+    + getMintCountry() : CoinCountry
+    + getMint() : Mint
+    + toString() : String
+}
+EuroCoin .|> Coin : implements
+EuroCoin --> "1" CoinValue : -value
+EuroCoin --> "1" CoinCountry : -mintCountry
+EuroCoin --> "1" CoinDescription : -description
+EuroCoin --> "1" Mint : -mint
+
+' COLLECTIONS
+class EuroCoinCollection {
+    - id : String {final}
+    - name : String
+    - coins : List<EuroCoin> {final}
+    --
+    + getId() : String
+    + getName() : String
+    + setName(String newName) : void
+    + getCoins() : List<EuroCoin>
+    + addCoin(EuroCoin coin) : void
+    + removeCoin(EuroCoin coin) : void
+    + getTotalValue() : int
+    + getCoinCount() : int
+}
+EuroCoinCollection .|> CoinCollection : implements
+EuroCoinCollection --> "*" EuroCoin : -coins
+
+class EuroCoinCollectionGroup {
+    - id : String
+    - name : String
+    - ownerID : String
+    - collections : List<EuroCoinCollection>
+    --
+    + getId() : String
+    + getName() : String
+    + getOwnerId() : String
+    + getCollections() : List<EuroCoinCollection>
+    + addCollection(EuroCoinCollection collection) : void
+    + removeCollection(EuroCoinCollection collection) : void
+    + getTotalCollections() : int
+    + getTotalCoins() : int
+    + getTotalValue() : int
+}
+
+EuroCoinCollectionGroup .|> CollectionGroup : implements
+EuroCoinCollectionGroup --> "*" EuroCoinCollection : -collections
+
+' BUILDER
+class EuroCoinBuilder {
+    - year : int
+    - value : CoinValue
+    - mintCountry : CoinCountry
+    - description : CoinDescription
+    - mint : Mint
+    - id : String
+    - collectionId : String
+    --
+    + {static} EURO_COIN_START_YEAR : int = 1999
+    --
+    + setYear(year : int) : EuroCoinBuilder
+    + setValue(value : CoinValue) : EuroCoinBuilder
+    + setMintCountry(mintCountry : CoinCountry) : EuroCoinBuilder
+    + setDescription(description : CoinDescription) : EuroCoinBuilder
+    + setMint(mint : Mint) : EuroCoinBuilder
+    + setCollectionId(collectionId : String) : EuroCoinBuilder
+    # setId(id : String) : EuroCoinBuilder
+    + build() : EuroCoin
+    - generateId() : String
+}
+EuroCoinBuilder ..> EuroCoin : builds
+
+' FACTORY
+class EuroCoinFactory {
+    - {static} logger : Logger
+    --
+    + fromDataBaseEntry(ResultSet resultSet) : EuroCoin
+}
+EuroCoinFactory ..> EuroCoin : creates
+EuroCoinFactory ..> EuroCoinBuilder : uses
+
+class EuroCoinCollectionFactory {
+    - {static} logger : Logger
+    --
+    + fromDataBaseEntry(ResultSet resultSet) : EuroCoinCollection
+}
+EuroCoinCollectionFactory .> EuroCoinCollection : creates
+
+' USER
+class User {
+    - id : String
+    - name : String
+    --
+    + getId() : String
+    + getName() : String
+    + setName(String username) : void
+}
+
+@enduml
