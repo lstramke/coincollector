@@ -1,5 +1,10 @@
 package io.github.lstramke.coincollector.model;
 
+/**
+ * Simple wrapper encapsulating a textual description for a coin. Provides a
+ * convenience constructor to auto-generate a German sentence based on coin
+ * metadata.
+ */
 public class CoinDescription {
     private String text;
 
@@ -7,6 +12,14 @@ public class CoinDescription {
         this.text = text;
     }
 
+    /**
+     * Auto-generate German description from coin attributes.
+     * @param value coin value
+     * @param year mint year (>0)
+     * @param country issuing country
+     * @param mint optional mint
+     * @throws IllegalArgumentException if required argument invalid
+     */
     public CoinDescription(CoinValue value, int year, CoinCountry country, Mint mint) throws IllegalArgumentException{
         if (value == null) throw new IllegalArgumentException("CoinValue cannot be null");
         if (country == null) throw new IllegalArgumentException("CoinCountry cannot be null");

@@ -1,5 +1,9 @@
 package io.github.lstramke.coincollector.model;
 
+/**
+ * Concrete implementation of a Euro coin including mint country, mint mark and
+ * optional generated description.
+ */
 public class EuroCoin implements Coin {
     private final String id;
     private final int year;
@@ -9,6 +13,13 @@ public class EuroCoin implements Coin {
     private CoinDescription description;
     private String collectionId;
 
+    /**
+     * Package-private constructor used exclusively by the builder/factory.
+     * Coins should be created via {@link EuroCoinBuilder#build()} (or
+     * {@link EuroCoinFactory} for hydration/import) to ensure validation,
+     * deterministic id handling and consistent description generation.
+     * Not intended for direct use in application code.
+     */
     EuroCoin(EuroCoinBuilder builder){
         this.id = builder.id;
         this.year = builder.year;

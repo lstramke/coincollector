@@ -1,5 +1,13 @@
 package io.github.lstramke.coincollector.model;
 
+/**
+ * Fluent builder for {@link EuroCoin}. Performs validation and generates a
+ * default description and id when not provided.
+ * A pre-existing id can be injected by {@link EuroCoinFactory} via the
+ * package-private {@code setId(String)} to preserve identifiers during
+ * hydration/import; otherwise an id is generated deterministically from core
+ * attributes.
+ */
 public class EuroCoinBuilder {
     int year;
     CoinValue value;
@@ -41,11 +49,20 @@ public class EuroCoinBuilder {
         return this;
     }
 
+    /**
+     * Explicitly set the coin id. Intended for {@link EuroCoinFactory} and
+     * persistence/import layers to preserve existing ids; not public by design.
+     */
     EuroCoinBuilder setId(String id) {
         this.id = id;
         return this;
     }
 
+    /**
+     * Validate and build the coin instance.
+     * @return new EuroCoin
+     * @throws IllegalStateException if mandatory fields missing or invalid
+     */
     public EuroCoin build() throws IllegalStateException {
         if (year < EURO_COIN_START_YEAR) {
             throw new IllegalStateException("Year must be >= " + EURO_COIN_START_YEAR);
@@ -69,6 +86,7 @@ public class EuroCoinBuilder {
         return new EuroCoin(this);
     }
 
+    /** Generate a deterministic id based on core attributes. */
     private String generateId() {
         return String.format("%s_%s_%d_%s", 
             mintCountry != null ? mintCountry.name() : "UNKNOWN",
