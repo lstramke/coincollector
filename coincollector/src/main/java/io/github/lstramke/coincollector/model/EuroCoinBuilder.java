@@ -79,7 +79,7 @@ public class EuroCoinBuilder {
         if (collectionId == null){
             throw new IllegalStateException("CollectionId cannot be null");
         }
-        if (id == null){
+        if (id == null || id.isBlank()){
             this.id = generateId();
         }
         
