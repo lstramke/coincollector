@@ -4,6 +4,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Fixed Euro coin denominations stored as cent integer plus a display label.
+ */
 public enum CoinValue {
     ONE_CENT(1, "1 Cent"),
     TWO_CENTS(2, "2 Cent"),
@@ -33,6 +36,12 @@ public enum CoinValue {
         return displayName;
     }
 
+    /**
+     * Lookup by cent integer.
+     * @param centValue integer value in cents
+     * @return enum constant
+     * @throws IllegalArgumentException if not found
+     */
     public static CoinValue fromCentValue(int centValue) throws IllegalArgumentException{
         CoinValue value = VALUE_MAP.get(centValue);
         if (value == null) {

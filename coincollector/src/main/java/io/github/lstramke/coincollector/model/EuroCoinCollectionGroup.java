@@ -4,20 +4,39 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Concrete implementation of a {@link CollectionGroup} for Euro coin
+ * collections owned by a single user.
+ */
 public class EuroCoinCollectionGroup implements CollectionGroup<EuroCoin, EuroCoinCollection> {
     private String id;
     private String name;
     private String ownerId;
     private List<EuroCoinCollection> collections;
 
+    /**
+     * Create an empty group with a newly generated random id.
+     */
     public EuroCoinCollectionGroup(String name, String ownerId){
         this(createGroupId(), name, ownerId, List.of());
     }
 
+    /**
+     * Create a group with initial collections and a newly generated random id.
+     */
     public EuroCoinCollectionGroup(String name, String ownerId, List<EuroCoinCollection> collections){
         this(createGroupId(), name, ownerId, collections);
     }
 
+    /**
+     * Canonical constructor performing validation of id, ownerId and collections.
+     * All other constructors delegate to this one.
+     * @param id existing unique group id (must not be null/blank)
+     * @param name display name (may be null if allowed by domain)
+     * @param ownerId owner user id (must not be null/blank)
+     * @param collections initial collections (non-null, no null elements)
+     * @throws IllegalArgumentException if validation fails
+     */
     private EuroCoinCollectionGroup(String id, String name, String ownerId, List<EuroCoinCollection> collections) throws IllegalArgumentException{
         if(id == null || id.isBlank()){
             throw new IllegalArgumentException("id is null or blank");
@@ -36,6 +55,11 @@ public class EuroCoinCollectionGroup implements CollectionGroup<EuroCoin, EuroCo
         this.name = name;
     }
     
+    /**
+     * Package-private constructor intended for factories inside this model
+     * package to preserve an existing id without generating a new one.
+     * Delegates to the private canonical constructor.
+     */
     EuroCoinCollectionGroup(String id, String name, String ownerId){
         this(id, name, ownerId, List.of());
     }
@@ -59,6 +83,7 @@ public class EuroCoinCollectionGroup implements CollectionGroup<EuroCoin, EuroCo
         return ownerId;
     }
 
+    @Override
     public List<EuroCoinCollection> getCollections() {
         return List.copyOf(collections);
     }

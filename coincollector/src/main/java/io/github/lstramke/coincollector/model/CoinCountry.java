@@ -4,6 +4,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Euro issuing countries with ISO code and localized German display name.
+ */
 public enum CoinCountry {
     AUSTRIA("AT", "Österreich"),
     BELGIUM("BE", "Belgien"),
@@ -48,6 +51,12 @@ public enum CoinCountry {
         return displayName;
     }
 
+    /**
+     * Lookup enum by ISO code.
+     * @param code ISO 3166-1 alpha-2 code
+     * @return matching country
+     * @throws IllegalArgumentException if unknown
+     */
     public static CoinCountry fromIsoCode(String code) throws IllegalArgumentException{
         CoinCountry country = CODE_MAP.get(code);
         if (country == null) {

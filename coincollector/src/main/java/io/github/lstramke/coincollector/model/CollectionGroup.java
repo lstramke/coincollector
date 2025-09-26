@@ -2,6 +2,11 @@ package io.github.lstramke.coincollector.model;
 
 import java.util.List;
 
+/**
+ * Logical grouping of multiple coin collections owned by a user.
+ * @param <T> coin type
+ * @param <C> collection type
+ */
 public interface CollectionGroup<T extends Coin, C extends CoinCollection<T>> {
     String getId();
     String getName();

@@ -6,10 +6,27 @@ import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Factory for creating {@link EuroCoin} instances when the id and/or other
+ * attributes are already known.
+ * <p>
+ * Use this instead of assembling a {@link EuroCoinBuilder} manually in cases
+ * where you need to preserve an existing identifier (database hydration,
+ * imports, synchronization, test fixtures). The public construction path via
+ * the builder normally generates an id; using this
+ * factory makes the intent explicit when an external id must be retained.
+ * </p>
+ */
 public class EuroCoinFactory {
     
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinFactory.class);
     
+    /**
+     * Build a coin from the current JDBC {@link ResultSet} row (DB hydration).
+     * @param resultSet positioned result set
+     * @return coin instance with preserved id
+     * @throws SQLException if input invalid
+     */
     public EuroCoin fromDataBaseEntry(ResultSet resultSet) throws SQLException{
         try {
             return new EuroCoinBuilder()

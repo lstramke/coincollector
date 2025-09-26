@@ -4,6 +4,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * German mints identified by their mint mark letters.
+ */
 public enum Mint {
     BERLIN("A"),
     MUNICH("D"),
@@ -29,6 +32,12 @@ public enum Mint {
         return mintMark;
     }
 
+    /**
+     * Lookup by mint mark letter.
+     * @param mintMark letter
+     * @return mint enum
+     * @throws IllegalArgumentException if unknown
+     */
     public static Mint fromMintMark(String mintMark) throws IllegalArgumentException {
         Mint mint =  MINT_MAP.get(mintMark);
         if (mint == null){
