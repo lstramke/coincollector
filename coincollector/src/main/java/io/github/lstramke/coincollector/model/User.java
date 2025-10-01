@@ -28,6 +28,9 @@ public class User {
             throw new IllegalArgumentException("userId is null or blank");
         }
         this.id = id;
+        if(name == null || name.isBlank()){
+             throw new IllegalArgumentException("username is null or blank");
+        }
         this.name = name;
     }
 

@@ -112,18 +112,18 @@ public class UserSqliteRepository implements UserStorageRepository{
      *   <li>Propagates any {@link SQLException} originating from the factory (invalid / incomplete row data).</li>
      * </ul>
      *
-     * @param userId id used only for logging correlation
+     * @param userIdentifierForLog id used only for logging correlation
      * @param resultSet JDBC result set positioned at the row to map
      * @return an {@link Optional} containing the mapped {@link User}
      * @throws SQLException if the mapping fails due to invalid column data or JDBC issues
      */
-    private Optional<User> createUserFromResultSet(String userId, ResultSet resultSet) throws SQLException{
+    private Optional<User> createUserFromResultSet(String userIdentifierForLog, ResultSet resultSet) throws SQLException{
         try {
             User readUser = userFactory.fromDataBaseEntry(resultSet);
-            logger.debug("User read: id={}", userId);
+            logger.debug("User read: id/name={}", userIdentifierForLog);
             return Optional.of(readUser);
         } catch (SQLException e) {
-            logger.warn("User read produced invalid data: id={}", userId);
+            logger.warn("User read produced invalid data: id/name={}", userIdentifierForLog);
             throw e;
         }
     }
@@ -232,12 +232,48 @@ public class UserSqliteRepository implements UserStorageRepository{
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public Optional<User> getByUsername(Connection connection, String username) throws SQLException {
+        if (connection == null) {
+            throw new IllegalArgumentException("connection must not be null (getByUsername)");
+        }
+        if(username == null || username.isBlank()){
+            logger.warn("Get by username aborted: username null/blank");
+            throw new IllegalArgumentException("username must not be null or blank (getByUsername)");
+        }
+
+         String sql = String.format(
+            """
+            SELECT user_id, username
+            FROM %s
+            WHERE username = ?
+            """, tableName
+        );
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, username);
+            try(ResultSet resultSet = preparedStatement.executeQuery()){
+                if(resultSet.next()){
+                    return createUserFromResultSet(username, resultSet);
+                } else {
+                    logger.debug("User not found: name={}", username);
+                    return Optional.empty();
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("User read failed: name={}", username, e);
+            throw e;
+        }
+    }
+
     /**
      * Internal (package-private) minimal validation of a {@link User} instance.
      * Current rules:
      * <ul>
      *   <li>User object must not be {@code null}</li>
      *   <li>Id must not be {@code null} or blank</li>
+     *   <li>Name must not be {@code null} or blank </li>
      * </ul>
      * Extend here if additional invariants (e.g. name constraints) are required.
      *
@@ -251,6 +287,11 @@ public class UserSqliteRepository implements UserStorageRepository{
 
         String userId = user.getId();
         if (userId == null || userId.isBlank()) {
+            return false;
+        }
+
+        String name = user.getName();
+        if(name == null || name.isBlank()){
             return false;
         }
 
