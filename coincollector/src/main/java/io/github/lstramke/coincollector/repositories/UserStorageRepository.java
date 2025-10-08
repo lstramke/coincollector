@@ -76,4 +76,15 @@ public interface UserStorageRepository {
      * @throws IllegalArgumentException if {@code userId} is {@code null} or blank
      */
     boolean exists(Connection connection, String userId) throws SQLException;
+
+    /**
+    * Reads a {@link User} by its username.
+    *
+    * @param connection an open JDBC connection; must not be {@code null}
+    * @param username the username of the user to fetch; must not be {@code null} and not blank
+    * @return an {@link Optional} containing the found user, or empty if no user exists with the given username
+    * @throws SQLException if a database access error occurs
+    * @throws IllegalArgumentException if {@code username} is {@code null} or blank
+    */
+    Optional<User> getByUsername(Connection connection, String username) throws SQLException;
 }

@@ -1,4 +1,4 @@
-@startuml storageRepositoryLayer_v3
+@startuml storageRepositoryLayer_v4
 
 interface EuroCoinStorageRepository {
     + void create(Connection connection, EuroCoin coin) throws SQLException
@@ -29,10 +29,11 @@ interface EuroCoinCollectionGroupStorageRepository {
 
 interface UserStorageRepository {
     + void create(Connection connection, User user) throws SQLException
-    + Optional<EuroCoinCollectionGroup> read(Connection connection, String userId) throws SQLException
+    + Optional<User> read(Connection connection, String userId) throws SQLException
     + void update(Connection connection, User user) throws SQLException
     + void delete(Connection connection, String userId) throws SQLException
     + boolean exists(Connection connection, String id) throws SQLException
+    + Optional<User> getByUsername(Connection connection, String username) throws SQLException
 }
 
 

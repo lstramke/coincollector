@@ -375,9 +375,96 @@ public class UserSqliteRepositoryTest {
         }
     }
 
+    private record GetByUsernameTestcase(
+        String username,
+        Connection connection,
+        boolean shouldThrowSQLException,
+        boolean hitInDB,
+        boolean factoryThrowsSQLException,
+        Optional<User> expectedUser,
+        Class<? extends Exception> expectedException,
+        String description
+    ) {
+        @Override
+        public String toString(){
+            return description;
+        }
+    }
+
+    private static Stream<GetByUsernameTestcase> getByUsernameTestcases(){
+        return Stream.of(
+            new GetByUsernameTestcase(null, mock(Connection.class), false, false, false, Optional.empty(), IllegalArgumentException.class, "Null name"),
+            new GetByUsernameTestcase("validName", null, false, false, false, Optional.empty(), IllegalArgumentException.class, "Null Connection"),
+            new GetByUsernameTestcase("", mock(Connection.class), false, false, false, Optional.empty(), IllegalArgumentException.class, "Empty name"),
+            new GetByUsernameTestcase("validName", mock(Connection.class), false, true, false, Optional.of(dummyUser), null, "Valid name - read hit, no SQLException"),
+            new GetByUsernameTestcase("validName", mock(Connection.class), false, true, true, Optional.empty(), SQLException.class, "Valid name- read hit, SQLException from factory"),
+            new GetByUsernameTestcase("validName", mock(Connection.class), true, true, false, Optional.empty(), SQLException.class, "SQLException during read attempt"),
+            new GetByUsernameTestcase("validName", mock(Connection.class), false, false, false, Optional.empty(), null, "Valid name - no read hit")
+        );
+    }
+
+    @ParameterizedTest(name = "{index} - {0}")
+    @MethodSource("getByUsernameTestcases")
+    void testGetByUsername(GetByUsernameTestcase testcase){
+        UserFactory userFactory = mock(UserFactory.class);
+        UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
+
+        PreparedStatement preparedStatement = mock(PreparedStatement.class);
+        ResultSet resultSet = mock(ResultSet.class);
+        try{
+            if (testcase.username != null && !testcase.username.isBlank() && testcase.connection != null) {
+                when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+
+                if (testcase.shouldThrowSQLException) {
+                    when(preparedStatement.executeQuery()).thenThrow(new SQLException("DB error"));
+                } else {
+                    when(preparedStatement.executeQuery()).thenReturn(resultSet);
+                    when(resultSet.next()).thenReturn(testcase.hitInDB);
+
+                    if (testcase.hitInDB) {
+                        if (testcase.factoryThrowsSQLException) {
+                            when(userFactory.fromDataBaseEntry(resultSet))
+                                .thenThrow(new SQLException("Factory error"));
+                        } else if (testcase.expectedUser.isPresent()) {
+                            when(userFactory.fromDataBaseEntry(resultSet))
+                                .thenReturn(testcase.expectedUser.get());
+                        }
+                    }
+                }
+            }
+
+            if (testcase.expectedException != null) {
+                assertThrows(testcase.expectedException,
+                    () -> repository.getByUsername(testcase.connection, testcase.username),
+                    "Expected Exception was not thrown for: " + testcase.description
+                );
+            } else {
+                Optional<User> result = repository.getByUsername(testcase.connection, testcase.username);
+                assertEquals(testcase.expectedUser, result,
+                    "Result value mismatch for: " + testcase.description);
+
+                if (testcase.username != null && !testcase.username.isBlank() && testcase.connection != null) {
+                    verify(testcase.connection).prepareStatement(anyString());
+                    verify(preparedStatement).setString(1, testcase.username);
+                    verify(preparedStatement).executeQuery();
+
+                    if (testcase.hitInDB) {
+                        verify(resultSet).next();
+                        if (!testcase.factoryThrowsSQLException) {
+                            verify(userFactory).fromDataBaseEntry(resultSet);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            fail("SQLException should not occur with mocks: " + e.getMessage());
+        }
+    }
+
     private record ValidationTestcase(
         boolean isNullUser,
         String userId,
+        String username,
         boolean expectedResult,
         String description) {
 
@@ -389,11 +476,14 @@ public class UserSqliteRepositoryTest {
 
     private static Stream<ValidationTestcase> validateUserTestcases() {
         return Stream.of(
-            new ValidationTestcase(false, "valid-id", true, "Valid user"),
-            new ValidationTestcase(true, null, false, "Null user"),
-            new ValidationTestcase(false, null, false, "User with null ID"),
-            new ValidationTestcase(false, "", false, "User with empty ID"),
-            new ValidationTestcase(false, "   ", false, "User with whitespace-only ID")
+            new ValidationTestcase(false, "validId", "name", true, "Valid user"),
+            new ValidationTestcase(true, null, "name", false, "Null user"),
+            new ValidationTestcase(false, null, "name", false, "User with null ID"),
+            new ValidationTestcase(false, "", "name", false, "User with empty ID"),
+            new ValidationTestcase(false, "   ", "name", false, "User with whitespace-only ID"),
+            new ValidationTestcase(false, "validId", null, false, "User with null name"),
+            new ValidationTestcase(false, "validId", "", false, "User with empty name"),
+            new ValidationTestcase(false, "validId", "  ", false, "User with whitespace-only name")
         );
     }
 
@@ -406,7 +496,8 @@ public class UserSqliteRepositoryTest {
         User user = null;
         if (!testcase.isNullUser) {
             user = mock(User.class);
-            lenient().when(user.getId()).thenReturn(testcase.userId());
+            lenient().when(user.getId()).thenReturn(testcase.userId);
+            lenient().when(user.getName()).thenReturn(testcase.username);
         }
 
         boolean result = repository.validateUser(user);

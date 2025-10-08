@@ -30,7 +30,7 @@ public class UserFactory {
     public User fromDataBaseEntry(ResultSet resultSet) throws SQLException{
         try {
             String userId = resultSet.getString("user_id");
-            String name = resultSet.getString("name");
+            String name = resultSet.getString("username");
 
             return new User(userId, name);
         } catch (IllegalArgumentException e) {

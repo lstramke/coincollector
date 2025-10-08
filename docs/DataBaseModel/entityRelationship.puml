@@ -4,7 +4,7 @@ left to right direction
 
 entity User {
     user_id : String <<key>>
-    name : String
+    username : String
 }
 
 entity EuroCoinCollectionGroup {
