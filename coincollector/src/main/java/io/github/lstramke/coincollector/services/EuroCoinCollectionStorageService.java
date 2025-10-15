@@ -121,7 +121,7 @@ public interface EuroCoinCollectionStorageService {
 
     /**
      * Retrieves all {@link EuroCoinCollection} rows and manages connection/transaction
-     * boundaries internally.
+     * boundaries internally. Adds all coins belonging to the collections.
      *
      * @return list of collections (possibly empty, never {@code null})
      * @throws EuroCoinCollectionGetAllException when retrieving all collections fails
@@ -131,6 +131,7 @@ public interface EuroCoinCollectionStorageService {
     /**
      * Retrieves all {@link EuroCoinCollection} rows using a caller-managed open JDBC
      * {@link Connection}. The implementation does not manage the connection lifecycle.
+     * Adds all coins belonging to the collections.
      *
      * @param connection open JDBC connection; must not be {@code null}
      * @return list of collections (possibly empty, never {@code null})
