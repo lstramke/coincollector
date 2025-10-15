@@ -1,4 +1,4 @@
-package io.github.lstramke.coincollector.initializer;
+package io.github.lstramke.coincollector.configuration;
 
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 
