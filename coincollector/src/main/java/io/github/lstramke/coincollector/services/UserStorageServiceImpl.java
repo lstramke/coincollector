@@ -27,7 +27,7 @@ public class UserStorageServiceImpl implements UserStorageService {
         this.dataSource = dataSource;
     }
 
-     /** {@inheritDoc} */
+    /** {@inheritDoc} */
     @Override
     public void save(User user) throws UserSaveException {
         try (Connection connection = dataSource.getConnection()) {
@@ -37,7 +37,7 @@ public class UserStorageServiceImpl implements UserStorageService {
         }
     }
 
-     /** {@inheritDoc} */
+    /** {@inheritDoc} */
     @Override
     public User getById(String userId) throws UserNotFoundException {
         try (Connection connection = dataSource.getConnection()) {
@@ -49,7 +49,7 @@ public class UserStorageServiceImpl implements UserStorageService {
         }
     }
 
-     /** {@inheritDoc} */
+    /** {@inheritDoc} */
     @Override
     public User getByUsername(String username) throws UserNotFoundException {
         try (Connection connection = dataSource.getConnection()) {
@@ -61,7 +61,7 @@ public class UserStorageServiceImpl implements UserStorageService {
         }
     }
 
-     /** {@inheritDoc} */
+    /** {@inheritDoc} */
     @Override
     public void update(User user) throws UserUpdateException {
         try (Connection connection = dataSource.getConnection()) {
@@ -71,7 +71,7 @@ public class UserStorageServiceImpl implements UserStorageService {
         }
     }
 
-     /** {@inheritDoc} */
+    /** {@inheritDoc} */
     @Override
     public void delete(String userId) throws UserDeleteException {
         try (Connection connection = dataSource.getConnection()) {

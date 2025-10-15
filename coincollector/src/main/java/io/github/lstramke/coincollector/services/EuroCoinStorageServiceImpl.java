@@ -154,7 +154,7 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
 
     /** {@inheritDoc} */
     @Override
-    public List<EuroCoin> getAll() {
+    public List<EuroCoin> getAll() throws EuroCoinGetAllException {
         try (Connection connection = dataSource.getConnection()) {
             return euroCoinStorageRepository.getAll(connection);
         } catch (SQLException e) {
@@ -164,7 +164,7 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
 
     /** {@inheritDoc} */
     @Override
-    public List<EuroCoin> getAll(Connection connection) {
+    public List<EuroCoin> getAll(Connection connection) throws EuroCoinGetAllException {
         try {
             return euroCoinStorageRepository.getAll(connection);
         } catch (SQLException e) {

@@ -5,6 +5,7 @@ import java.util.List;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinAlreadyExistsException;
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinDeleteException;
+import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinGetAllException;
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinNotFoundException;
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinSaveException;
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinUpdateException;
@@ -129,8 +130,9 @@ public interface EuroCoinStorageService {
      * boundaries internally.
      *
      * @return list of coins (possibly empty, never {@code null})
+    * @throws EuroCoinGetAllException when retrieving all coins fails
      */
-    List<EuroCoin> getAll();
+    List<EuroCoin> getAll() throws EuroCoinGetAllException;
 
     /**
      * Retrieves all {@link EuroCoin} rows using a caller-managed open JDBC
@@ -138,6 +140,7 @@ public interface EuroCoinStorageService {
      *
      * @param connection open JDBC connection; must not be {@code null}
      * @return list of coins (possibly empty, never {@code null})
+    * @throws EuroCoinGetAllException when retrieving all coins fails
      */
-    List<EuroCoin> getAll(Connection connection);
+    List<EuroCoin> getAll(Connection connection) throws EuroCoinGetAllException;
 }
