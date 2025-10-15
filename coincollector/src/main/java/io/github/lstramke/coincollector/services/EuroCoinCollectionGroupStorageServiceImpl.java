@@ -45,7 +45,7 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
         try (Connection connection = dataSource.getConnection()) {
                 groupStorageRepository.create(connection, group);
         } catch (SQLException e) {
-           throw new EuroCoinCollectionGroupSaveException();
+           throw new EuroCoinCollectionGroupSaveException(group.getId(), e);
         }
     }
 
@@ -55,13 +55,13 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
         try (Connection connection = dataSource.getConnection()) {
             EuroCoinCollectionGroup group = groupStorageRepository
             .read(connection, groupId)
-            .orElseThrow(() -> new EuroCoinCollectionGroupNotFoundException());
+            .orElseThrow(() -> new EuroCoinCollectionGroupNotFoundException(groupId));
             euroCoinCollectionStorageService.getAll(connection).stream()
             .filter(collection -> Objects.equals(collection.getGroupId(), groupId))
             .forEach(group::addCollection);
             return group;
         } catch (SQLException e) {
-            throw new EuroCoinCollectionGroupNotFoundException();
+            throw new EuroCoinCollectionGroupNotFoundException(groupId, e);
         }
     }
 
@@ -71,7 +71,7 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
         try (Connection connection = dataSource.getConnection()) {
             groupStorageRepository.update(connection, group);
         } catch (SQLException e) {
-            throw new EuroCoinCollectionGroupUpdateException();
+            throw new EuroCoinCollectionGroupUpdateException(group.getId(), e);
         }
     }
 
@@ -81,7 +81,7 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
         try (Connection connection = dataSource.getConnection()) {
             groupStorageRepository.delete(connection, groupId);
         } catch (SQLException e) {
-            throw new EuroCoinCollectionGroupDeleteException();
+            throw new EuroCoinCollectionGroupDeleteException(groupId, e);
         }
     }
 
@@ -99,7 +99,7 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
         }
         return groupsByUser.values().stream().toList();
         } catch (SQLException e) {
-           throw new EuroCoinCollectionGroupGetAllException();
+           throw new EuroCoinCollectionGroupGetAllException(e);
         }
     }
 }
