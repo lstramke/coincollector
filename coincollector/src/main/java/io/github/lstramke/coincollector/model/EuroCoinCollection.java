@@ -107,6 +107,7 @@ public class EuroCoinCollection implements CoinCollection<EuroCoin> {
     public void addCoin(EuroCoin coin) {
         if (coin == null)
             return;
+        // TODO: coin collcetion id update
         this.coins.add(coin);
     }
 
