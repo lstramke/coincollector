@@ -30,7 +30,7 @@ public class UserStorageServiceImplTest {
 
     private record SaveTestcase(
         User user,
-        boolean dsThrowsSQLException,
+        boolean getConnectionThrows,
         boolean repoThrowsSQLException,
         Class<? extends Exception> expectedException,
         String description
@@ -51,40 +51,44 @@ public class UserStorageServiceImplTest {
 
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("saveTestcases")
-    void testSave(SaveTestcase testcase) throws SQLException {
+    void testSave(SaveTestcase testcase) {
         DataSource dataSource = mock(DataSource.class);
         UserStorageRepository repository = mock(UserStorageRepository.class);
         UserStorageServiceImpl service = new UserStorageServiceImpl(repository, dataSource);
 
         Connection connection = mock(Connection.class);
 
-        if (testcase.dsThrowsSQLException) {
-            when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
-        } else {
-            when(dataSource.getConnection()).thenReturn(connection);
-            if (testcase.user != null) {
-                if (testcase.repoThrowsSQLException) {
-                    doThrow(new SQLException("Repo create error")).when(repository).create(connection, testcase.user);
-                } else {
-                    doNothing().when(repository).create(connection, testcase.user);
-                }
+        try {   
+            if (testcase.getConnectionThrows) {
+                when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
             } else {
-                doThrow(new IllegalArgumentException("user must not be null")).when(repository).create(eq(connection), isNull());
+                when(dataSource.getConnection()).thenReturn(connection);
+                if (testcase.user != null) {
+                    if (testcase.repoThrowsSQLException) {
+                        doThrow(new SQLException("Repo create error")).when(repository).create(connection, testcase.user);
+                    } else {
+                        doNothing().when(repository).create(connection, testcase.user);
+                    }
+                } else {
+                    doThrow(new IllegalArgumentException("user must not be null")).when(repository).create(eq(connection), isNull());
+                }
             }
-        }
-
-        if (testcase.expectedException != null) {
-            assertThrows(testcase.expectedException, () -> service.save(testcase.user));
-        } else {
-            assertDoesNotThrow(() -> service.save(testcase.user));
-            verify(dataSource).getConnection();
-            verify(repository).create(connection, testcase.user);
+    
+            if (testcase.expectedException != null) {
+                assertThrows(testcase.expectedException, () -> service.save(testcase.user));
+            } else {
+                assertDoesNotThrow(() -> service.save(testcase.user));
+                verify(dataSource).getConnection();
+                verify(repository).create(connection, testcase.user);
+            }
+        } catch (SQLException e) {
+           fail("SQLException should not occur with mocks: " + e.getMessage());
         }
     }
 
     private record GetByIdTestcase(
         String id,
-        boolean dsThrowsSQLException,
+        boolean getConnectionThrows,
         boolean repoThrowsSQLException,
         boolean repoReturnsEmpty,
         Optional<User> repoResult,
@@ -108,39 +112,43 @@ public class UserStorageServiceImplTest {
 
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("getByIdTestcases")
-    void testGetById(GetByIdTestcase testcase) throws SQLException {
+    void testGetById(GetByIdTestcase testcase) {
         DataSource dataSource = mock(DataSource.class);
         UserStorageRepository repository = mock(UserStorageRepository.class);
         UserStorageServiceImpl service = new UserStorageServiceImpl(repository, dataSource);
         Connection connection = mock(Connection.class);
 
-        if (testcase.dsThrowsSQLException) {
-            when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
-        } else {
-            when(dataSource.getConnection()).thenReturn(connection);
-
-            if (testcase.repoThrowsSQLException) {
-                when(repository.read(connection, testcase.id)).thenThrow(new SQLException("Repo read error"));
-            } else if (testcase.repoReturnsEmpty) {
-                when(repository.read(connection, testcase.id)).thenReturn(Optional.empty());
+        try {
+            if (testcase.getConnectionThrows) {
+                when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
             } else {
-                when(repository.read(connection, testcase.id)).thenReturn(testcase.repoResult);
+                when(dataSource.getConnection()).thenReturn(connection);
+    
+                if (testcase.repoThrowsSQLException) {
+                    when(repository.read(connection, testcase.id)).thenThrow(new SQLException("Repo read error"));
+                } else if (testcase.repoReturnsEmpty) {
+                    when(repository.read(connection, testcase.id)).thenReturn(Optional.empty());
+                } else {
+                    when(repository.read(connection, testcase.id)).thenReturn(testcase.repoResult);
+                }
             }
-        }
-
-        if (testcase.expectedException != null) {
-            assertThrows(testcase.expectedException, () -> service.getById(testcase.id));
-        } else {
-            User result = assertDoesNotThrow(() -> service.getById(testcase.id));
-            assertEquals(testcase.repoResult.get(), result);
-            verify(dataSource).getConnection();
-            verify(repository).read(connection, testcase.id);
+    
+            if (testcase.expectedException != null) {
+                assertThrows(testcase.expectedException, () -> service.getById(testcase.id));
+            } else {
+                User result = assertDoesNotThrow(() -> service.getById(testcase.id));
+                assertEquals(testcase.repoResult.get(), result);
+                verify(dataSource).getConnection();
+                verify(repository).read(connection, testcase.id);
+            }
+        } catch (SQLException e) {
+            fail("SQLException should not occur with mocks: " + e.getMessage());
         }
     }
 
     private record GetByUsernameTestcase(
         String username,
-        boolean dsThrowsSQLException,
+        boolean getConnectionThrows,
         boolean repoThrowsSQLException,
         boolean repoReturnsEmpty,
         Optional<User> repoResult,
@@ -164,40 +172,43 @@ public class UserStorageServiceImplTest {
 
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("getByUsernameTestcases")
-    void testGetByUsername(GetByUsernameTestcase testcase) throws SQLException {
+    void testGetByUsername(GetByUsernameTestcase testcase) {
         DataSource dataSource = mock(DataSource.class);
         UserStorageRepository repository = mock(UserStorageRepository.class);
         UserStorageServiceImpl service = new UserStorageServiceImpl(repository, dataSource);
-
         Connection connection = mock(Connection.class);
 
-        if (testcase.dsThrowsSQLException) {
-            when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
-        } else {
-            when(dataSource.getConnection()).thenReturn(connection);
-
-            if (testcase.repoThrowsSQLException) {
-                when(repository.getByUsername(connection, testcase.username)).thenThrow(new SQLException("Repo getByUsername error"));
-            } else if (testcase.repoReturnsEmpty) {
-                when(repository.getByUsername(connection, testcase.username)).thenReturn(Optional.empty());
+        try {
+            if (testcase.getConnectionThrows) {
+                when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
             } else {
-                when(repository.getByUsername(connection, testcase.username)).thenReturn(testcase.repoResult);
+                when(dataSource.getConnection()).thenReturn(connection);
+    
+                if (testcase.repoThrowsSQLException) {
+                    when(repository.getByUsername(connection, testcase.username)).thenThrow(new SQLException("Repo getByUsername error"));
+                } else if (testcase.repoReturnsEmpty) {
+                    when(repository.getByUsername(connection, testcase.username)).thenReturn(Optional.empty());
+                } else {
+                    when(repository.getByUsername(connection, testcase.username)).thenReturn(testcase.repoResult);
+                }
             }
-        }
-
-        if (testcase.expectedException != null) {
-            assertThrows(testcase.expectedException, () -> service.getByUsername(testcase.username));
-        } else {
-            User result = assertDoesNotThrow(() -> service.getByUsername(testcase.username));
-            assertEquals(testcase.repoResult.get(), result);
-            verify(dataSource).getConnection();
-            verify(repository).getByUsername(connection, testcase.username);
+    
+            if (testcase.expectedException != null) {
+                assertThrows(testcase.expectedException, () -> service.getByUsername(testcase.username));
+            } else {
+                User result = assertDoesNotThrow(() -> service.getByUsername(testcase.username));
+                assertEquals(testcase.repoResult.get(), result);
+                verify(dataSource).getConnection();
+                verify(repository).getByUsername(connection, testcase.username);
+            } 
+        } catch (SQLException e) {
+            fail("SQLException should not occur with mocks: " + e.getMessage());
         }
     }
 
     private record UpdateTestcase(
         User user,
-        boolean dsThrowsSQLException,
+        boolean getConnectionThrows,
         boolean repoThrowsSQLException,
         Class<? extends Exception> expectedException,
         String description
@@ -218,40 +229,43 @@ public class UserStorageServiceImplTest {
 
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("updateTestcases")
-    void testUpdate(UpdateTestcase testcase) throws SQLException {
+    void testUpdate(UpdateTestcase testcase) {
         DataSource dataSource = mock(DataSource.class);
         UserStorageRepository repository = mock(UserStorageRepository.class);
         UserStorageServiceImpl service = new UserStorageServiceImpl(repository, dataSource);
-
         Connection connection = mock(Connection.class);
 
-        if (testcase.dsThrowsSQLException) {
-            when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
-        } else {
-            when(dataSource.getConnection()).thenReturn(connection);
-            if (testcase.user != null) {
-                if (testcase.repoThrowsSQLException) {
-                    doThrow(new SQLException("Repo update error")).when(repository).update(connection, testcase.user);
-                } else {
-                    doNothing().when(repository).update(connection, testcase.user);
-                }
+        try {
+            if (testcase.getConnectionThrows) {
+                when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
             } else {
-                doThrow(new IllegalArgumentException("user must not be null")).when(repository).update(eq(connection), isNull());
+                when(dataSource.getConnection()).thenReturn(connection);
+                if (testcase.user != null) {
+                    if (testcase.repoThrowsSQLException) {
+                        doThrow(new SQLException("Repo update error")).when(repository).update(connection, testcase.user);
+                    } else {
+                        doNothing().when(repository).update(connection, testcase.user);
+                    }
+                } else {
+                    doThrow(new IllegalArgumentException("user must not be null")).when(repository).update(eq(connection), isNull());
+                }
             }
-        }
-
-        if (testcase.expectedException != null) {
-            assertThrows(testcase.expectedException, () -> service.update(testcase.user));
-        } else {
-            assertDoesNotThrow(() -> service.update(testcase.user));
-            verify(dataSource).getConnection();
-            verify(repository).update(connection, testcase.user);
+    
+            if (testcase.expectedException != null) {
+                assertThrows(testcase.expectedException, () -> service.update(testcase.user));
+            } else {
+                assertDoesNotThrow(() -> service.update(testcase.user));
+                verify(dataSource).getConnection();
+                verify(repository).update(connection, testcase.user);
+            }
+        } catch (SQLException e) {
+            fail("SQLException should not occur with mocks: " + e.getMessage());
         }
     }
 
     private record DeleteTestcase(
         String id,
-        boolean dsThrowsSQLException,
+        boolean getConnectionThrows,
         boolean repoThrowsSQLException,
         Class<? extends Exception> expectedException,
         String description
@@ -272,35 +286,38 @@ public class UserStorageServiceImplTest {
 
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("deleteTestcases")
-    void testDelete(DeleteTestcase testcase) throws SQLException {
+    void testDelete(DeleteTestcase testcase) {
         DataSource dataSource = mock(DataSource.class);
         UserStorageRepository repository = mock(UserStorageRepository.class);
         UserStorageServiceImpl service = new UserStorageServiceImpl(repository, dataSource);
-
         Connection connection = mock(Connection.class);
 
-        if (testcase.dsThrowsSQLException) {
-            when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
-        } else {
-            when(dataSource.getConnection()).thenReturn(connection);
-
-            if (testcase.id == null) {
-                doThrow(new IllegalArgumentException("id must not be null")).when(repository).delete(eq(connection), isNull());
-            } else if (testcase.id.isBlank()) {
-                doThrow(new IllegalArgumentException("id must not be blank")).when(repository).delete(connection, testcase.id);
-            } else if (testcase.repoThrowsSQLException) {
-                doThrow(new SQLException("Repo delete error")).when(repository).delete(connection, testcase.id);
+        try {
+            if (testcase.getConnectionThrows) {
+                when(dataSource.getConnection()).thenThrow(new SQLException("DS error"));
             } else {
-                doNothing().when(repository).delete(connection, testcase.id);
+                when(dataSource.getConnection()).thenReturn(connection);
+    
+                if (testcase.id == null) {
+                    doThrow(new IllegalArgumentException("id must not be null")).when(repository).delete(eq(connection), isNull());
+                } else if (testcase.id.isBlank()) {
+                    doThrow(new IllegalArgumentException("id must not be blank")).when(repository).delete(connection, testcase.id);
+                } else if (testcase.repoThrowsSQLException) {
+                    doThrow(new SQLException("Repo delete error")).when(repository).delete(connection, testcase.id);
+                } else {
+                    doNothing().when(repository).delete(connection, testcase.id);
+                }
             }
-        }
-        
-        if (testcase.expectedException != null) {
-            assertThrows(testcase.expectedException, () -> service.delete(testcase.id));
-            verify(dataSource).getConnection();
-        } else {
-            assertDoesNotThrow(() -> service.delete(testcase.id));
-            verify(repository).delete(connection, testcase.id);
+            
+            if (testcase.expectedException != null) {
+                assertThrows(testcase.expectedException, () -> service.delete(testcase.id));
+                verify(dataSource).getConnection();
+            } else {
+                assertDoesNotThrow(() -> service.delete(testcase.id));
+                verify(repository).delete(connection, testcase.id);
+            }
+        } catch (SQLException e) {
+            fail("SQLException should not occur with mocks: " + e.getMessage());
         }
     }
 }
