@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionCoinsLoadException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionDeleteException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetAllException;
+import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetByIdException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionNotFoundException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionSaveException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionUpdateException;
@@ -62,7 +63,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
                 connection.setAutoCommit(false);
                 executeSave(euroCoinCollection, connection);
                 connection.commit();
-            } catch (SQLException | RuntimeException e) {
+            } catch (SQLException | EuroCoinSaveException | EuroCoinUpdateException e) {
                 connection.rollback();
                 throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
             }
@@ -75,14 +76,14 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     @Override
     public void save(EuroCoinCollection euroCoinCollection, Connection connection) throws EuroCoinCollectionSaveException {
         try {
+            executeSave(euroCoinCollection, connection);
+        } catch (SQLException | EuroCoinSaveException | EuroCoinUpdateException e) {
             try {
-                executeSave(euroCoinCollection, connection);
-            } catch (SQLException | RuntimeException e) {
                 connection.rollback();
                 throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
+            } catch (SQLException byRollback) {
+                throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
             }
-        } catch (SQLException e) {
-            throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
         }
     }
 
@@ -110,25 +111,25 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
 
     /** {@inheritDoc} */
     @Override
-    public EuroCoinCollection getById(String collectionId) throws EuroCoinCollectionNotFoundException {
+    public EuroCoinCollection getById(String collectionId) throws EuroCoinCollectionNotFoundException, EuroCoinCollectionCoinsLoadException, EuroCoinCollectionGetByIdException {
         try (Connection connection = dataSource.getConnection()) {
             return executeGetById(collectionId, connection);
         } catch(EuroCoinGetAllException e) {
-            throw new EuroCoinCollectionCoinsLoadException( collectionId);
+            throw new EuroCoinCollectionCoinsLoadException(collectionId, e);
         } catch (SQLException e) {
-            throw new EuroCoinCollectionNotFoundException(collectionId, e);
+            throw new EuroCoinCollectionGetByIdException(collectionId, e);
         }
     }
 
     /** {@inheritDoc} */
     @Override
-    public EuroCoinCollection getById(String collectionId, Connection connection) throws EuroCoinCollectionNotFoundException {
+    public EuroCoinCollection getById(String collectionId, Connection connection) throws EuroCoinCollectionNotFoundException, EuroCoinCollectionCoinsLoadException, EuroCoinCollectionGetByIdException {
         try {
             return executeGetById(collectionId, connection);
-         } catch(EuroCoinGetAllException e) {
+        } catch(EuroCoinGetAllException e) {
             throw new EuroCoinCollectionCoinsLoadException(collectionId);
         } catch (SQLException e) {
-            throw new EuroCoinCollectionNotFoundException(collectionId, e);
+            throw new EuroCoinCollectionGetByIdException(collectionId, e);
         }
     }
 
@@ -180,7 +181,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
         try (Connection connection = dataSource.getConnection()) {
             euroCoinCollectionStorageRepository.delete(connection, collectionId);
         } catch (SQLException e) {
-           throw new EuroCoinCollectionUpdateException(collectionId, e);
+           throw new EuroCoinCollectionDeleteException(collectionId, e);
         }
     }
 
@@ -190,7 +191,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
         try {
             euroCoinCollectionStorageRepository.delete(connection, collectionId);
         } catch (SQLException e) {
-           throw new EuroCoinCollectionUpdateException(collectionId, e);
+           throw new EuroCoinCollectionDeleteException(collectionId, e);
         }
     }
 
@@ -199,7 +200,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     public List<EuroCoinCollection> getAll() throws EuroCoinCollectionGetAllException {
         try (Connection connection = dataSource.getConnection()) {
             return executeGetAll(connection);
-        } catch (SQLException e) {
+        } catch (SQLException | EuroCoinGetAllException e) {
             throw new EuroCoinCollectionGetAllException(e);
         }
     }
@@ -209,7 +210,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     public List<EuroCoinCollection> getAll(Connection connection) throws EuroCoinCollectionGetAllException {
         try {
             return executeGetAll(connection);
-        } catch (SQLException e) {
+        } catch (SQLException | EuroCoinGetAllException e) {
             throw new EuroCoinCollectionGetAllException(e);
         }
     }

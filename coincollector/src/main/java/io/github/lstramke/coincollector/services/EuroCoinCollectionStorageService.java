@@ -3,8 +3,10 @@ package io.github.lstramke.coincollector.services;
 import java.sql.Connection;
 import java.util.List;
 
+import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionCoinsLoadException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionDeleteException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetAllException;
+import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetByIdException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionNotFoundException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionSaveException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionUpdateException;
@@ -68,7 +70,7 @@ public interface EuroCoinCollectionStorageService {
      * @return the found collection
      * @throws EuroCoinCollectionNotFoundException if no collection with the given id exists
      */
-    EuroCoinCollection getById(String collectionId) throws EuroCoinCollectionNotFoundException;
+    EuroCoinCollection getById(String collectionId) throws EuroCoinCollectionNotFoundException, EuroCoinCollectionCoinsLoadException, EuroCoinCollectionGetByIdException;
 
     /**
      * Retrieves a {@link EuroCoinCollection} by its id using a caller-managed open JDBC
@@ -79,7 +81,7 @@ public interface EuroCoinCollectionStorageService {
      * @return the found collection
      * @throws EuroCoinCollectionNotFoundException if no collection with the given id exists
      */
-    EuroCoinCollection getById(String collectionId, Connection connection) throws EuroCoinCollectionNotFoundException;
+    EuroCoinCollection getById(String collectionId, Connection connection) throws EuroCoinCollectionNotFoundException, EuroCoinCollectionCoinsLoadException, EuroCoinCollectionGetByIdException;
 
     /**
      * Updates an existing {@link EuroCoinCollection} and manages connection/transaction
