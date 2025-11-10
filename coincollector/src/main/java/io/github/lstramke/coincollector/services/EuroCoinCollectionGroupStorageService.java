@@ -4,6 +4,7 @@ import java.util.List;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupDeleteException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupGetAllException;
+import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupGetByIdException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupNotFoundException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupSaveException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupUpdateException;
@@ -44,7 +45,7 @@ public interface EuroCoinCollectionGroupStorageService {
      * @return the found group
      * @throws EuroCoinCollectionGroupNotFoundException if no group with the given id exists
      */
-    EuroCoinCollectionGroup getById(String groupId) throws EuroCoinCollectionGroupNotFoundException;
+    EuroCoinCollectionGroup getById(String groupId) throws EuroCoinCollectionGroupGetByIdException, EuroCoinCollectionGroupNotFoundException;
 
     /**
      * Updates an existing {@link EuroCoinCollectionGroup} and manages connection/transaction boundaries internally.
