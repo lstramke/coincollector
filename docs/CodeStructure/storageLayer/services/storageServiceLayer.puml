@@ -1,0 +1,72 @@
+@startuml storageServiceLayer_v1
+
+interface EuroCoinStorageService {
+    + void create(EuroCoin coin)
+    + Optional<EuroCoin> read(String id)
+    + void update(EuroCoin coin)
+    + void delete(String id)
+    + List<EuroCoin> getAll()
+    + boolean exists(String id)
+}
+
+interface EuroCoinCollectionStorageService {
+    + void create(EuroCoinCollection collection)
+    + Optional<EuroCoinCollection> read(String id)
+    + void update(EuroCoinCollection collection)
+    + void delete(String id)
+    + List<EuroCoinCollection> getAll()
+    + boolean exists(String id)
+}
+
+interface EuroCoinCollectionGroupStorageService {
+    + void create(EuroCoinCollectionGroup group)
+    + Optional<EuroCoinCollectionGroup> read(String id)
+    + void update(EuroCoinCollectionGroup group)
+    + void delete(String id)
+    + List<EuroCoinCollectionGroup> getAllByUser(String userId)
+    + boolean exists(String id)
+}
+
+interface UserStorageService {
+    + void create(User user)
+    + Optional<User> read(String userId)
+    + void update(User user)
+    + void delete(String userId)
+    + boolean exists(String id)
+    + Optional<User> getByUsername(String username)
+}
+
+class EuroCoinStorageServiceImpl {
+    - static final logger : Logger
+    - final DataSource dataSource
+    - final EuroCoinStorageRepository repository
+    - final String tableName
+}
+
+class EuroCoinCollectionStorageServiceImpl {
+    - static final logger : Logger
+    - final DataSource dataSource
+    - final EuroCoinCollectionStorageRepository repository
+    - final String tableName
+}
+
+class EuroCoinCollectionGroupStorageServiceImpl {
+    - static final logger : Logger
+    - final DataSource dataSource
+    - final EuroCoinCollectionGroupStorageRepository repository
+    - final String tableName
+}
+
+class UserStorageServiceImpl {
+    - static final logger : Logger
+    - final DataSource dataSource
+    - final UserStorageRepository repository
+    - final String tableName
+}
+
+EuroCoinStorageService <|.. EuroCoinStorageServiceImpl
+EuroCoinCollectionStorageService <|.. EuroCoinCollectionStorageServiceImpl
+EuroCoinCollectionGroupStorageService <|.. EuroCoinCollectionGroupStorageServiceImpl
+UserStorageService <|.. UserStorageServiceImpl
+
+@enduml
