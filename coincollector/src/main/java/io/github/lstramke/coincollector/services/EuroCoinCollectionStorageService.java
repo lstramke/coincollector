@@ -3,6 +3,7 @@ package io.github.lstramke.coincollector.services;
 import java.sql.Connection;
 import java.util.List;
 
+import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionAlreadyExistsException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionCoinsLoadException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionDeleteException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetAllException;
@@ -49,7 +50,7 @@ public interface EuroCoinCollectionStorageService {
      * @throws EuroCoinCollectionSaveException if validation fails or persistence does not succeed
      * @throws EuroCoinCollectionAlreadyExistsException if a collection with the same id already exists
      */
-    void save(EuroCoinCollection euroCoinCollection) throws EuroCoinCollectionSaveException;
+    void save(EuroCoinCollection euroCoinCollection) throws EuroCoinCollectionSaveException, EuroCoinCollectionAlreadyExistsException;
 
     /**
      * Persists a new {@link EuroCoinCollection} using a caller-managed open JDBC
@@ -60,7 +61,7 @@ public interface EuroCoinCollectionStorageService {
      * @throws EuroCoinCollectionSaveException if validation fails or persistence does not succeed
      * @throws EuroCoinCollectionAlreadyExistsException if a collection with the same id already exists
      */
-    void save(EuroCoinCollection euroCoinCollection, Connection connection) throws EuroCoinCollectionSaveException;
+    void save(EuroCoinCollection euroCoinCollection, Connection connection) throws EuroCoinCollectionSaveException, EuroCoinCollectionAlreadyExistsException;
 
     /**
      * Retrieves a {@link EuroCoinCollection} by its id and manages connection/transaction

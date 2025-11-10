@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionAlreadyExistsException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionCoinsLoadException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionDeleteException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetAllException;
@@ -57,7 +58,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
 
     /** {@inheritDoc} */
     @Override
-    public void save(EuroCoinCollection euroCoinCollection) throws EuroCoinCollectionSaveException {
+    public void save(EuroCoinCollection euroCoinCollection) throws EuroCoinCollectionSaveException, EuroCoinCollectionAlreadyExistsException {
         try (Connection connection = dataSource.getConnection()) {
             try {
                 connection.setAutoCommit(false);
@@ -74,16 +75,11 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
 
     /** {@inheritDoc} */
     @Override
-    public void save(EuroCoinCollection euroCoinCollection, Connection connection) throws EuroCoinCollectionSaveException {
+    public void save(EuroCoinCollection euroCoinCollection, Connection connection) throws EuroCoinCollectionSaveException, EuroCoinCollectionAlreadyExistsException {
         try {
             executeSave(euroCoinCollection, connection);
         } catch (SQLException | EuroCoinSaveException | EuroCoinUpdateException e) {
-            try {
-                connection.rollback();
-                throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
-            } catch (SQLException byRollback) {
-                throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
-            }
+            throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
         }
     }
 
@@ -98,7 +94,11 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
      * @throws EuroCoinSaveException if saving a coin fails
      * @throws EuroCoinUpdateException if updating an existing coin fails
      */
-    private void executeSave(EuroCoinCollection euroCoinCollection, Connection connection) throws SQLException, EuroCoinSaveException, EuroCoinUpdateException {
+    private void executeSave(EuroCoinCollection euroCoinCollection, Connection connection) throws SQLException, EuroCoinSaveException, EuroCoinUpdateException, EuroCoinCollectionAlreadyExistsException {
+        if (euroCoinCollectionStorageRepository.exists(connection, euroCoinCollection.getId())){
+            throw new EuroCoinCollectionAlreadyExistsException(euroCoinCollection.getId());
+        }
+
         euroCoinCollectionStorageRepository.create(connection, euroCoinCollection);
         for (EuroCoin euroCoin : euroCoinCollection.getCoins()) {
             try {
