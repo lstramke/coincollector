@@ -28,14 +28,10 @@ public class UserFactoryTest {
 
 	private static Stream<FromDbEntryTestcase> fromDbEntryTestcases(){
 		return Stream.of(
-			new FromDbEntryTestcase("u-1", "Alice", false, null,
-				"valid: proper row creates user with preserved id"),
-			new FromDbEntryTestcase(null, "Bob", false, SQLException.class,
-				"invalid: null id -> wrapped to SQLException with IAE cause"),
-			new FromDbEntryTestcase("   ", "Bob", false, SQLException.class,
-				"invalid: blank id -> wrapped to SQLException with IAE cause"),
-			new FromDbEntryTestcase("ignored", "ignored", true, SQLException.class,
-				"sql error: ResultSet#getString throws SQLException which is propagated")
+			new FromDbEntryTestcase("u-1", "Alice", false, null, "valid: proper row creates user with preserved id"),
+			new FromDbEntryTestcase(null, "Bob", false, SQLException.class, "invalid: null id -> wrapped to SQLException with IAE cause"),
+			new FromDbEntryTestcase("   ", "Bob", false, SQLException.class, "invalid: blank id -> wrapped to SQLException with IAE cause"),
+			new FromDbEntryTestcase("ignored", "ignored", true, SQLException.class, "sql error: ResultSet#getString throws SQLException which is propagated")
 		);
 	}
 
@@ -50,7 +46,7 @@ public class UserFactoryTest {
 			when(rs.getString(anyString())).thenThrow(new SQLException("rs boom"));
 		} else {
 			when(rs.getString("user_id")).thenReturn(testcase.id);
-			when(rs.getString("name")).thenReturn(testcase.name);
+			when(rs.getString("username")).thenReturn(testcase.name);
 		}
 
 		if (testcase.expectedException != null){
@@ -64,7 +60,7 @@ public class UserFactoryTest {
 			assertEquals(testcase.name, user.getName());
 
 			verify(rs, times(1)).getString("user_id");
-			verify(rs, times(1)).getString("name");
+			verify(rs, times(1)).getString("username");
 			verifyNoMoreInteractions(rs);
 		}
 	}

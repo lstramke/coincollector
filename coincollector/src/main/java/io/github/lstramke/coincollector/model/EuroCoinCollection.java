@@ -107,6 +107,7 @@ public class EuroCoinCollection implements CoinCollection<EuroCoin> {
     public void addCoin(EuroCoin coin) {
         if (coin == null)
             return;
+        // TODO: coin collcetion id update
         this.coins.add(coin);
     }
 
@@ -125,5 +126,37 @@ public class EuroCoinCollection implements CoinCollection<EuroCoin> {
     @Override
     public int getCoinCount() {
         return coins.size();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        EuroCoinCollection other = (EuroCoinCollection) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        } else if (!name.equals(other.name))
+            return false;
+        if (coins == null) {
+            if (other.coins != null)
+                return false;
+        } else if (!coins.equals(other.coins))
+            return false;
+        if (groupId == null) {
+            if (other.groupId != null)
+                return false;
+        } else if (!groupId.equals(other.groupId))
+            return false;
+        return true;
     }
 }

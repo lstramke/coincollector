@@ -1,0 +1,169 @@
+@startuml completeStorageLayer_v1
+
+!define SERVICE_COLOR #E1F5FE
+!define REPOSITORY_COLOR #FFF9C4
+!define INTERFACE_COLOR #E8EAF6
+
+' ===== SERVICE LAYER =====
+package "Service Layer" SERVICE_COLOR {
+    
+    interface EuroCoinStorageService <<interface>> INTERFACE_COLOR {
+        + void create(EuroCoin coin)
+        + Optional<EuroCoin> read(String id)
+        + void update(EuroCoin coin)
+        + void delete(String id)
+        + List<EuroCoin> getAll()
+        + boolean exists(String id)
+    }
+    
+    interface EuroCoinCollectionStorageService <<interface>> INTERFACE_COLOR {
+        + void create(EuroCoinCollection collection)
+        + Optional<EuroCoinCollection> read(String id)
+        + void update(EuroCoinCollection collection)
+        + void delete(String id)
+        + List<EuroCoinCollection> getAll()
+        + boolean exists(String id)
+    }
+    
+    interface EuroCoinCollectionGroupStorageService <<interface>> INTERFACE_COLOR {
+        + void create(EuroCoinCollectionGroup group)
+        + Optional<EuroCoinCollectionGroup> read(String id)
+        + void update(EuroCoinCollectionGroup group)
+        + void delete(String id)
+        + List<EuroCoinCollectionGroup> getAllByUser(String userId)
+        + boolean exists(String id)
+    }
+    
+    interface UserStorageService <<interface>> INTERFACE_COLOR {
+        + void create(User user)
+        + Optional<User> read(String userId)
+        + void update(User user)
+        + void delete(String userId)
+        + boolean exists(String id)
+        + Optional<User> getByUsername(String username)
+    }
+    
+    class EuroCoinStorageServiceImpl {
+        --
+        + EuroCoinStorageServiceImpl(Repository, DataSource)
+    }
+    
+    class EuroCoinCollectionStorageServiceImpl {
+        --
+        + EuroCoinCollectionStorageServiceImpl(Repository, DataSource, EuroCoinStorageService)
+    }
+    
+    class EuroCoinCollectionGroupStorageServiceImpl {
+        --
+        + EuroCoinCollectionGroupStorageServiceImpl(DataSource, Repository, EuroCoinCollectionStorageService)
+    }
+    
+    class UserStorageServiceImpl {
+        --
+        + UserStorageServiceImpl(Repository, DataSource)
+    }
+    
+    EuroCoinStorageService <|.. EuroCoinStorageServiceImpl
+    EuroCoinCollectionStorageService <|.. EuroCoinCollectionStorageServiceImpl
+    EuroCoinCollectionGroupStorageService <|.. EuroCoinCollectionGroupStorageServiceImpl
+    UserStorageService <|.. UserStorageServiceImpl
+    
+    ' Service-to-Service Dependencies
+    EuroCoinCollectionStorageServiceImpl --> EuroCoinStorageService : delegates coin operations
+    EuroCoinCollectionGroupStorageServiceImpl --> EuroCoinCollectionStorageService : delegates collection operations
+}
+
+' ===== REPOSITORY LAYER =====
+package "Repository Layer" REPOSITORY_COLOR {
+    
+    interface EuroCoinStorageRepository <<interface>> INTERFACE_COLOR {
+        + void create(Connection connection, EuroCoin coin) throws SQLException
+        + Optional<EuroCoin> read(Connection connection, String id) throws SQLException
+        + void update(Connection connection, EuroCoin coin) throws SQLException
+        + void delete(Connection connection, String id) throws SQLException
+        + List<EuroCoin> getAll(Connection connection) throws SQLException
+        + boolean exists(Connection connection, String id) throws SQLException
+    }
+    
+    interface EuroCoinCollectionStorageRepository <<interface>> INTERFACE_COLOR {
+        + void create(Connection connection, EuroCoinCollection collection) throws SQLException
+        + Optional<EuroCoinCollection> read(Connection connection, String id) throws SQLException
+        + void update(Connection connection, EuroCoinCollection collection) throws SQLException
+        + void delete(Connection connection, String id) throws SQLException
+        + List<EuroCoinCollection> getAll(Connection connection) throws SQLException
+        + boolean exists(Connection connection, String id) throws SQLException
+    }
+    
+    interface EuroCoinCollectionGroupStorageRepository <<interface>> INTERFACE_COLOR {
+        + void create(Connection connection, EuroCoinCollectionGroup group) throws SQLException
+        + Optional<EuroCoinCollectionGroup> read(Connection connection, String id) throws SQLException
+        + void update(Connection connection, EuroCoinCollectionGroup group) throws SQLException
+        + void delete(Connection connection, String id) throws SQLException
+        + List<EuroCoinCollectionGroup> getAllByUser(Connection connection, String userId) throws SQLException
+        + boolean exists(Connection connection, String id) throws SQLException
+    }
+    
+    interface UserStorageRepository <<interface>> INTERFACE_COLOR {
+        + void create(Connection connection, User user) throws SQLException
+        + Optional<User> read(Connection connection, String userId) throws SQLException
+        + void update(Connection connection, User user) throws SQLException
+        + void delete(Connection connection, String userId) throws SQLException
+        + boolean exists(Connection connection, String id) throws SQLException
+        + Optional<User> getByUsername(Connection connection, String username) throws SQLException
+    }
+    
+    class EuroCoinSqliteRepository {
+        - static final logger : Logger
+        - tableName : String
+        - final euroCoinFactory : EuroCoinFactory
+        --
+        + EuroCoinSqliteRepository(String, EuroCoinFactory)
+    }
+    
+    class EuroCoinCollectionSqliteRepository {
+        - static final logger : Logger
+        - tableName : String
+        - final euroCoinCollectionFactory : EuroCoinCollectionFactory
+        --
+        + EuroCoinCollectionSqliteRepository(String, EuroCoinCollectionFactory)
+    }
+    
+    class EuroCoinCollectionGroupSqliteRepository {
+        - static final logger : Logger
+        - tableName : String
+        - final euroCoinCollectionGroupFactory : EuroCoinCollectionGroupFactory
+        --
+        + EuroCoinCollectionGroupSqliteRepository(String, EuroCoinCollectionGroupFactory)
+    }
+    
+    class UserSqliteRepository {
+        - static final logger : Logger
+        - tableName : String
+        - final userFactory : UserFactory
+        --
+        + UserSqliteRepository(String, UserFactory)
+    }
+    
+    EuroCoinStorageRepository <|.. EuroCoinSqliteRepository
+    EuroCoinCollectionStorageRepository <|.. EuroCoinCollectionSqliteRepository
+    EuroCoinCollectionGroupStorageRepository <|.. EuroCoinCollectionGroupSqliteRepository
+    UserStorageRepository <|.. UserSqliteRepository
+}
+
+' ===== DEPENDENCIES BETWEEN LAYERS =====
+EuroCoinStorageServiceImpl --> EuroCoinStorageRepository : uses
+EuroCoinCollectionStorageServiceImpl --> EuroCoinCollectionStorageRepository : uses
+EuroCoinCollectionGroupStorageServiceImpl --> EuroCoinCollectionGroupStorageRepository : uses
+UserStorageServiceImpl --> UserStorageRepository : uses
+
+' ===== EXTERNAL DEPENDENCIES =====
+class DataSource <<external>> {
+    + Connection getConnection()
+}
+
+EuroCoinStorageServiceImpl -> DataSource : manages connection
+EuroCoinCollectionStorageServiceImpl -> DataSource : manages connection
+EuroCoinCollectionGroupStorageServiceImpl -> DataSource : manages connection
+UserStorageServiceImpl -> DataSource : manages connection
+
+@enduml

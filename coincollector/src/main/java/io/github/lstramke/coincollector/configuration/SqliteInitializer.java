@@ -1,4 +1,4 @@
-package io.github.lstramke.coincollector.initializer;
+package io.github.lstramke.coincollector.configuration;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -44,9 +44,9 @@ public class SqliteInitializer implements StorageInitializer{
         String sql = String.format("""
                 CREATE TABLE IF NOT EXISTS %s (
                     group_id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
+                    name TEXT NOT NULL UNIQUE,
                     owner_id TEXT NOT NULL,
-                    FOREIGN KEY (owner_id) REFERENCES users(user_id)
+                    FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE CASCADE
                 )
                 """, tableName);
         initTable(tableName, sql);
@@ -57,9 +57,9 @@ public class SqliteInitializer implements StorageInitializer{
         String sql = String.format("""
                 CREATE TABLE IF NOT EXISTS %s (
                     collection_id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
+                    name TEXT NOT NULL UNIQUE,
                     group_id TEXT NOT NULL,
-                    FOREIGN KEY (group_id) REFERENCES euroCoinCollectionGroups(group_id)
+                    FOREIGN KEY (group_id) REFERENCES euroCoinCollectionGroups(group_id) ON DELETE CASCADE
                 )
                 """, tableName);
         initTable(tableName, sql);
@@ -76,7 +76,7 @@ public class SqliteInitializer implements StorageInitializer{
                     mint TEXT,
                     description TEXT NOT NULL,
                     collection_id TEXT NOT NULL,
-                    FOREIGN KEY (collection_id) REFERENCES euroCoinCollections(collection_id)
+                    FOREIGN KEY (collection_id) REFERENCES euroCoinCollections(collection_id) ON DELETE CASCADE
                 )
                 """, tableName);
         initTable(tableName, sql);
