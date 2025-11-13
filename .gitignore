@@ -5,7 +5,6 @@
 **/logs/
 **/main/resources/frontend/
 
-frontend/node
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
