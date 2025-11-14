@@ -3,9 +3,8 @@
 
 **/target/
 **/logs/
-**/main/resources/frontend/
+dependency-reduced-pom.xml
 
-frontend/node
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
