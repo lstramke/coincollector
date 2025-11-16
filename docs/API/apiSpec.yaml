@@ -1,0 +1,809 @@
+openapi: 3.0.0
+info:
+  title: "CoinCollector API"
+  version: "1.0"
+
+paths:
+
+# Authentication
+  /api/login:
+    post:
+      tags:
+        - User
+      summary: Logs in a user if the username exists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/registration:
+    post:
+      tags:
+        - User
+      summary: Creates a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+      responses:
+        '200':
+          description: Successful registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+# GROUP
+  /api/groups:
+    get:
+      tags:
+        - Groups
+      summary: Gets all groups
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Successfully retrieved all groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+              
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    post:
+      tags:
+        - Groups
+      summary: Creates new group
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupRequest'
+
+      responses:
+        '201':
+          description: Successfully created a new group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+                
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+  /api/groups/{id}:
+    get:
+      tags:
+        - Groups
+      summary: Gets a specific group by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the group
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Successfully retrieved the group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags:
+        - Groups
+      summary: Updates group metadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the group
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupMetadata'
+
+      responses:
+        '200':
+          description: Successfully updated a groups metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupMetadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Groups
+      summary: Deletes a group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the group
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '204':
+          description: Successfully deleted a group
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
+# COLLECTION
+  /api/collections:
+    post:
+      tags:
+        - Collections
+      summary: Creates new collection
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+
+      responses:
+        '201':
+          description: Successfully created a new collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+                
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/collections/{id}:
+    get:
+      tags:
+        - Collections
+      summary: Gets a specific collection by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the collection
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Successfully retrieved the collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  
+    patch:
+      tags:
+        - Collections
+      summary: Updates collection metadata
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the collection
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionMetadata'
+
+      responses:
+        '200':
+          description: Successfully updated a collections metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionMetadata'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Collections
+      summary: Deletes a collection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the collection
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '204':
+          description: Successfully deleted a collection
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+# COINS
+  /api/coins:
+    post:
+      tags:
+        - Coins
+      summary: Creates new coin
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCoinRequest'
+
+      responses:
+        '201':
+          description: Successfully created a new coin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coin'
+                
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/coins/{id}:
+    get:
+      tags:
+        - Coins
+      summary: Gets a specific coin by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the coin
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Successfully retrieved the coin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coin'
+                
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags:
+        - Coins
+      summary: Updates a coin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the coin
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCoinRequest'
+
+      responses:
+        '200':
+          description: Successfully updated a coin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coin'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Coins
+      summary: Deletes a coin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the coin
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '204':
+          description: Successfully deleted a coin
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
+# COMPONENTS
+components:
+
+  #PARAMETERS
+  parameters:
+    SessionId:
+      name: sessionId
+      in: cookie
+      required: true
+      schema:
+        type: string
+      description: The session ID from login
+      example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    
+    UserId:
+      name: userId
+      in: header
+      required: true
+      schema:
+        type: string
+      description: The user ID from login
+      example: "123e4567-e89b-12d3-a456-426614174000"
+  
+  #RESPONSES
+  responses:
+    BadRequest:
+      description: Bad request - Invalid input
+      content:
+        application/json:
+          example:
+            error: "Request is not valid"
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          example:
+            error: "Resource not found"
+    
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          example:
+            error: "An unexpected error occurred"
+  
+  #SCHEMAS
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          description: The username for login
+          example: "max.mustermann"
+      example:
+        username: "max.mustermann"
+    
+    LoginResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: The unique ID of the logged-in user
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        sessionId:
+          type: string
+          description: The session ID for the current session
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      example:
+        userId: "123e4567-e89b-12d3-a456-426614174000"
+        sessionId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    RegistrationRequest:
+      allOf:
+       - $ref: '#/components/schemas/LoginRequest'
+       - type: object
+    
+    CreateGroupRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name: 
+          type: string
+          description: The name of the group
+          example: "Euro Coins 2024"
+        collections:
+          type: array
+          description: Optional list of collections to add to the group
+          items:
+            $ref: '#/components/schemas/Collection'
+      example:
+        name: "Euro Coins 2024"
+        collections: []
+        
+    GroupActionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the group
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        action:
+          type: string
+          description: The action that was performed
+          example: "created"
+
+    GroupMetadata:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The name of the group
+          example: "Euro Coins 2024"
+      example:
+        name: "Euro Coins 2024"
+
+    Group:
+      type: object
+      required:
+      - id
+      - name
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the group
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          description: The name of the group
+          example: "Euro Coins 2024"
+        collections:
+          type: array
+          description: List of collections in this group
+          items:
+            $ref: '#/components/schemas/Collection'
+      example:
+        id: "123e4567-e89b-12d3-a456-426614174000"
+        name: "Euro Coins 2024"
+        collections: []
+    
+    CreateCollectionRequest:
+      type: object
+      required:
+        - name
+        - groupId
+      properties:
+        name: 
+          type: string
+          description: The name of the collection
+          example: "German Euro Coins"
+        groupId:
+          type: string
+          description: The unique identifier of the group this collection belongs to
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        coins:
+          type: array
+          description: Optional list of coins to add to the collection
+          items:
+            $ref: '#/components/schemas/Coin'
+      example:
+        name: "German Euro Coins"
+        groupId: "123e4567-e89b-12d3-a456-426614174000"
+        coins: []
+
+    CollectionActionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the collection
+          example: "456e7890-a12b-34c5-d678-901234567def"
+        groupId:
+          type: string
+          description: The unique identifier of the group this collection belongs to
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        action:
+          type: string
+          description: The action that was performed
+          example: "created"
+
+    CollectionMetadata:
+      type: object
+      required:
+        - name
+        - groupId
+      properties:
+        name:
+          type: string
+          description: The name of the collection
+          example: "German Euro Coins"
+        groupId:
+          type: string
+          description: The unique identifier of the group this collection belongs to
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      example:
+        name: "German Euro Coins"
+        groupId: "123e4567-e89b-12d3-a456-426614174000"
+
+    Collection:
+      type: object
+      required:
+      - id
+      - name
+      - groupId
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the collection
+          example: "456e7890-a12b-34c5-d678-901234567def"
+        name:
+          type: string
+          description: The name of the collection
+          example: "German Euro Coins"
+        groupId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        coins:
+          type: array
+          description: List of coins in this collection
+          items:
+            $ref: '#/components/schemas/Coin'
+      example:
+        id: "456e7890-a12b-34c5-d678-901234567def"
+        name: "German Euro Coins"
+        groupId: "123e4567-e89b-12d3-a456-426614174000"
+        coins:
+          - id: "789e0123-b45c-67d8-e901-234567890abc"
+            year: 2024
+            value: 200
+            country: "Germany"
+            collectionId: "456e7890-a12b-34c5-d678-901234567def"
+            mint: "A"
+            description: "Special commemorative coin"
+
+    CreateCoinRequest:
+      type: object
+      required:
+        - year
+        - value
+        - country
+        - collectionId
+      properties:
+        year:
+          type: integer
+          description: The year the coin was minted
+          example: 2024
+        value:
+          type: integer
+          description: The value of the coin in cent
+          example: 200
+        country:
+          type: string
+          description: The country of origin
+          example: "Germany"
+        collectionId:
+          type: string
+          description: The unique identifier of the collection this coin belongs to
+          example: "456e7890-a12b-34c5-d678-901234567def"
+        mint:
+          type: string
+          description: The mint mark
+          example: "A"
+        description:
+          type: string
+          description: Additional description or notes
+          example: "Special commemorative coin"
+      example:
+        year: 2024
+        value: 200
+        country: "Germany"
+        collectionId: "456e7890-a12b-34c5-d678-901234567def"
+        mint: "A"
+        description: "Special commemorative coin"
+
+    UpdateCoinRequest:
+      type: object
+      properties:
+        year:
+          type: integer
+          description: The year the coin was minted
+          example: 2024
+        value:
+          type: integer
+          description: The value of the coin in cent
+          example: 200
+        country:
+          type: string
+          description: The country of origin
+          example: "Germany"
+        collectionId:
+          type: string
+          description: The unique identifier of the collection this coin belongs to
+          example: "456e7890-a12b-34c5-d678-901234567def"
+        mint:
+          type: string
+          description: The mint mark
+          example: "A"
+        description:
+          type: string
+          description: Additional description or notes
+          example: "Special commemorative coin"
+      example:
+        year: 2024
+        value: 200
+        country: "Germany"
+        collectionId: "456e7890-a12b-34c5-d678-901234567def"
+        mint: "A"
+        description: "Special commemorative coin"
+
+    CoinActionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the collection
+          example: "456e7890-a12b-34c5-d678-901234567def"
+        groupId:
+          type: string
+          description: The unique identifier of the group this collection belongs to
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        action:
+          type: string
+          description: The action that was performed
+          example: "created"
+
+
+    Coin:
+      type: object
+      required:
+      - id
+      - year
+      - value
+      - country
+      - collectionId
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the coin
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        year:
+          type: integer
+          description: The year the coin was minted
+          example: 2024
+        value:
+          type: integer
+          description: The value of the coin in cent
+          example: 200
+        country:
+          type: string
+          description: The country of origin
+          example: "Germany"
+        collectionId:
+          type: string
+          description: The unique identifier of the collection this coin belongs to
+          example: "456e7890-a12b-34c5-d678-901234567def"
+        mint:
+          type: string
+          description: The mint mark (optional)
+          example: "A"
+        description:
+          type: string
+          description: Additional description or notes (optional)
+          example: "Special commemorative coin"
+      example:
+        id: "789e0123-b45c-67d8-e901-234567890abc"
+        year: 2024
+        value: 200
+        country: "Germany"
+        collectionId: "456e7890-a12b-34c5-d678-901234567def"
+        mint: "A"
+        description: "Special commemorative coin"
+
+
+
+
+        
+
+
