@@ -44,7 +44,7 @@
           </button>
         </div>
       </div>
-</header>
+    </header>
     {#if activeTab === 'login'}
       <LoginWindow />
     {:else}

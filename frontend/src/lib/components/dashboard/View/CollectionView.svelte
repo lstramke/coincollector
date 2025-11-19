@@ -2,6 +2,7 @@
     import { selection } from "$lib/stores/selectionStore";
     import { collectionMap } from "$lib/stores/groupStore";
     import type { Collection } from "$lib/types/collection";
+    import NewCoinForm from "./NewCoinForm.svelte";
 
     const collection = $derived((): Collection | undefined => {
         return $selection?.type === "collection"
@@ -13,6 +14,8 @@
         if (value >= 1) return `${value} ${value === 1 ? "Euro" : "Euro"}`;
         return `${Math.round(value * 100)} Cent`;
     }
+
+    let newCoinDialog: NewCoinForm;
 
 </script>
 
@@ -31,6 +34,7 @@
             <button
                 type="button"
                 class="flex items-center gap-2 rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] shadow-sm hover:brightness-95"
+                onclick={() => newCoinDialog.show()}
             >
                 <span class="text-lg leading-none mr-2">+</span>
                 Münze hinzufügen
@@ -79,7 +83,7 @@
                         <td class="px-4 py-3 align-middle">
                             <div class="flex justify-end gap-2">
                                  <button
-                                     class="p-1 rounded text-[var(--color-primary)] hover:bg-[var(--hover-state)]/10"
+                                     class="p-1 rounded text-[var(--color-primary)] hover:bg-[var(--hover-state)]/10 hover:scale-130"
                                      title="Bearbeiten"
                                      aria-label="Bearbeiten"
                                 >
@@ -88,7 +92,7 @@
                                     </svg>
                                 </button>
                                 <button
-                                    class="p-1 rounded text-red-500 hover:bg-[var(--hover-state)]/10"
+                                    class="p-1 rounded text-[var(--color-error)] hover:bg-[var(--hover-state)]/10 hover:scale-130"
                                     title="Löschen"
                                     aria-label="Löschen"
                                 >
@@ -109,3 +113,4 @@
     </div>
 {/if}
 
+<NewCoinForm bind:this={newCoinDialog}/>

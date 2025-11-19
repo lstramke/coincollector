@@ -1,4 +1,7 @@
 <script lang="ts">
+    import NewCollectionForm from "./NewCollectionForm.svelte";
+    import NewGroupForm from "./NewGroupForm.svelte";
+
     const {
         collectionCount,
         groupCount,
@@ -6,6 +9,9 @@
         collectionCount: number;
         groupCount: number;
     }>();
+
+    let newCollectionDialog: NewCollectionForm;
+    let newGroupDialog: NewGroupForm;
 </script>
 
 <footer class="border-t border-[var(--border-transparent)] px-4 py-5 text-[var(--text-white)]">
@@ -13,13 +19,16 @@
         <button
             class="flex w-full items-center gap-3 rounded-lg border border-[var(--border-transparent)] bg-[var(--btn-background)] px-3 py-2 text-sm font-medium transition hover:bg-[var(--btn-hover)]"
             type="button"
+            onclick={() => newCollectionDialog.show()}
         >
             <span class="flex h-6 w-6 items-center justify-center rounded-md text-base leading-none text-[var(--text-white)]">+</span>
             Neue Collection
         </button>
+
         <button
             class="flex w-full items-center gap-3 rounded-lg border border-[var(--border-transparent)] bg-[var(--btn-background)] px-3 py-2 text-sm font-medium transition hover:bg-[var(--btn-hover)]"
             type="button"
+            onclick={() => newGroupDialog.show()}
         >
             <span class="flex h-6 w-6 items-center justify-center rounded-md text-base leading-none text-[var(--text-white)]">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -35,3 +44,6 @@
         {groupCount} Gruppen
     </div>
 </footer>
+
+<NewCollectionForm bind:this={newCollectionDialog} />
+<NewGroupForm bind:this={newGroupDialog}/>

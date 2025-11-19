@@ -6,12 +6,14 @@
   --bg-sidebar: #6A6A6A;
   --bg-main: #FFF8E7;
   --bg-table: #FFFCF5;
+  --bg-white: #FFF9F0;
   --bg-table-header: #E8D9C0;
   --hover-state: #7A7A7A;
   --btn-background: #7A7A7A;
   --btn-hover: #8A8A8A;
   --active-selection: #D4A017;
   --border-table: #E8DCC8;
+  --border-standard: #D9D2C1;
   --border-transparent: rgba(255, 255, 255, 0.2);
   --text-primary: #2D2D2D;
   --text-secondary: #6B7280;

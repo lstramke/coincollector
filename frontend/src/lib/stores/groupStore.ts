@@ -58,5 +58,12 @@ setGroups([{
                 ]
             }
         ]
+    },
+    {
+        id: 'g-sp',
+        name: 'Spanische Euromünzen',
+        collections: [
+            
+        ]
     }
 ])

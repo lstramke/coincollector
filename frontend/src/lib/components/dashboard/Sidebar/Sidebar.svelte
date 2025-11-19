@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Group } from "$lib/types/group";
-    import { selection } from "$lib/stores/selectionStore";
+    import { selection, handleSelectCollection, handleGroupSelect } from "$lib/stores/selectionStore";
 
     import SidebarHeader from "./SidebarHeader.svelte";
     import GroupDropdown from "./GroupDropdown.svelte";
@@ -17,13 +17,6 @@
         $selection?.type === "collection" ? $selection.id : undefined
     );
 
-    function handleSelectCollection(id: string) {
-        selection.set({ type: "collection", id });
-    }
-
-    function handleGroupToggle(groupId: string) {
-        selection.set({ type: "group", id: groupId });
-    }
 </script>
 
 <aside class="flex h-full min-h-screen flex-col bg-[var(--bg-sidebar)] text-[var(--text-white)]">
@@ -34,7 +27,7 @@
                 {group}
                 {selectedId}
                 onCollectionSelect={handleSelectCollection}
-                onGroupSelect={() => handleGroupToggle(group.id)}
+                onGroupSelect={() => handleGroupSelect(group.id)}
             />
         {/each}
     </nav>
