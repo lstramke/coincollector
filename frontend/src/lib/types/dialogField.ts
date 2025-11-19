@@ -7,5 +7,5 @@ export type DialogField = {
     disabled?: boolean;
     placeholder?: string;
     description?: string;
-    options?: string[]; // Nur für Select
+    options?: string[];
 };

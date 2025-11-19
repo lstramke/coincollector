@@ -4,4 +4,5 @@ export interface Collection{
     id: string;
     name: string;
     coins: Coin[]
+    groupId: string
 }

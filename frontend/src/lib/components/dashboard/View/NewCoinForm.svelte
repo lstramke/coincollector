@@ -2,9 +2,9 @@
     import Dialog from "$lib/components/util/Dialog.svelte";
     import { collectionMap } from "$lib/stores/groupStore";
     import { selection } from "$lib/stores/selectionStore";
-    import { mintCityMap } from "$lib/stores/mintCityStore";
+    import { cityMintMap } from "$lib/stores/mintCityStore";
     import type { DialogField } from "$lib/types/dialogField";
-    import { coinValuesMap } from "$lib/stores/coinValuesStore";
+    import { stringCoinValuesMap } from "$lib/stores/coinValuesStore";
     import { coinCountryMap } from "$lib/stores/coinCountryStore";
 
     let dialog: Dialog;
@@ -34,7 +34,7 @@
             value: "",
             type: "select",
             required: true,
-            options: Object.keys($coinValuesMap)
+            options: Object.keys($stringCoinValuesMap)
         },
         {
             id: "year",
@@ -49,7 +49,7 @@
             label: "Prägestadt",
             value: "",
             type: "select",
-            options: Object.entries($mintCityMap).map(([name, code]) => `${name} (${code})`),
+            options: Object.entries($cityMintMap).map(([name, code]) => `${name} (${code})`),
             placeholder: "Prägestadt wählen",
             description: "Aktuell nur für Deutschland unterstützt"
         },

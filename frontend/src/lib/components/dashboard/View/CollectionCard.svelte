@@ -1,8 +1,11 @@
 <script lang="ts">
     import type { Collection } from "$lib/types/collection";
     import { handleSelectCollection } from "$lib/stores/selectionStore";
+    import EditCollectionForm from "./EditCollectionForm.svelte";
 
     let { collection } = $props<{collection: Collection}>();
+
+    let editCollectionDialog: EditCollectionForm
 </script>
 
 <div class="group flex items-center justify-between rounded-xl bg-white px-6 py-4 shadow transition hover:ring-2 hover:ring-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] cursor-pointer"
@@ -23,7 +26,11 @@
             class="p-1 rounded text-[var(--color-primary)] hover:bg-[var(--hover-state)]/10 hover:scale-130"
             title="Bearbeiten"
             aria-label="Bearbeiten"
-            onclick={(e) => e.stopPropagation()}
+            onclick={(e) => {
+                    e.stopPropagation();
+                    editCollectionDialog.show(collection)
+                }
+            }
         >
             <svg class="w-5.5 h-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/>
@@ -41,3 +48,5 @@
         </button>
     </div>
 </div>
+
+<EditCollectionForm bind:this={editCollectionDialog}/>

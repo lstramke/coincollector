@@ -5,4 +5,5 @@ export interface Coin {
     year: number;
     mintCity?: string | null
     description: string
+    collectionId: string
 }

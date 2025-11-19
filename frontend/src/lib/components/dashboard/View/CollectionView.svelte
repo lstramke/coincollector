@@ -3,6 +3,8 @@
     import { collectionMap } from "$lib/stores/groupStore";
     import type { Collection } from "$lib/types/collection";
     import NewCoinForm from "./NewCoinForm.svelte";
+    import EditCoinForm from "./EditCoinForm.svelte";
+    import { mintCityMap } from "$lib/stores/mintCityStore";
 
     const collection = $derived((): Collection | undefined => {
         return $selection?.type === "collection"
@@ -11,12 +13,12 @@
     });
 
     function formatValue(value: number) {
-        if (value >= 1) return `${value} ${value === 1 ? "Euro" : "Euro"}`;
-        return `${Math.round(value * 100)} Cent`;
+        if (value >= 100) return `${value / 100} Euro`;
+        return `${value} Cent`;
     }
 
     let newCoinDialog: NewCoinForm;
-
+    let editCoinDialog: EditCoinForm;
 </script>
 
 {#if collection()}
@@ -24,7 +26,7 @@
 
     <div class="mb-6 flex items-start justify-between">
         <div>
-            <h1 class="text-2xl font-semibold">{col?.name}</h1>
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">{col?.name}</h1>
             <div class="mt-1 text-sm text-[var(--color-secondary)]">
                 {col?.coins.length} Münze{col?.coins.length === 1 ? '' : 'n'}
             </div>
@@ -33,7 +35,7 @@
         <div>
             <button
                 type="button"
-                class="flex items-center gap-2 rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] shadow-sm hover:brightness-95"
+                class="flex items-center gap-2 rounded-md bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--text-white)] shadow-sm hover:bg-[var(--color-primary)]/90"
                 onclick={() => newCoinDialog.show()}
             >
                 <span class="text-lg leading-none mr-2">+</span>
@@ -44,7 +46,7 @@
 
     <div class="rounded-md bg-[var(--bg-table)] p-0 overflow-hidden">
         <table class="w-full table-fixed text-sm border-collapse">
-            <thead class="bg-[var(--bg-table-header)] text-sm font-semibold text-[rgba(0,0,0,0.7)]">
+            <thead class="bg-[var(--bg-table-header)] text-sm font-semibold text-[var(--text-primary)]">
                 <tr class="h-12">
                     <th class="px-4 text-left w-[110px]">Wert</th>
                     <th class="px-4 text-left">Prägeland</th>
@@ -57,26 +59,26 @@
 
             <tbody>
                 {#each col?.coins as coin (coin.id)}
-                    <tr class="bg-[white] border-b border-[var(--border-table)]">
+                    <tr class="bg-[var(--bg-white)] border-b border-[var(--border-table)]">
                         <td class="px-4 py-3 align-middle">
-                            <span class="inline-block rounded-full border border-[var(--border-table)] bg-[var(--bg-main)] px-3 py-1 text-xs font-medium">
+                            <span class="inline-block rounded-full border border-[var(--border-table)] bg-[var(--bg-main)] px-3 py-1 text-xs font-medium text-[var(--text-primary)]">
                                 {formatValue(coin.value)}
                             </span>
                         </td>
 
-                        <td class="px-4 py-3 align-middle text-[rgba(0,0,0,0.8)]">
+                        <td class="px-4 py-3 align-middle text-[var(--text-primary)]">
                             {coin.country}
                         </td>
 
-                        <td class="px-4 py-3 align-middle text-[rgba(0,0,0,0.8)]">
+                        <td class="px-4 py-3 align-middle text-[var(--text-primary)]">
                             {coin.year}
                         </td>
 
-                        <td class="px-4 py-3 align-middle text-[rgba(0,0,0,0.65)]">
-                            {coin.mintCity ?? '-'}
+                        <td class="px-4 py-3 align-middle text-[var(--text-secondary)]">
+                            {coin.mintCity ? $mintCityMap[coin.mintCity] : '-'}
                         </td>
 
-                        <td class="px-4 py-3 align-middle text-[rgba(0,0,0,0.85)]">
+                        <td class="px-4 py-3 align-middle text-[var(--text-primary)]">
                             {coin.description}
                         </td>
 
@@ -86,6 +88,7 @@
                                      class="p-1 rounded text-[var(--color-primary)] hover:bg-[var(--hover-state)]/10 hover:scale-130"
                                      title="Bearbeiten"
                                      aria-label="Bearbeiten"
+                                     onclick={() => editCoinDialog.show(coin)}
                                 >
                                     <svg class="w-5.5 h-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/>
@@ -114,3 +117,4 @@
 {/if}
 
 <NewCoinForm bind:this={newCoinDialog}/>
+<EditCoinForm bind:this={editCoinDialog}/>
