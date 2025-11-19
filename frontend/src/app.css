@@ -5,6 +5,7 @@
   --color-secondary: #A3A3A3;
   --bg-sidebar: #6A6A6A;
   --bg-main: #FFF8E7;
+  --bg-login-bar : #FAF0D8;
   --bg-table: #FFFCF5;
   --bg-white: #FFF9F0;
   --bg-table-header: #E8D9C0;
@@ -19,7 +20,7 @@
   --text-secondary: #6B7280;
   --text-white: #FFFFFF;
   --color-success: #10B981;
-  --color-error: #EF4444;
+  --color-destructive: #EF4444;
   --color-warning: #F59E0B;
 }
 

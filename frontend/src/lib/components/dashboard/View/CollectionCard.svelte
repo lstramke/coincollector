@@ -30,7 +30,7 @@
             </svg>
         </button>
         <button
-            class="p-1 rounded text-[var(--color-error)] hover:bg-[var(--hover-state)]/10 hover:scale-130"
+            class="p-1 rounded text-[var(--color-destructive)] hover:bg-[var(--hover-state)]/10 hover:scale-130"
             title="Löschen"
             aria-label="Löschen"
             onclick={(e) => e.stopPropagation()}

@@ -2,7 +2,7 @@
   import LoginWindow from './LoginWindow.svelte';
   import RegisterWindow from './RegisterWindow.svelte';
   
-  let activeTab: 'login' | 'register' = 'login';
+  let activeTab: 'login' | 'register' = $state('login');
 </script>
 
 <div class="min-h-screen bg-[var(--bg-main)] flex items-center justify-center px-4 py-16">
@@ -19,7 +19,7 @@
       </div>
 
       <div class="mb-8 flex justify-center">
-        <div class="inline-flex items-center gap-2 rounded-full bg-[#FAF0D8] p-1">
+        <div class="inline-flex items-center gap-2 rounded-full bg-[var(--bg-login-bar)] p-1">
           <button
             type="button"
             class={`rounded-full px-6 py-2 text-sm font-semibold transition-all duration-200 ${
@@ -50,5 +50,14 @@
     {:else}
       <RegisterWindow />
     {/if}
+    <div class="flex justify-center mt-8 items-center gap-2 rounded-full  p-1">
+      <button
+        type="button"
+        class="rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 text-[var(--text-secondary)] bg-[var(--bg-login-bar)] hover:bg-[var(--color-destructive)] hover:text-[var(--text-white)]"
+        onclick={() => console.log("end app")}
+      >
+        Beenden
+      </button>
+    </div>
   </div>
 </div>
