@@ -11,8 +11,11 @@
     "noEmit": true,
     "isolatedModules": true,
     "types": ["svelte", "vite/client"],
-    "baseUrl": "./src",
-    "rootDir": "./src"
+    "baseUrl": ".",
+    "paths": {
+      "$lib": ["./src/lib"],
+      "$lib/*": ["./src/lib/*"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.svelte"],
   "exclude": ["node_modules", "dist"]
