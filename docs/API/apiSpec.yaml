@@ -9,7 +9,7 @@ paths:
   /api/login:
     post:
       tags:
-        - User
+        - Login
       summary: Logs in a user if the username exists
       requestBody:
         required: true
@@ -21,6 +21,11 @@ paths:
       responses:
         '200':
           description: Successful login
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: The session cookie (sessionId)
           content:
             application/json:
               schema:
@@ -33,7 +38,7 @@ paths:
   /api/registration:
     post:
       tags:
-        - User
+        - Registration
       summary: Creates a new user
       requestBody:
         required: true
@@ -44,6 +49,11 @@ paths:
       responses:
         '200':
           description: Successful registration
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: The session cookie (sessionId)
           content:
             application/json:
               schema:
@@ -490,13 +500,8 @@ components:
           type: string
           description: The unique ID of the logged-in user
           example: "123e4567-e89b-12d3-a456-426614174000"
-        sessionId:
-          type: string
-          description: The session ID for the current session
-          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
       example:
         userId: "123e4567-e89b-12d3-a456-426614174000"
-        sessionId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
     RegistrationRequest:
       allOf:
@@ -800,10 +805,3 @@ components:
         collectionId: "456e7890-a12b-34c5-d678-901234567def"
         mint: "A"
         description: "Special commemorative coin"
-
-
-
-
-        
-
-

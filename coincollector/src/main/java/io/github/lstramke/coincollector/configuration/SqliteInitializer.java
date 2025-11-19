@@ -5,30 +5,45 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 
 public class SqliteInitializer implements StorageInitializer{
-    private Connection connection;
+    private final DataSource dataSource;
     private static final Logger logger = LoggerFactory.getLogger(SqliteInitializer.class);
     private final List<String> tableNames;
 
-    public SqliteInitializer(Connection connection, List<String> tableNames) {
-        this.connection = connection;
+    public SqliteInitializer(DataSource dataSource, List<String> tableNames) {
+        this.dataSource = dataSource;
         this.tableNames = tableNames;
     }
 
     @Override
     public void init() throws StorageInitializeException  {
-        initUserTable();
-        initEuroCoinCollectionGroupTable();
-        initEuroCoinCollectionTable();
-        initEuroCoinTable();
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                initUserTable(connection);
+                initEuroCoinCollectionGroupTable(connection);
+                initEuroCoinCollectionTable(connection);
+                initEuroCoinTable(connection);
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                logger.error("Transaction rolled back due to error: {}", e.getMessage());
+                throw new StorageInitializeException("Failed to initialize tables: " + e.getMessage(), e);
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to initialize database: {}", e.getMessage());
+            throw new StorageInitializeException("Failed to initialize database: " + e.getMessage(), e);
+        }
     }
 
-    private void initUserTable() throws StorageInitializeException  {
+    private void initUserTable(Connection connection) throws StorageInitializeException  {
         String tableName = tableNames.get(0);
         String sql = String.format("""
             CREATE TABLE IF NOT EXISTS %s (
@@ -36,10 +51,10 @@ public class SqliteInitializer implements StorageInitializer{
                 username TEXT UNIQUE NOT NULL
             )
             """, tableName);
-        initTable(tableName, sql);
+        initTable(connection, tableName, sql);
     }
 
-    private void initEuroCoinCollectionGroupTable() throws StorageInitializeException {
+    private void initEuroCoinCollectionGroupTable(Connection connection) throws StorageInitializeException {
         String tableName = tableNames.get(1);
         String sql = String.format("""
                 CREATE TABLE IF NOT EXISTS %s (
@@ -49,10 +64,10 @@ public class SqliteInitializer implements StorageInitializer{
                     FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE CASCADE
                 )
                 """, tableName);
-        initTable(tableName, sql);
+        initTable(connection, tableName, sql);
     }
 
-    private void initEuroCoinCollectionTable(){
+    private void initEuroCoinCollectionTable(Connection connection) throws StorageInitializeException {
         String tableName = tableNames.get(2);
         String sql = String.format("""
                 CREATE TABLE IF NOT EXISTS %s (
@@ -62,27 +77,27 @@ public class SqliteInitializer implements StorageInitializer{
                     FOREIGN KEY (group_id) REFERENCES euroCoinCollectionGroups(group_id) ON DELETE CASCADE
                 )
                 """, tableName);
-        initTable(tableName, sql);
+        initTable(connection, tableName, sql);
     }
     
-    private void initEuroCoinTable(){
+    private void initEuroCoinTable(Connection connection) throws StorageInitializeException {
         String tableName = tableNames.get(3);
         String sql = String.format("""
                 CREATE TABLE IF NOT EXISTS %s (
                     coin_id TEXT PRIMARY KEY,
                     year INTEGER NOT NULL,
                     coin_value INTEGER NOT NULL,
-                    mint_country TEXT NOT NUll,
+                    mint_country TEXT NOT NULL,
                     mint TEXT,
                     description TEXT NOT NULL,
                     collection_id TEXT NOT NULL,
                     FOREIGN KEY (collection_id) REFERENCES euroCoinCollections(collection_id) ON DELETE CASCADE
                 )
                 """, tableName);
-        initTable(tableName, sql);
+        initTable(connection, tableName, sql);
     }
 
-    private void initTable(String name, String sql) throws StorageInitializeException {
+    private void initTable(Connection connection, String name, String sql) throws StorageInitializeException {
         try (Statement statement = connection.createStatement()) {
             statement.execute(sql);
             logger.info("Table {} initialized successfully", name);
