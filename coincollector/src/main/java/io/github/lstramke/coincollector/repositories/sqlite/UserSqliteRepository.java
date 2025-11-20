@@ -48,7 +48,7 @@ public class UserSqliteRepository implements UserStorageRepository{
             throw new IllegalArgumentException("User validation failed (create)");
         }
 
-        String sql = String.format("INSERT INTO %s (user_id, name) VALUES (?, ?)", tableName);
+        String sql = String.format("INSERT INTO %s (user_id, username) VALUES (?, ?)", tableName);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, user.getId());
@@ -81,7 +81,7 @@ public class UserSqliteRepository implements UserStorageRepository{
 
         String sql = String.format(
             """
-            SELECT user_id, name
+            SELECT user_id, username
             FROM %s
             WHERE user_id = ?
             """, tableName
@@ -120,7 +120,7 @@ public class UserSqliteRepository implements UserStorageRepository{
     private Optional<User> createUserFromResultSet(String userIdentifierForLog, ResultSet resultSet) throws SQLException{
         try {
             User readUser = userFactory.fromDataBaseEntry(resultSet);
-            logger.debug("User read: id/name={}", userIdentifierForLog);
+            logger.debug("User read: id/username={}", userIdentifierForLog);
             return Optional.of(readUser);
         } catch (SQLException e) {
             logger.warn("User read produced invalid data: id/name={}", userIdentifierForLog);
@@ -142,7 +142,7 @@ public class UserSqliteRepository implements UserStorageRepository{
         String sql = String.format(
             """
             UPDATE %s
-            SET name = ?
+            SET username = ?
             WHERE user_id = ?
             """, tableName
         );

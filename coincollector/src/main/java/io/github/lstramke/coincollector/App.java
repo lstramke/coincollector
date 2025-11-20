@@ -11,6 +11,7 @@ import io.github.lstramke.coincollector.configuration.SqliteInitializer;
 import io.github.lstramke.coincollector.configuration.StorageInitializer;
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 import io.github.lstramke.coincollector.handler.LoginHandler;
+import io.github.lstramke.coincollector.handler.RegistrationHandler;
 import io.github.lstramke.coincollector.model.UserFactory;
 import io.github.lstramke.coincollector.repositories.UserStorageRepository;
 import io.github.lstramke.coincollector.repositories.sqlite.UserSqliteRepository;
@@ -56,19 +57,8 @@ public class App {
         UserStorageRepository userStorageRepository = new UserSqliteRepository(tableNames.get(0), userFactory);
         UserStorageService userStorageService = new UserStorageServiceImpl(userStorageRepository, configuredDataSource);
         LoginHandler loginHandler = new LoginHandler(userStorageService);
+        RegistrationHandler registrationHandler = new RegistrationHandler(userStorageService);
         HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
-
-        server.createContext("/api/login", exchange -> {
-            try {
-                loginHandler.handle(exchange);
-            } catch (IOException e) {
-                String errorJson = "{\"error\":\"An unexpected error occurred\"}";
-                exchange.getResponseHeaders().set("Content-Type", "application/json");
-                exchange.sendResponseHeaders(500, errorJson.length());
-                exchange.getResponseBody().write(errorJson.getBytes());
-                exchange.getResponseBody().close();
-            }
-        });
         
         server.createContext("/", exchange -> {
             String path = exchange.getRequestURI().getPath();
@@ -90,6 +80,31 @@ public class App {
                 exchange.getResponseBody().close();
             }
         });
+
+        server.createContext("/api/login", exchange -> {
+            try {
+                loginHandler.handle(exchange);
+            } catch (IOException e) {
+                String errorJson = "{\"error\":\"An unexpected error occurred\"}";
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(500, errorJson.length());
+                exchange.getResponseBody().write(errorJson.getBytes());
+                exchange.getResponseBody().close();
+            }
+        });
+
+        server.createContext("/api/registration", exchange -> {
+            try{
+                registrationHandler.handle(exchange);
+            } catch (IOException e) {
+                String errorJson = "{\"error\":\"An unexpected error occurred\"}";
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(500, errorJson.length());
+                exchange.getResponseBody().write(errorJson.getBytes());
+                exchange.getResponseBody().close();
+            }
+        });
+
         
         server.setExecutor(null);
         server.start();
