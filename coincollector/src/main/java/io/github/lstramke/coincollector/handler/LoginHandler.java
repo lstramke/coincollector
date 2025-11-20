@@ -32,12 +32,8 @@ public class LoginHandler implements Handler {
         
         logger.info("Route called: {} {}", method, path);
         switch (method) {
-            case "POST":
-                handleLogin(exchange);
-                break;
-            default:
-                exchange.sendResponseHeaders(405, -1);
-                break;
+            case "POST" -> handleLogin(exchange);
+            default -> exchange.sendResponseHeaders(405, -1);
         }
     }
 

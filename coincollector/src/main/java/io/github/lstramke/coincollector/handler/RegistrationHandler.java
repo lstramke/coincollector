@@ -33,12 +33,8 @@ public class RegistrationHandler implements Handler {
         
         logger.info("Route called: {} {}", method, path);
         switch (method) {
-            case "POST":
-                handleRegistration(exchange);
-                break;
-            default:
-                exchange.sendResponseHeaders(405, -1);
-                break;
+            case "POST" -> handleRegistration(exchange);
+            default -> exchange.sendResponseHeaders(405, -1);
         }
     }
 
