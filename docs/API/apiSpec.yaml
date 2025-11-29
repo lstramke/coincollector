@@ -26,10 +26,7 @@ paths:
               schema:
                 type: string
               description: The session cookie (sessionId)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginResponse'
+
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -54,10 +51,6 @@ paths:
               schema:
                 type: string
               description: The session cookie (sessionId)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -71,7 +64,6 @@ paths:
       summary: Gets all groups
       parameters:
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       responses:
         '200':
           description: Successfully retrieved all groups
@@ -93,7 +85,6 @@ paths:
       summary: Creates new group
       parameters:
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       requestBody:
         content:
           application/json:
@@ -127,7 +118,6 @@ paths:
           description: The unique identifier of the group
           example: "123e4567-e89b-12d3-a456-426614174000"
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       responses:
         '200':
           description: Successfully retrieved the group
@@ -155,7 +145,6 @@ paths:
           description: The unique identifier of the group
           example: "123e4567-e89b-12d3-a456-426614174000"
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       requestBody:
         content:
           application/json:
@@ -189,7 +178,6 @@ paths:
           description: The unique identifier of the group
           example: "123e4567-e89b-12d3-a456-426614174000"
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       responses:
         '204':
           description: Successfully deleted a group
@@ -209,7 +197,6 @@ paths:
       summary: Creates new collection
       parameters:
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       requestBody:
         content:
           application/json:
@@ -243,7 +230,6 @@ paths:
           description: The unique identifier of the collection
           example: "123e4567-e89b-12d3-a456-426614174000"
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       responses:
         '200':
           description: Successfully retrieved the collection
@@ -271,7 +257,6 @@ paths:
           description: The unique identifier of the collection
           example: "123e4567-e89b-12d3-a456-426614174000"
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       requestBody:
         content:
           application/json:
@@ -305,7 +290,6 @@ paths:
           description: The unique identifier of the collection
           example: "123e4567-e89b-12d3-a456-426614174000"
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       responses:
         '204':
           description: Successfully deleted a collection
@@ -324,7 +308,6 @@ paths:
       summary: Creates new coin
       parameters:
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       requestBody:
         content:
           application/json:
@@ -358,7 +341,6 @@ paths:
           description: The unique identifier of the coin
           example: "123e4567-e89b-12d3-a456-426614174000"
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       responses:
         '200':
           description: Successfully retrieved the coin
@@ -387,7 +369,6 @@ paths:
           description: The unique identifier of the coin
           example: "123e4567-e89b-12d3-a456-426614174000"
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       requestBody:
         content:
           application/json:
@@ -421,7 +402,6 @@ paths:
           description: The unique identifier of the coin
           example: "123e4567-e89b-12d3-a456-426614174000"
         - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
       responses:
         '204':
           description: Successfully deleted a coin
@@ -446,15 +426,6 @@ components:
         type: string
       description: The session ID from login
       example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-    
-    UserId:
-      name: userId
-      in: header
-      required: true
-      schema:
-        type: string
-      description: The user ID from login
-      example: "123e4567-e89b-12d3-a456-426614174000"
   
   #RESPONSES
   responses:
@@ -492,16 +463,6 @@ components:
           example: "max.mustermann"
       example:
         username: "max.mustermann"
-    
-    LoginResponse:
-      type: object
-      properties:
-        userId:
-          type: string
-          description: The unique ID of the logged-in user
-          example: "123e4567-e89b-12d3-a456-426614174000"
-      example:
-        userId: "123e4567-e89b-12d3-a456-426614174000"
 
     RegistrationRequest:
       allOf:
@@ -758,7 +719,6 @@ components:
           type: string
           description: The action that was performed
           example: "created"
-
 
     Coin:
       type: object
