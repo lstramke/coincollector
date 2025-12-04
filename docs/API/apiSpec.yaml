@@ -61,7 +61,7 @@ paths:
     get:
       tags:
         - Groups
-      summary: Gets all groups
+      summary: Gets all groups for current user
       parameters:
         - $ref: '#/components/parameters/SessionId'
       responses:

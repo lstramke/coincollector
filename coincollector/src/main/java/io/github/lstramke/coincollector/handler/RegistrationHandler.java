@@ -6,24 +6,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 
 import io.github.lstramke.coincollector.exceptions.userExceptions.UserSaveException;
 import io.github.lstramke.coincollector.model.User;
-import io.github.lstramke.coincollector.model.DTOs.LoginResponse;
 import io.github.lstramke.coincollector.model.DTOs.RegistrationRequest;
 import io.github.lstramke.coincollector.services.UserStorageService;
+import io.github.lstramke.coincollector.services.SessionManager;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-public class RegistrationHandler implements Handler {
+public class RegistrationHandler implements HttpHandler {
 
     private final UserStorageService userStorageService;
-    private final static Logger logger = LoggerFactory.getLogger(LoginHandler.class);
+    private final SessionManager sessionManager;
+    private final static Logger logger = LoggerFactory.getLogger(RegistrationHandler.class);
 
     
 
-    public RegistrationHandler(UserStorageService userStorageService) {
+    public RegistrationHandler(UserStorageService userStorageService, SessionManager sessionManager) {
         this.userStorageService = userStorageService;
+        this.sessionManager = sessionManager;
     }
 
     @Override
@@ -48,18 +51,15 @@ public class RegistrationHandler implements Handler {
             User user = new User(registrationRequest.username());
             userStorageService.save(user);
 
-            String sessionId = java.util.UUID.randomUUID().toString();
+            String sessionId = sessionManager.createSession(user.getId());
             exchange.getResponseHeaders().add(
                 "Set-Cookie", 
-                "sessionId=" + sessionId + "; Path=/; HttpOnly"
+                "sessionId=" + sessionId + "; Path=/; HttpOnly; SameSite=Strict"
             );
 
-            LoginResponse response = new LoginResponse(user.getId());
-            String responseJson = mapper.writeValueAsString(response);
-
             exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, responseJson.getBytes().length);
-            exchange.getResponseBody().write(responseJson.getBytes());
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().close();
             
         } catch (UserSaveException e) {
             exchange.sendResponseHeaders(400, 0);
