@@ -13,6 +13,7 @@ import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.model.DTOs.Requests.RegistrationRequest;
 import io.github.lstramke.coincollector.services.UserStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -45,9 +46,9 @@ public class RegistrationHandler implements HttpHandler {
         ObjectMapper mapper = new JsonMapper();
         String body = new String(exchange.getRequestBody().readAllBytes());
 
-        var registrationRequest = mapper.readValue(body, RegistrationRequest.class);
         
         try {
+            var registrationRequest = mapper.readValue(body, RegistrationRequest.class);
             User user = new User(registrationRequest.username());
             userStorageService.save(user);
 
@@ -58,12 +59,15 @@ public class RegistrationHandler implements HttpHandler {
             );
 
             exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, 0);
+            exchange.sendResponseHeaders(201, 0);
             exchange.getResponseBody().close();
             
-        } catch (UserSaveException e) {
+        } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+        } catch (UserSaveException e) {
+            exchange.sendResponseHeaders(500, 0);
+            exchange.getResponseBody().write("{\"error\":\"An unexpected error occurred\"}".getBytes());
         } finally {
             exchange.getResponseBody().close();
         }

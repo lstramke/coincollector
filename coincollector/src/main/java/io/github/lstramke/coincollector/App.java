@@ -96,7 +96,7 @@ public class App {
         server.createContext("/api/login", exchange -> {
             try {
                 loginHandler.handle(exchange);
-            } catch (IOException e) {
+            } catch (IOException | RuntimeException e) {
                 String errorJson = "{\"error\":\"An unexpected error occurred\"}";
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(500, errorJson.length());
@@ -108,7 +108,7 @@ public class App {
         server.createContext("/api/registration", exchange -> {
             try{
                 registrationHandler.handle(exchange);
-            } catch (IOException e) {
+            } catch (IOException | RuntimeException e) {
                 String errorJson = "{\"error\":\"An unexpected error occurred\"}";
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(500, errorJson.length());

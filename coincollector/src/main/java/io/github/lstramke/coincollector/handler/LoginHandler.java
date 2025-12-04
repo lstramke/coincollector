@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -44,9 +45,9 @@ public class LoginHandler implements HttpHandler {
         ObjectMapper mapper = new JsonMapper();
         String body = new String(exchange.getRequestBody().readAllBytes());
 
-        LoginRequest loginRequest = mapper.readValue(body, LoginRequest.class);
-
         try {
+            LoginRequest loginRequest = mapper.readValue(body, LoginRequest.class);
+            
             User user = userStorageService.getByUsername(loginRequest.username());
             String sessionId = sessionManager.createSession(user.getId());
 
@@ -59,6 +60,9 @@ public class LoginHandler implements HttpHandler {
             exchange.sendResponseHeaders(200, 0);
             exchange.getResponseBody().close();
             
+        } catch (JacksonException e) {
+            exchange.sendResponseHeaders(400, 0);
+            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
         } catch (UserNotFoundException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());

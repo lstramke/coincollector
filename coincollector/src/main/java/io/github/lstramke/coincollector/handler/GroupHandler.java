@@ -13,10 +13,14 @@ import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupExcept
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupGetByIdException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupNotFoundException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupSaveException;
+import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupUpdateException;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroup;
 import io.github.lstramke.coincollector.model.DTOs.Requests.CreateGroupRequest;
+import io.github.lstramke.coincollector.model.DTOs.Requests.UpdateGroupRequest;
+import io.github.lstramke.coincollector.model.DTOs.Responses.GroupMetadataResponse;
 import io.github.lstramke.coincollector.model.DTOs.Responses.GroupsResponse;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageService;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -84,9 +88,9 @@ public class GroupHandler implements HttpHandler {
         String userId = (String) exchange.getAttribute("userId");
         String body = new String(exchange.getRequestBody().readAllBytes());
 
-        var createGroupRequest = mapper.readValue(body, CreateGroupRequest.class);
-
         try {
+            var createGroupRequest = mapper.readValue(body, CreateGroupRequest.class);
+
             var requestedGroup = new EuroCoinCollectionGroup(createGroupRequest.name(), userId);
             this.groupStorageService.save(requestedGroup);
 
@@ -97,6 +101,9 @@ public class GroupHandler implements HttpHandler {
             exchange.sendResponseHeaders(201, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
             
+        } catch (JacksonException e) {
+            exchange.sendResponseHeaders(400, 0);
+            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
         } catch (EuroCoinCollectionGroupSaveException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
@@ -138,7 +145,43 @@ public class GroupHandler implements HttpHandler {
     }
 
     private void handleUpdate(HttpExchange exchange) throws IOException {
+        String userId = (String) exchange.getAttribute("userId");
+        String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
+        String body = new String(exchange.getRequestBody().readAllBytes());
 
+        try {
+            var request = mapper.readValue(body, UpdateGroupRequest.class);
+            
+            var groupToUpdate = this.groupStorageService.getById(groupId);
+            if (!groupToUpdate.getOwnerId().equals(userId)){
+                exchange.sendResponseHeaders(404, 0);
+                exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
+                exchange.getResponseBody().close();
+                return;
+            }
+
+            groupToUpdate.setName(request.name());
+            this.groupStorageService.updateMetadata(groupToUpdate);
+
+            var response = new GroupMetadataResponse(groupToUpdate.getName());
+            String responseJson = mapper.writeValueAsString(response);
+            
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, responseJson.getBytes().length);
+            exchange.getResponseBody().write(responseJson.getBytes());
+            
+        } catch (JacksonException e) {
+            exchange.sendResponseHeaders(400, 0);
+            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+        } catch (EuroCoinCollectionGroupNotFoundException e) {
+            exchange.sendResponseHeaders(404, 0);
+            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
+        } catch (EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupUpdateException e) {
+            exchange.sendResponseHeaders(500, 0);
+            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
+        } finally {
+            exchange.getResponseBody().close();
+        }
     }
 
     private void handleDelete(HttpExchange exchange) throws IOException{

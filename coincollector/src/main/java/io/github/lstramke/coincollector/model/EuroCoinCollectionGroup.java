@@ -79,6 +79,11 @@ public class EuroCoinCollectionGroup implements CollectionGroup<EuroCoin, EuroCo
     }
 
     @Override
+    public void setName(String newName) {
+        this.name = newName;
+    }
+
+    @Override
     public String getOwnerId(){
         return ownerId;
     }
