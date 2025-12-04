@@ -13,7 +13,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import io.github.lstramke.coincollector.exceptions.userExceptions.UserNotFoundException;
 import io.github.lstramke.coincollector.model.User;
-import io.github.lstramke.coincollector.model.DTOs.LoginRequest;
+import io.github.lstramke.coincollector.model.DTOs.Requests.LoginRequest;
 import io.github.lstramke.coincollector.services.UserStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
 

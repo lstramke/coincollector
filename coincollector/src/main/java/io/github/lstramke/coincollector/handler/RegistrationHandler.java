@@ -10,7 +10,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import io.github.lstramke.coincollector.exceptions.userExceptions.UserSaveException;
 import io.github.lstramke.coincollector.model.User;
-import io.github.lstramke.coincollector.model.DTOs.RegistrationRequest;
+import io.github.lstramke.coincollector.model.DTOs.Requests.RegistrationRequest;
 import io.github.lstramke.coincollector.services.UserStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
 import tools.jackson.databind.ObjectMapper;
@@ -45,7 +45,7 @@ public class RegistrationHandler implements HttpHandler {
         ObjectMapper mapper = new JsonMapper();
         String body = new String(exchange.getRequestBody().readAllBytes());
 
-        RegistrationRequest registrationRequest = mapper.readValue(body, RegistrationRequest.class);
+        var registrationRequest = mapper.readValue(body, RegistrationRequest.class);
         
         try {
             User user = new User(registrationRequest.username());

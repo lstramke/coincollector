@@ -6,17 +6,6 @@ import org.sqlite.SQLiteDataSource;
 
 import com.sun.net.httpserver.HttpServer;
 
-import io.github.lstramke.coincollector.configuration.DataSourceAutoActivateForeignKeys;
-import io.github.lstramke.coincollector.configuration.SqliteInitializer;
-import io.github.lstramke.coincollector.configuration.StorageInitializer;
-import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
-import io.github.lstramke.coincollector.handler.LoginHandler;
-import io.github.lstramke.coincollector.handler.RegistrationHandler;
-import io.github.lstramke.coincollector.model.UserFactory;
-import io.github.lstramke.coincollector.repositories.UserStorageRepository;
-import io.github.lstramke.coincollector.repositories.sqlite.UserSqliteRepository;
-import io.github.lstramke.coincollector.services.UserStorageService;
-import io.github.lstramke.coincollector.services.UserStorageServiceImpl;
 
 import java.util.List;
 
@@ -28,6 +17,22 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import io.github.lstramke.coincollector.configuration.DataSourceAutoActivateForeignKeys;
+import io.github.lstramke.coincollector.configuration.SqliteInitializer;
+import io.github.lstramke.coincollector.configuration.StorageInitializer;
+import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
+import io.github.lstramke.coincollector.handler.GroupHandler;
+import io.github.lstramke.coincollector.handler.LoginHandler;
+import io.github.lstramke.coincollector.handler.RegistrationHandler;
+import io.github.lstramke.coincollector.model.UserFactory;
+import io.github.lstramke.coincollector.repositories.UserStorageRepository;
+import io.github.lstramke.coincollector.repositories.sqlite.UserSqliteRepository;
+import io.github.lstramke.coincollector.services.SessionFilter;
+import io.github.lstramke.coincollector.services.SessionManager;
+import io.github.lstramke.coincollector.services.SessionManagerImpl;
+import io.github.lstramke.coincollector.services.UserStorageService;
+import io.github.lstramke.coincollector.services.UserStorageServiceImpl;
 
 public class App {
 
@@ -52,12 +57,19 @@ public class App {
             log.error("Database initialization failed: {}", e.getMessage());
             System.exit(1);
         }
+        SessionManager sessionManager = new SessionManagerImpl();
 
         UserFactory userFactory = new UserFactory();
         UserStorageRepository userStorageRepository = new UserSqliteRepository(tableNames.get(0), userFactory);
         UserStorageService userStorageService = new UserStorageServiceImpl(userStorageRepository, configuredDataSource);
-        LoginHandler loginHandler = new LoginHandler(userStorageService);
-        RegistrationHandler registrationHandler = new RegistrationHandler(userStorageService);
+        LoginHandler loginHandler = new LoginHandler(userStorageService, sessionManager);
+        RegistrationHandler registrationHandler = new RegistrationHandler(userStorageService, sessionManager);
+
+        GroupHandler groupHandler = new GroupHandler(null);
+
+
+
+
         HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
         
         server.createContext("/", exchange -> {
@@ -105,6 +117,7 @@ public class App {
             }
         });
 
+        server.createContext("/api/groups", SessionFilter.withSessionValidation(groupHandler, sessionManager));
         
         server.setExecutor(null);
         server.start();

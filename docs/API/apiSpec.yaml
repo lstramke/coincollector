@@ -480,9 +480,11 @@ components:
           example: "Euro Coins 2024"
         collections:
           type: array
-          description: Optional list of collections to add to the group
+          description: Optional list of collectionIds to add to the group
           items:
-            $ref: '#/components/schemas/Collection'
+            type: string
+            description: The id of the collection
+          example: "456e7890-a12b-34c5-d678-901234567def"
       example:
         name: "Euro Coins 2024"
         collections: []

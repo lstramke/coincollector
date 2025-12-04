@@ -1,4 +1,5 @@
 package io.github.lstramke.coincollector.services;
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -18,18 +19,30 @@ public class SessionFilter {
      * If the session is invalid, logs the attempt and sends a redirect response.
      *
      * @param handler The original HTTP handler to wrap
-     * @param sessionService The session manager to use for validation
+     * @param sessionManager The session manager to use for validation
      * @return A new {@link HttpHandler} with session validation
      */
-    public static HttpHandler withSessionValidation(HttpHandler handler, SessionManager sessionService) {
+    public static HttpHandler withSessionValidation(HttpHandler handler, SessionManager sessionManager) {
         return exchange -> {
             String sessionId = getSessionCookie(exchange);
-            if (!sessionService.validateSession(sessionId)) {
+            if (!sessionManager.validateSession(sessionId)) {
                 logger.warning("Unauthorized access attempt: SessionId=" + sessionId + ", RemoteAddress=" + exchange.getRemoteAddress());
                 exchange.sendResponseHeaders(302, -1);
                 return;
             }
-            handler.handle(exchange);
+
+            String userId = sessionManager.getUserId(sessionId);
+            exchange.setAttribute("userId", userId);
+
+            try {
+                handler.handle(exchange);
+            } catch (IOException | RuntimeException e) {
+                String errorJson = "{\"error\":\"An unexpected error occurred\"}";
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(500, errorJson.length());
+                exchange.getResponseBody().write(errorJson.getBytes());
+                exchange.getResponseBody().close();
+            }
         };
     }
 
