@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupDeleteException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupGetAllException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupGetByIdException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupNotFoundException;
@@ -119,12 +120,7 @@ public class GroupHandler implements HttpHandler {
         try {
             var group = this.groupStorageService.getById(groupId);
             
-            if (!group.getOwnerId().equals(userId)) {
-                exchange.sendResponseHeaders(404, 0);
-                exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-                exchange.getResponseBody().close();
-                return;
-            }
+            if(handleIfNotOwner(exchange, group, userId)) return;
             
             var response = GroupsResponse.fromDomain(group);
             
@@ -153,12 +149,7 @@ public class GroupHandler implements HttpHandler {
             var request = mapper.readValue(body, UpdateGroupRequest.class);
             
             var groupToUpdate = this.groupStorageService.getById(groupId);
-            if (!groupToUpdate.getOwnerId().equals(userId)){
-                exchange.sendResponseHeaders(404, 0);
-                exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-                exchange.getResponseBody().close();
-                return;
-            }
+            if(handleIfNotOwner(exchange, groupToUpdate, userId)) return;
 
             groupToUpdate.setName(request.name());
             this.groupStorageService.updateMetadata(groupToUpdate);
@@ -185,7 +176,24 @@ public class GroupHandler implements HttpHandler {
     }
 
     private void handleDelete(HttpExchange exchange) throws IOException{
+        String userId = (String) exchange.getAttribute("userId");
+        String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
 
+        try {
+            var groupToDelete = this.groupStorageService.getById(groupId);
+            if(handleIfNotOwner(exchange, groupToDelete, userId)) return;
+
+            this.groupStorageService.delete(groupId);
+            exchange.sendResponseHeaders(204, -1);
+        } catch (EuroCoinCollectionGroupDeleteException e) {
+            exchange.sendResponseHeaders(500, 0);
+            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
+        } catch (EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupNotFoundException e) {
+            exchange.sendResponseHeaders(404, 0);
+            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
+        } finally {
+            exchange.getResponseBody().close();
+        }
     }
 
     private boolean isGroupIdPath(String path) {
@@ -200,5 +208,19 @@ public class GroupHandler implements HttpHandler {
         }
         return false;
     }
+
+    private boolean handleIfNotOwner(
+        HttpExchange exchange, 
+        EuroCoinCollectionGroup group, 
+        String userId
+    ) throws IOException {
+    if (!group.getOwnerId().equals(userId)) {
+        exchange.sendResponseHeaders(404, 0);
+        exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
+        exchange.getResponseBody().close();
+        return true;
+    }
+    return false;
+}
     
 }
