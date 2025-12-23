@@ -12,6 +12,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import io.github.lstramke.coincollector.configuration.ApplicationContext;
 import io.github.lstramke.coincollector.configuration.InitService;
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 import io.github.lstramke.coincollector.services.SessionFilter;
@@ -26,7 +27,7 @@ public class App {
 
         String dbFilePath = "coincollector.db";
     
-        InitService.ApplicationContext context;
+        ApplicationContext context;
         try {
             context = InitService.initialize(dbFilePath);
         } catch (StorageInitializeException e) {
@@ -83,6 +84,7 @@ public class App {
         });
 
         server.createContext("/api/groups", SessionFilter.withSessionValidation(context.groupHandler(), context.sessionManager()));
+        server.createContext("/api/collections", SessionFilter.withSessionValidation(context.collectionHandler(), context.sessionManager()));
         
         server.setExecutor(null);
         server.start();

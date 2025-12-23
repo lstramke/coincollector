@@ -62,7 +62,7 @@ public class GroupHandler implements HttpHandler {
         }
     }
 
-    private void handleGetAll(HttpExchange exchange) throws IOException{
+    private void handleGetAll(HttpExchange exchange) throws IOException {
         logger.info("handleGetAll called");
         String userId = (String) exchange.getAttribute("userId");
 
@@ -86,7 +86,7 @@ public class GroupHandler implements HttpHandler {
         }
     }    
     
-    private void handleCreate(HttpExchange exchange) throws IOException{
+    private void handleCreate(HttpExchange exchange) throws IOException {
         logger.info("handleCreate called");
         String userId = (String) exchange.getAttribute("userId");
         String body = new String(exchange.getRequestBody().readAllBytes());
@@ -183,7 +183,7 @@ public class GroupHandler implements HttpHandler {
         }
     }
 
-    private void handleDelete(HttpExchange exchange) throws IOException{
+    private void handleDelete(HttpExchange exchange) throws IOException {
         logger.info("handleDelete called");
         String userId = (String) exchange.getAttribute("userId");
         String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
@@ -224,13 +224,13 @@ public class GroupHandler implements HttpHandler {
         EuroCoinCollectionGroup group, 
         String userId
     ) throws IOException {
-    if (!group.getOwnerId().equals(userId)) {
-        exchange.sendResponseHeaders(404, 0);
-        exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-        exchange.getResponseBody().close();
-        return true;
+        if (!group.getOwnerId().equals(userId)) {
+            exchange.sendResponseHeaders(404, 0);
+            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
+            exchange.getResponseBody().close();
+            return true;
+        }
+        return false;
     }
-    return false;
-}
     
 }
