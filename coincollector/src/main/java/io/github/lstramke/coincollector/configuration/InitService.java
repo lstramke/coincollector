@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.sqlite.SQLiteDataSource;
 
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
+import io.github.lstramke.coincollector.handler.CoinHandler;
 import io.github.lstramke.coincollector.handler.CollectionHandler;
 import io.github.lstramke.coincollector.handler.GroupHandler;
 import io.github.lstramke.coincollector.handler.LoginHandler;
@@ -67,9 +68,10 @@ public class InitService {
         var registrationHandler = new RegistrationHandler(userStorageService, sessionManager);
         var groupHandler = new GroupHandler(groupStorageService);
         var collectionHandler = new CollectionHandler(collectionStorageService, groupStorageService);
+        var coinHandler = new CoinHandler(coinStorageService, collectionStorageService, groupStorageService);
         
         logger.info("Application context initialized successfully");
         
-        return new ApplicationContext(sessionManager, loginHandler, registrationHandler, groupHandler, collectionHandler);
+        return new ApplicationContext(sessionManager, loginHandler, registrationHandler, groupHandler, collectionHandler, coinHandler);
     }
 }

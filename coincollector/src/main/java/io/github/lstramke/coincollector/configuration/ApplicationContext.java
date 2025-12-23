@@ -1,5 +1,6 @@
 package io.github.lstramke.coincollector.configuration;
 
+import io.github.lstramke.coincollector.handler.CoinHandler;
 import io.github.lstramke.coincollector.handler.CollectionHandler;
 import io.github.lstramke.coincollector.handler.GroupHandler;
 import io.github.lstramke.coincollector.handler.LoginHandler;
@@ -11,5 +12,6 @@ public record ApplicationContext(
         LoginHandler loginHandler,
         RegistrationHandler registrationHandler,
         GroupHandler groupHandler,
-        CollectionHandler collectionHandler
+        CollectionHandler collectionHandler,
+        CoinHandler coinHandler
     ) {}

@@ -82,6 +82,9 @@ public class EuroCoinBuilder {
         if (id == null || id.isBlank()){
             this.id = generateId();
         }
+        if(mintCountry == CoinCountry.GERMANY && mint == null){
+            throw new IllegalStateException("Mint cannot be null if country is Germany");
+        }
         
         return new EuroCoin(this);
     }

@@ -71,12 +71,12 @@ public class CollectionHandler implements HttpHandler {
             exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
             exchange.getResponseBody().close();
-            
+   
         } catch (EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
             exchange.getResponseBody().close();
-        } catch (EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException e) {
+        } catch (JacksonException | EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
             exchange.getResponseBody().close();
@@ -123,13 +123,13 @@ public class CollectionHandler implements HttpHandler {
     private void handleUpdate(HttpExchange exchange) throws IOException {
         logger.info("handleUpdate called");
         String userId = (String) exchange.getAttribute("userId");
-        String collecetionId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
+        String collectionId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
         String body = new String(exchange.getRequestBody().readAllBytes());
 
         try {
             var request = mapper.readValue(body, CreateCollectionRequest.class);
 
-            var collectionToUpdate = this.collectionStorageService.getById(collecetionId);
+            var collectionToUpdate = this.collectionStorageService.getById(collectionId);
 
             if(handleIfNotOwnerViaGroup(exchange, collectionToUpdate.getGroupId(), userId)) return;
 

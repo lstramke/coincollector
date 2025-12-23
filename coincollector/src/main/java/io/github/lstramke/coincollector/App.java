@@ -85,6 +85,7 @@ public class App {
 
         server.createContext("/api/groups", SessionFilter.withSessionValidation(context.groupHandler(), context.sessionManager()));
         server.createContext("/api/collections", SessionFilter.withSessionValidation(context.collectionHandler(), context.sessionManager()));
+        server.createContext("/api/collections", SessionFilter.withSessionValidation(context.coinHandler(), context.sessionManager()));
         
         server.setExecutor(null);
         server.start();
