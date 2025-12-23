@@ -1,6 +1,7 @@
 package io.github.lstramke.coincollector.services;
 import java.io.IOException;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -12,7 +13,7 @@ import com.sun.net.httpserver.HttpHandler;
  * Unauthorized access attempts are logged and denied with a redirect response.
  */
 public class SessionFilter {
-    private static final Logger logger = Logger.getLogger(SessionFilter.class.getName());
+    private final static Logger logger = LoggerFactory.getLogger(SessionFilter.class);
 
     /**
      * Wraps an {@link HttpHandler} with session validation logic.
@@ -26,7 +27,7 @@ public class SessionFilter {
         return exchange -> {
             String sessionId = getSessionCookie(exchange);
             if (!sessionManager.validateSession(sessionId)) {
-                logger.warning("Unauthorized access attempt: SessionId=" + sessionId + ", RemoteAddress=" + exchange.getRemoteAddress());
+                logger.warn("Unauthorized access attempt: SessionId=" + sessionId + ", RemoteAddress=" + exchange.getRemoteAddress());
                 exchange.sendResponseHeaders(302, -1);
                 return;
             }
@@ -37,6 +38,7 @@ public class SessionFilter {
             try {
                 handler.handle(exchange);
             } catch (IOException | RuntimeException e) {
+                logger.error("Exception in handler: {}", e.getMessage(), e); 
                 String errorJson = "{\"error\":\"An unexpected error occurred\"}";
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(500, errorJson.length());

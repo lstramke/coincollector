@@ -116,7 +116,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
             if(testcase.getConnectionThrows){
@@ -200,7 +200,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
             if(testcase.repositoryCreateThrows){
@@ -269,7 +269,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
             if(testcase.getConnectionThrows){
@@ -339,7 +339,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
             if(testcase.repositoryReadThrows){
@@ -395,7 +395,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
             if(testcase.getConnectionThrows){
@@ -448,7 +448,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
             if(testcase.repositoryUpdateThrows){
@@ -496,7 +496,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
             if(testcase.getConnectionThrows){
@@ -549,7 +549,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
             if(testcase.repositoryDeleteThrows){
@@ -598,7 +598,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
             if(testcase.getConnectionThrows){
@@ -663,7 +663,7 @@ public class EuroCoinCollectionStorageServiceImplTest {
         EuroCoinStorageService coinStorageService = mock(EuroCoinStorageService.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
-        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(repository, dataSource, coinStorageService);
+        EuroCoinCollectionStorageService service = new EuroCoinCollectionStorageServiceImpl(dataSource, repository, coinStorageService);
 
         try {
 

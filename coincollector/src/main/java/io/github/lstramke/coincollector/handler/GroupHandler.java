@@ -63,6 +63,7 @@ public class GroupHandler implements HttpHandler {
     }
 
     private void handleGetAll(HttpExchange exchange) throws IOException{
+        logger.info("handleGetAll called");
         String userId = (String) exchange.getAttribute("userId");
 
         try {
@@ -76,16 +77,17 @@ public class GroupHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
+            exchange.getResponseBody().close();
             
         } catch (EuroCoinCollectionGroupGetAllException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-        } finally {
             exchange.getResponseBody().close();
         }
     }    
     
     private void handleCreate(HttpExchange exchange) throws IOException{
+        logger.info("handleCreate called");
         String userId = (String) exchange.getAttribute("userId");
         String body = new String(exchange.getRequestBody().readAllBytes());
 
@@ -101,19 +103,21 @@ public class GroupHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(201, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
+            exchange.getResponseBody().close();
             
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+            exchange.getResponseBody().close();
         } catch (EuroCoinCollectionGroupSaveException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-        } finally {
             exchange.getResponseBody().close();
         }
     }
 
     private void handleGetWithId(HttpExchange exchange) throws IOException {
+        logger.info("handleGetWithId called");
         String userId = (String) exchange.getAttribute("userId");
         String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
 
@@ -129,18 +133,20 @@ public class GroupHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
+            exchange.getResponseBody().close();
         } catch (EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
+            exchange.getResponseBody().close();
         } catch (EuroCoinCollectionGroupGetByIdException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-        } finally {
             exchange.getResponseBody().close();
         }
     }
 
     private void handleUpdate(HttpExchange exchange) throws IOException {
+        logger.info("handleUpdate called");
         String userId = (String) exchange.getAttribute("userId");
         String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
         String body = new String(exchange.getRequestBody().readAllBytes());
@@ -160,22 +166,25 @@ public class GroupHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
+            exchange.getResponseBody().close();
             
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+            exchange.getResponseBody().close();
         } catch (EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
+            exchange.getResponseBody().close();
         } catch (EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupUpdateException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-        } finally {
             exchange.getResponseBody().close();
         }
     }
 
     private void handleDelete(HttpExchange exchange) throws IOException{
+        logger.info("handleDelete called");
         String userId = (String) exchange.getAttribute("userId");
         String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
 
@@ -185,13 +194,14 @@ public class GroupHandler implements HttpHandler {
 
             this.groupStorageService.delete(groupId);
             exchange.sendResponseHeaders(204, -1);
+            exchange.getResponseBody().close();
         } catch (EuroCoinCollectionGroupDeleteException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
+            exchange.getResponseBody().close();
         } catch (EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-        } finally {
             exchange.getResponseBody().close();
         }
     }

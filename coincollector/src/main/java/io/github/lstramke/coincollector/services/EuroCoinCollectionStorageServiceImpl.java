@@ -47,9 +47,10 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     private final EuroCoinStorageService euroCoinStorageService;
 
     public EuroCoinCollectionStorageServiceImpl(
-        EuroCoinCollectionStorageRepository euroCoinCollectionStorageRepository,
         DataSource dataSource, 
-        EuroCoinStorageService euroCoinStorageService) {
+        EuroCoinCollectionStorageRepository euroCoinCollectionStorageRepository,
+        EuroCoinStorageService euroCoinStorageService
+    ) {
             
         this.euroCoinCollectionStorageRepository = euroCoinCollectionStorageRepository;
         this.dataSource = dataSource;

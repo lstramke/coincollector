@@ -2,14 +2,8 @@ package io.github.lstramke.coincollector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.sqlite.SQLiteDataSource;
 
 import com.sun.net.httpserver.HttpServer;
-
-
-import java.util.List;
-
-import javax.sql.DataSource;
 
 import java.awt.Desktop;
 import java.io.IOException;
@@ -18,59 +12,30 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import io.github.lstramke.coincollector.configuration.DataSourceAutoActivateForeignKeys;
-import io.github.lstramke.coincollector.configuration.SqliteInitializer;
-import io.github.lstramke.coincollector.configuration.StorageInitializer;
+import io.github.lstramke.coincollector.configuration.InitService;
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
-import io.github.lstramke.coincollector.handler.GroupHandler;
-import io.github.lstramke.coincollector.handler.LoginHandler;
-import io.github.lstramke.coincollector.handler.RegistrationHandler;
-import io.github.lstramke.coincollector.model.UserFactory;
-import io.github.lstramke.coincollector.repositories.UserStorageRepository;
-import io.github.lstramke.coincollector.repositories.sqlite.UserSqliteRepository;
 import io.github.lstramke.coincollector.services.SessionFilter;
-import io.github.lstramke.coincollector.services.SessionManager;
-import io.github.lstramke.coincollector.services.SessionManagerImpl;
-import io.github.lstramke.coincollector.services.UserStorageService;
-import io.github.lstramke.coincollector.services.UserStorageServiceImpl;
 
 public class App {
 
-    private static final Logger log = LoggerFactory.getLogger(App.class);
+    private static final Logger logger = LoggerFactory.getLogger(App.class);
     private static final int PORT = 8080;
 
     public static void main(String[] args) throws IOException {
-        log.info("✅ Starting CoinCollector...");
+        logger.info("✅ Starting CoinCollector...");
 
-        // TODO: ADD FULL INIT SERVICE
         String dbFilePath = "coincollector.db";
-        SQLiteDataSource dataSource = new SQLiteDataSource();
-        dataSource.setUrl("jdbc:sqlite:" + dbFilePath);
-        
-        DataSource configuredDataSource = new DataSourceAutoActivateForeignKeys(dataSource);
-        List<String> tableNames = List.of("users", "euroCoinCollectionGroups", "euroCoinCollections", "euroCoins");
-        StorageInitializer storageInitializer = new SqliteInitializer(configuredDataSource, tableNames);
-        
+    
+        InitService.ApplicationContext context;
         try {
-            storageInitializer.init();
+            context = InitService.initialize(dbFilePath);
         } catch (StorageInitializeException e) {
-            log.error("Database initialization failed: {}", e.getMessage());
+            logger.error("Application initialization failed: {}", e.getMessage());
             System.exit(1);
+            return;
         }
-        SessionManager sessionManager = new SessionManagerImpl();
 
-        UserFactory userFactory = new UserFactory();
-        UserStorageRepository userStorageRepository = new UserSqliteRepository(tableNames.get(0), userFactory);
-        UserStorageService userStorageService = new UserStorageServiceImpl(userStorageRepository, configuredDataSource);
-        LoginHandler loginHandler = new LoginHandler(userStorageService, sessionManager);
-        RegistrationHandler registrationHandler = new RegistrationHandler(userStorageService, sessionManager);
-
-        GroupHandler groupHandler = new GroupHandler(null);
-
-
-
-
-        HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
+        var server = HttpServer.create(new InetSocketAddress(PORT), 0);
         
         server.createContext("/", exchange -> {
             String path = exchange.getRequestURI().getPath();
@@ -95,7 +60,7 @@ public class App {
 
         server.createContext("/api/login", exchange -> {
             try {
-                loginHandler.handle(exchange);
+                context.loginHandler().handle(exchange);
             } catch (IOException | RuntimeException e) {
                 String errorJson = "{\"error\":\"An unexpected error occurred\"}";
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -107,7 +72,7 @@ public class App {
 
         server.createContext("/api/registration", exchange -> {
             try{
-                registrationHandler.handle(exchange);
+                context.registrationHandler().handle(exchange);
             } catch (IOException | RuntimeException e) {
                 String errorJson = "{\"error\":\"An unexpected error occurred\"}";
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -117,12 +82,12 @@ public class App {
             }
         });
 
-        server.createContext("/api/groups", SessionFilter.withSessionValidation(groupHandler, sessionManager));
+        server.createContext("/api/groups", SessionFilter.withSessionValidation(context.groupHandler(), context.sessionManager()));
         
         server.setExecutor(null);
         server.start();
         
-        log.info("✅ Server started on http://localhost:{}", PORT);
+        logger.info("✅ Server started on http://localhost:{}", PORT);
         
         if (Desktop.isDesktopSupported()) {
             try {
