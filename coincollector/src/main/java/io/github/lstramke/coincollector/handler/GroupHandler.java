@@ -199,7 +199,7 @@ public class GroupHandler implements HttpHandler {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
             exchange.getResponseBody().close();
-        } catch (EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupNotFoundException e) {
+        } catch (EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
             exchange.getResponseBody().close();
