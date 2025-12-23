@@ -66,7 +66,7 @@ public class InitService {
         var loginHandler = new LoginHandler(userStorageService, sessionManager);
         var registrationHandler = new RegistrationHandler(userStorageService, sessionManager);
         var groupHandler = new GroupHandler(groupStorageService);
-        var collectionHandler = new CollectionHandler(collectionStorageService);
+        var collectionHandler = new CollectionHandler(collectionStorageService, groupStorageService);
         
         logger.info("Application context initialized successfully");
         
