@@ -66,7 +66,7 @@ public class InitService {
         var groupStorageService = new EuroCoinCollectionGroupStorageServiceImpl(configuredDataSource, groupStorageRepository, collectionStorageService);
         
         var mapper = new ObjectMapper();
-        var loginHandler = new LoginHandler(userStorageService, sessionManager);
+        var loginHandler = new LoginHandler(userStorageService, sessionManager, mapper);
         var registrationHandler = new RegistrationHandler(userStorageService, sessionManager);
         var groupHandler = new GroupHandler(groupStorageService, mapper);
         var collectionHandler = new CollectionHandler(collectionStorageService, groupStorageService);

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -22,11 +21,13 @@ public class LoginHandler implements HttpHandler {
 
     private final UserStorageService userStorageService;
     private final SessionManager sessionManager;
+    private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(LoginHandler.class);
     
-    public LoginHandler(UserStorageService userStorageService, SessionManager sessionManager) {
+    public LoginHandler(UserStorageService userStorageService, SessionManager sessionManager, ObjectMapper mapper) {
         this.userStorageService = userStorageService;
         this.sessionManager = sessionManager;
+        this.mapper = mapper;
     }
 
     @Override
@@ -42,7 +43,6 @@ public class LoginHandler implements HttpHandler {
     }
 
     private void handleLogin(HttpExchange exchange) throws IOException{
-        ObjectMapper mapper = new JsonMapper();
         String body = new String(exchange.getRequestBody().readAllBytes());
 
         try {
@@ -58,7 +58,6 @@ public class LoginHandler implements HttpHandler {
 
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, 0);
-            exchange.getResponseBody().close();
             
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
