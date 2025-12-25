@@ -23,18 +23,18 @@ import io.github.lstramke.coincollector.model.DTOs.Responses.GroupsResponse;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageService;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 
 public class GroupHandler implements HttpHandler {
 
     private final EuroCoinCollectionGroupStorageService groupStorageService;
-    private final ObjectMapper mapper = new JsonMapper();
+    private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(GroupHandler.class);
     private final static String PREFIX = "/api/groups";
 
     
-    public GroupHandler(EuroCoinCollectionGroupStorageService groupStorageService) {
+    public GroupHandler(EuroCoinCollectionGroupStorageService groupStorageService, ObjectMapper mapper) {
         this.groupStorageService = groupStorageService;
+        this.mapper = mapper;
     }
 
     @Override
@@ -83,6 +83,10 @@ public class GroupHandler implements HttpHandler {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
             exchange.getResponseBody().close();
+        } catch (JacksonException e) {
+            exchange.sendResponseHeaders(500, 0);
+            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
+            exchange.getResponseBody().close();
         }
     }    
     
@@ -91,9 +95,17 @@ public class GroupHandler implements HttpHandler {
         String userId = (String) exchange.getAttribute("userId");
         String body = new String(exchange.getRequestBody().readAllBytes());
 
+        CreateGroupRequest createGroupRequest;
         try {
-            var createGroupRequest = mapper.readValue(body, CreateGroupRequest.class);
+            createGroupRequest = mapper.readValue(body, CreateGroupRequest.class);
+        } catch (JacksonException e) {
+            exchange.sendResponseHeaders(400, 0);
+            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+            exchange.getResponseBody().close();
+            return;
+        }
 
+        try {
             var requestedGroup = new EuroCoinCollectionGroup(createGroupRequest.name(), userId);
             this.groupStorageService.save(requestedGroup);
 
@@ -105,11 +117,11 @@ public class GroupHandler implements HttpHandler {
             exchange.getResponseBody().write(responseJson.getBytes());
             exchange.getResponseBody().close();
             
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.getResponseBody().close();
         } catch (EuroCoinCollectionGroupSaveException e) {
+            exchange.sendResponseHeaders(500, 0);
+            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
+            exchange.getResponseBody().close();
+        } catch (JacksonException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
             exchange.getResponseBody().close();
@@ -151,9 +163,17 @@ public class GroupHandler implements HttpHandler {
         String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
         String body = new String(exchange.getRequestBody().readAllBytes());
 
+        UpdateGroupRequest request;
         try {
-            var request = mapper.readValue(body, UpdateGroupRequest.class);
-            
+            request = mapper.readValue(body, UpdateGroupRequest.class);
+        } catch (JacksonException e) {
+            exchange.sendResponseHeaders(400, 0);
+            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+            exchange.getResponseBody().close();
+            return;
+        }
+
+        try {
             var groupToUpdate = this.groupStorageService.getById(groupId);
             if(handleIfNotOwner(exchange, groupToUpdate, userId)) return;
 
@@ -164,19 +184,16 @@ public class GroupHandler implements HttpHandler {
             String responseJson = mapper.writeValueAsString(response);
             
             exchange.getResponseHeaders().add("Content-Type", "application/json");
+            
             exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
             exchange.getResponseBody().close();
             
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.getResponseBody().close();
         } catch (EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
             exchange.getResponseBody().close();
-        } catch (EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupUpdateException e) {
+        } catch (JacksonException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupUpdateException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
             exchange.getResponseBody().close();

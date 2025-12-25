@@ -28,6 +28,7 @@ import io.github.lstramke.coincollector.services.EuroCoinStorageServiceImpl;
 import io.github.lstramke.coincollector.services.SessionManager;
 import io.github.lstramke.coincollector.services.SessionManagerImpl;
 import io.github.lstramke.coincollector.services.UserStorageServiceImpl;
+import tools.jackson.databind.ObjectMapper;
 
 public class InitService {
     
@@ -64,9 +65,10 @@ public class InitService {
         var collectionStorageService = new EuroCoinCollectionStorageServiceImpl(configuredDataSource, collectionStorageRepository, coinStorageService);
         var groupStorageService = new EuroCoinCollectionGroupStorageServiceImpl(configuredDataSource, groupStorageRepository, collectionStorageService);
         
+        var mapper = new ObjectMapper();
         var loginHandler = new LoginHandler(userStorageService, sessionManager);
         var registrationHandler = new RegistrationHandler(userStorageService, sessionManager);
-        var groupHandler = new GroupHandler(groupStorageService);
+        var groupHandler = new GroupHandler(groupStorageService, mapper);
         var collectionHandler = new CollectionHandler(collectionStorageService, groupStorageService);
         var coinHandler = new CoinHandler(coinStorageService, collectionStorageService, groupStorageService);
         
