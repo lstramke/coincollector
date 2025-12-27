@@ -468,7 +468,7 @@ class GroupHandlerTest {
         try {
             testcase.mockSetup.setup(service, mapper);
         } catch (Exception e) {
-            fail(" due to unexcpected exception in setup");
+            fail("fail due to unexcpected exception in setup");
         }
 
         handler.handle(exchange);

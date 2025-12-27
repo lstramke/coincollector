@@ -22,19 +22,19 @@ import io.github.lstramke.coincollector.model.DTOs.Responses.CollectionResponse;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageService;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 
 public class CollectionHandler implements HttpHandler {
 
     private final EuroCoinCollectionStorageService collectionStorageService;
     private final EuroCoinCollectionGroupStorageService groupStorageService;
-    private final ObjectMapper mapper = new JsonMapper();
+    private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(CollectionHandler.class);
     private final static String PREFIX = "/api/collections";
 
-    public CollectionHandler(EuroCoinCollectionStorageService collectionStorageService, EuroCoinCollectionGroupStorageService groupStorageService) {
+    public CollectionHandler(EuroCoinCollectionStorageService collectionStorageService, EuroCoinCollectionGroupStorageService groupStorageService, ObjectMapper mapper) {
         this.collectionStorageService = collectionStorageService;
         this.groupStorageService = groupStorageService;
+        this.mapper = mapper;
     }
 
     @Override
@@ -89,9 +89,17 @@ public class CollectionHandler implements HttpHandler {
         String userId = (String) exchange.getAttribute("userId");
         String body = new String(exchange.getRequestBody().readAllBytes());
 
+        CreateCollectionRequest request;
         try {
-            var request = mapper.readValue(body, CreateCollectionRequest.class);
+            request = mapper.readValue(body, CreateCollectionRequest.class);
+        } catch (JacksonException e) {
+            exchange.sendResponseHeaders(400, 0);
+            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+            exchange.getResponseBody().close();
+            return;
+        }
 
+        try {
             if(handleIfNotOwnerViaGroup(exchange, request.groupId(), userId)) return;
 
             var requestedCollection = new EuroCoinCollection(request.name(), request.coins(), request.groupId());
@@ -105,11 +113,7 @@ public class CollectionHandler implements HttpHandler {
             exchange.getResponseBody().write(responseJson.getBytes());
             exchange.getResponseBody().close();
 
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.getResponseBody().close();
-        } catch (EuroCoinCollectionSaveException | EuroCoinCollectionGroupGetByIdException e) {
+        } catch (JacksonException | EuroCoinCollectionSaveException | EuroCoinCollectionGroupGetByIdException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
             exchange.getResponseBody().close();
@@ -126,8 +130,17 @@ public class CollectionHandler implements HttpHandler {
         String collectionId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
         String body = new String(exchange.getRequestBody().readAllBytes());
 
+        CreateCollectionRequest request;
         try {
-            var request = mapper.readValue(body, CreateCollectionRequest.class);
+            request = mapper.readValue(body, CreateCollectionRequest.class);
+        } catch (JacksonException e) {
+            exchange.sendResponseHeaders(400, 0);
+            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+            exchange.getResponseBody().close();
+            return;
+        }
+
+        try {
 
             var collectionToUpdate = this.collectionStorageService.getById(collectionId);
 
@@ -149,11 +162,7 @@ public class CollectionHandler implements HttpHandler {
             exchange.getResponseBody().write(responseJson.getBytes());
             exchange.getResponseBody().close();
 
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.getResponseBody().close();
-        } catch (EuroCoinCollectionSaveException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionCoinsLoadException e) {
+        } catch (JacksonException | EuroCoinCollectionSaveException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionCoinsLoadException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
             exchange.getResponseBody().close();
