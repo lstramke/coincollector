@@ -67,7 +67,7 @@ public class InitService {
         
         var mapper = new ObjectMapper();
         var loginHandler = new LoginHandler(userStorageService, sessionManager, mapper);
-        var registrationHandler = new RegistrationHandler(userStorageService, sessionManager);
+        var registrationHandler = new RegistrationHandler(userStorageService, sessionManager, mapper);
         var groupHandler = new GroupHandler(groupStorageService, mapper);
         var collectionHandler = new CollectionHandler(collectionStorageService, groupStorageService);
         var coinHandler = new CoinHandler(coinStorageService, collectionStorageService, groupStorageService);

@@ -15,19 +15,20 @@ import io.github.lstramke.coincollector.services.UserStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 
 public class RegistrationHandler implements HttpHandler {
 
     private final UserStorageService userStorageService;
     private final SessionManager sessionManager;
+    private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(RegistrationHandler.class);
 
     
 
-    public RegistrationHandler(UserStorageService userStorageService, SessionManager sessionManager) {
+    public RegistrationHandler(UserStorageService userStorageService, SessionManager sessionManager, ObjectMapper mapper) {
         this.userStorageService = userStorageService;
         this.sessionManager = sessionManager;
+        this.mapper = mapper;
     }
 
     @Override
@@ -43,7 +44,6 @@ public class RegistrationHandler implements HttpHandler {
     }
 
     private void handleRegistration(HttpExchange exchange) throws IOException {
-        ObjectMapper mapper = new JsonMapper();
         String body = new String(exchange.getRequestBody().readAllBytes());
 
         
