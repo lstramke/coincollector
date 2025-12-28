@@ -699,8 +699,8 @@ components:
           example: 200
         country:
           type: string
-          description: The country of origin
-          example: "Germany"
+          description: The ISO 3166-1 alpha-2 code of country of origin
+          example: "DE"
         collectionId:
           type: string
           description: The unique identifier of the collection this coin belongs to
@@ -717,7 +717,7 @@ components:
         id: "GERMANY_TWO_EURO_2024_A"
         year: 2024
         value: 200
-        country: "Germany"
+        country: "DE"
         collectionId: "456e7890-a12b-34c5-d678-901234567def"
         mint: "A"
         description: "Special commemorative coin"

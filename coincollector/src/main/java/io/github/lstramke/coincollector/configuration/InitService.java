@@ -70,7 +70,7 @@ public class InitService {
         var registrationHandler = new RegistrationHandler(userStorageService, sessionManager, mapper);
         var groupHandler = new GroupHandler(groupStorageService, mapper);
         var collectionHandler = new CollectionHandler(collectionStorageService, groupStorageService, mapper);
-        var coinHandler = new CoinHandler(coinStorageService, collectionStorageService, groupStorageService);
+        var coinHandler = new CoinHandler(coinStorageService, collectionStorageService, groupStorageService, mapper);
         
         logger.info("Application context initialized successfully");
         

@@ -10,7 +10,6 @@ import com.sun.net.httpserver.HttpHandler;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetByIdException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionNotFoundException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupGetByIdException;
@@ -35,18 +34,20 @@ public class CoinHandler implements HttpHandler {
     private final EuroCoinStorageService coinStorageService;
     private final EuroCoinCollectionStorageService collectionStorageService;
     private final EuroCoinCollectionGroupStorageService groupStorageService;
-    private final ObjectMapper mapper = new JsonMapper();
+    private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(CoinHandler.class);
     private final static String PREFIX = "/api/coins";
 
     public CoinHandler(
         EuroCoinStorageService coinStorageService, 
         EuroCoinCollectionStorageService collectionStorageService, 
-        EuroCoinCollectionGroupStorageService groupStorageService
+        EuroCoinCollectionGroupStorageService groupStorageService,
+        ObjectMapper mapper
     ) {
         this.coinStorageService = coinStorageService;
         this.collectionStorageService = collectionStorageService;
         this.groupStorageService = groupStorageService;
+        this.mapper = mapper;
     }
 
     @Override
