@@ -18,7 +18,7 @@ public record CoinResponse(
             coin.getYear(),
             coin.getValue().getCentValue(),
             coin.getMintCountry().getIsoCode(),
-            coin.getMint().getMintMark(),
+            coin.getMint() != null ? coin.getMint().getMintMark() : null,
             coin.getDescription().toString(),
             coin.getCollectionId()
         );

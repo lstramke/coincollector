@@ -8,10 +8,10 @@ import io.github.lstramke.coincollector.handler.RegistrationHandler;
 import io.github.lstramke.coincollector.services.SessionManager;
 
 public record ApplicationContext(
-        SessionManager sessionManager,
-        LoginHandler loginHandler,
-        RegistrationHandler registrationHandler,
-        GroupHandler groupHandler,
-        CollectionHandler collectionHandler,
-        CoinHandler coinHandler
-    ) {}
+    SessionManager sessionManager,
+    LoginHandler loginHandler,
+    RegistrationHandler registrationHandler,
+    GroupHandler groupHandler,
+    CollectionHandler collectionHandler,
+    CoinHandler coinHandler
+) {}
