@@ -29,6 +29,7 @@ public class SessionFilter {
             if (!sessionManager.validateSession(sessionId)) {
                 logger.warn("Unauthorized access attempt: SessionId=" + sessionId + ", RemoteAddress=" + exchange.getRemoteAddress());
                 exchange.sendResponseHeaders(302, -1);
+                exchange.close();
                 return;
             }
 
@@ -43,7 +44,7 @@ public class SessionFilter {
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(500, errorJson.length());
                 exchange.getResponseBody().write(errorJson.getBytes());
-                exchange.getResponseBody().close();
+                exchange.close();
             }
         };
     }
@@ -54,7 +55,7 @@ public class SessionFilter {
      * @param exchange The HTTP exchange containing the request
      * @return The sessionId if present, otherwise null
      */
-    private static String getSessionCookie(HttpExchange exchange) {
+    public static String getSessionCookie(HttpExchange exchange) {
         String cookieHeader = exchange.getRequestHeaders().getFirst("Cookie");
         if (cookieHeader != null) {
             for (String cookie : cookieHeader.split(";")) {

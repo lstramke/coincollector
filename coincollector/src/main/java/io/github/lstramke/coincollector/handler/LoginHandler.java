@@ -38,7 +38,10 @@ public class LoginHandler implements HttpHandler {
         logger.info("Route called: {} {}", method, path);
         switch (method) {
             case "POST" -> handleLogin(exchange);
-            default -> exchange.sendResponseHeaders(405, -1);
+            default -> {
+                exchange.sendResponseHeaders(405, -1);
+                exchange.close();
+            }
         }
     }
 
@@ -58,15 +61,15 @@ public class LoginHandler implements HttpHandler {
 
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, 0);
-            
+            exchange.close();
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+            exchange.close();
         } catch (UserNotFoundException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-        } finally {
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
     

@@ -70,16 +70,16 @@ public class CollectionHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
    
         } catch (EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (JacksonException | EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
 
@@ -95,7 +95,7 @@ public class CollectionHandler implements HttpHandler {
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
             return;
         }
 
@@ -111,16 +111,16 @@ public class CollectionHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(201, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
 
         } catch (JacksonException | EuroCoinCollectionSaveException | EuroCoinCollectionGroupGetByIdException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Parent resource not found\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
     
@@ -136,7 +136,7 @@ public class CollectionHandler implements HttpHandler {
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
             return;
         }
 
@@ -160,16 +160,16 @@ public class CollectionHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(201, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
 
         } catch (JacksonException | EuroCoinCollectionSaveException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionCoinsLoadException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Parent resource not found\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
     
@@ -185,16 +185,16 @@ public class CollectionHandler implements HttpHandler {
 
             this.collectionStorageService.delete(collectionId);
             exchange.sendResponseHeaders(204, -1);
-            exchange.getResponseBody().close();
+            exchange.close();
 
         } catch (EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (EuroCoinCollectionDeleteException | EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionCoinsLoadException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
 
@@ -211,7 +211,7 @@ public class CollectionHandler implements HttpHandler {
         if (!group.getOwnerId().equals(userId)) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
             return true;
         }
         return false;

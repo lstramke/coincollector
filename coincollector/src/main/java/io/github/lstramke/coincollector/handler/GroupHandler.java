@@ -58,6 +58,7 @@ public class GroupHandler implements HttpHandler {
             case "DELETE" -> handleDelete(exchange);
             default -> {
                exchange.sendResponseHeaders(405, -1);
+               exchange.close();
             }
         }
     }
@@ -77,16 +78,16 @@ public class GroupHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
             
         } catch (EuroCoinCollectionGroupGetAllException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }    
     
@@ -101,7 +102,7 @@ public class GroupHandler implements HttpHandler {
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
             return;
         }
 
@@ -115,16 +116,16 @@ public class GroupHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(201, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
             
         } catch (EuroCoinCollectionGroupSaveException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
 
@@ -145,15 +146,15 @@ public class GroupHandler implements HttpHandler {
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (EuroCoinCollectionGroupGetByIdException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
 
@@ -169,7 +170,7 @@ public class GroupHandler implements HttpHandler {
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
             return;
         }
 
@@ -187,16 +188,16 @@ public class GroupHandler implements HttpHandler {
             
             exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
             
         } catch (EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (JacksonException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupUpdateException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
 
@@ -211,15 +212,15 @@ public class GroupHandler implements HttpHandler {
 
             this.groupStorageService.delete(groupId);
             exchange.sendResponseHeaders(204, -1);
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (EuroCoinCollectionGroupDeleteException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         } catch (EuroCoinCollectionGroupNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
 
@@ -244,7 +245,7 @@ public class GroupHandler implements HttpHandler {
         if (!group.getOwnerId().equals(userId)) {
             exchange.sendResponseHeaders(404, 0);
             exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.getResponseBody().close();
+            exchange.close();
             return true;
         }
         return false;

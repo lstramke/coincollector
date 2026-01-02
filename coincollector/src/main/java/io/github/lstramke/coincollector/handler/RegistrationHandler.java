@@ -39,7 +39,10 @@ public class RegistrationHandler implements HttpHandler {
         logger.info("Route called: {} {}", method, path);
         switch (method) {
             case "POST" -> handleRegistration(exchange);
-            default -> exchange.sendResponseHeaders(405, -1);
+            default -> {
+                exchange.sendResponseHeaders(405, -1);
+                exchange.close();
+            }
         }
     }
 
@@ -60,16 +63,15 @@ public class RegistrationHandler implements HttpHandler {
 
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(201, 0);
-            exchange.getResponseBody().close();
-            
+            exchange.close();
         } catch (JacksonException e) {
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
+            exchange.close();
         } catch (UserSaveException e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write("{\"error\":\"An unexpected error occurred\"}".getBytes());
-        } finally {
-            exchange.getResponseBody().close();
+            exchange.close();
         }
     }
 }

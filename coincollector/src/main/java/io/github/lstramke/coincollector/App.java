@@ -70,7 +70,7 @@ public class App {
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(500, errorJson.length());
                 exchange.getResponseBody().write(errorJson.getBytes());
-                exchange.getResponseBody().close();
+                exchange.close();
             }
         });
 
@@ -82,7 +82,7 @@ public class App {
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
                 exchange.sendResponseHeaders(500, errorJson.length());
                 exchange.getResponseBody().write(errorJson.getBytes());
-                exchange.getResponseBody().close();
+                exchange.close();
             }
         });
 
@@ -90,7 +90,7 @@ public class App {
         server.createContext("/api/collections", SessionFilter.withSessionValidation(context.collectionHandler(), context.sessionManager()));
         server.createContext("/api/coins", SessionFilter.withSessionValidation(context.coinHandler(), context.sessionManager()));
         server.createContext("/api/logout", SessionFilter.withSessionValidation(context.logoutHandler(), context.sessionManager()));
-        
+
         server.setExecutor(null);
         server.start();
         
