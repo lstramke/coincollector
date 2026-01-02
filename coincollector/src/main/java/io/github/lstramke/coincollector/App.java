@@ -86,6 +86,26 @@ public class App {
             }
         });
 
+        server.createContext("/api/shutdown", exchange -> {
+            String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
+            logger.info("Route called: {} {}", method, path);
+            switch (method) {
+                case "POST" -> {
+                    exchange.sendResponseHeaders(200, -1);
+                    exchange.close();
+                    new Thread(() -> {
+                        try { Thread.sleep(100); } catch (InterruptedException ignored) {}
+                        App.stopServer();
+                    }).start();
+                }
+                default -> {
+                    exchange.sendResponseHeaders(405, -1);
+                    exchange.close();
+                }
+            }
+        });
+
         server.createContext("/api/groups", SessionFilter.withSessionValidation(context.groupHandler(), context.sessionManager()));
         server.createContext("/api/collections", SessionFilter.withSessionValidation(context.collectionHandler(), context.sessionManager()));
         server.createContext("/api/coins", SessionFilter.withSessionValidation(context.coinHandler(), context.sessionManager()));
