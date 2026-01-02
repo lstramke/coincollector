@@ -60,7 +60,7 @@ public class SessionFilter {
         if (cookieHeader != null) {
             for (String cookie : cookieHeader.split(";")) {
                 String[] parts = cookie.trim().split("=");
-                if (parts.length == 2 && parts[0].equals("sessionId")) {
+                if (parts.length == 2 && parts[0].equals("sessionId") && !parts[1].isEmpty()) {
                     return parts[1];
                 }
             }

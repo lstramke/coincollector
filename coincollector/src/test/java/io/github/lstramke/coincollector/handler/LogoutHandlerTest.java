@@ -60,13 +60,13 @@ public class LogoutHandlerTest {
             new LogoutHandleTestcase(
                 "POST",
                 "/api/logout",
-                "sessionId=invalid",
+                "sessionId=",
                 sessionManager -> {
-                    doNothing().when(sessionManager).invalidateSession("invalid");
+                    doNothing().when(sessionManager).invalidateSession(null);
                 },
                 401,
                 null,
-                "Invalid session: returns 401"
+                "Empty session: returns 401"
             ),
             new LogoutHandleTestcase(
                 "GET",
