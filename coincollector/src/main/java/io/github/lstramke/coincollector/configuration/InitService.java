@@ -13,6 +13,7 @@ import io.github.lstramke.coincollector.handler.CoinHandler;
 import io.github.lstramke.coincollector.handler.CollectionHandler;
 import io.github.lstramke.coincollector.handler.GroupHandler;
 import io.github.lstramke.coincollector.handler.LoginHandler;
+import io.github.lstramke.coincollector.handler.LogoutHandler;
 import io.github.lstramke.coincollector.handler.RegistrationHandler;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionFactory;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroupFactory;
@@ -67,13 +68,15 @@ public class InitService {
         
         var mapper = new ObjectMapper();
         var loginHandler = new LoginHandler(userStorageService, sessionManager, mapper);
+        var logoutHandler = new LogoutHandler(sessionManager);
         var registrationHandler = new RegistrationHandler(userStorageService, sessionManager, mapper);
         var groupHandler = new GroupHandler(groupStorageService, mapper);
         var collectionHandler = new CollectionHandler(collectionStorageService, groupStorageService, mapper);
         var coinHandler = new CoinHandler(coinStorageService, collectionStorageService, groupStorageService, mapper);
+
         
         logger.info("Application context initialized successfully");
         
-        return new ApplicationContext(sessionManager, loginHandler, registrationHandler, groupHandler, collectionHandler, coinHandler);
+        return new ApplicationContext(sessionManager, loginHandler, logoutHandler, registrationHandler, groupHandler, collectionHandler, coinHandler);
     }
 }
