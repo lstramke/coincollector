@@ -158,7 +158,7 @@ public class CollectionHandler implements HttpHandler {
             String responseJson = mapper.writeValueAsString(response);
 
             exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(201, responseJson.getBytes().length);
+            exchange.sendResponseHeaders(200, responseJson.getBytes().length);
             exchange.getResponseBody().write(responseJson.getBytes());
             exchange.close();
 

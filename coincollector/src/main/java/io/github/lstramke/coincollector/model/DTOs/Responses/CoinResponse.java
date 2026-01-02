@@ -6,7 +6,7 @@ public record CoinResponse(
     String id,
     int year,
     int value,
-    String mintCountry,
+    String country,
     String mint,
     String description,
     String collectionId

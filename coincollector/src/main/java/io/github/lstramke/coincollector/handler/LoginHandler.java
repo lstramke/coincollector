@@ -59,14 +59,15 @@ public class LoginHandler implements HttpHandler {
                 "sessionId=" + sessionId + "; Path=/; HttpOnly; SameSite=Strict"
             );
 
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, 0);
             exchange.close();
         } catch (JacksonException e) {
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
             exchange.close();
         } catch (UserNotFoundException e) {
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(400, 0);
             exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
             exchange.close();
