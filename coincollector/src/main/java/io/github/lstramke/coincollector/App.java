@@ -20,23 +20,26 @@ import io.github.lstramke.coincollector.services.SessionFilter;
 public class App {
 
     private static final Logger logger = LoggerFactory.getLogger(App.class);
-    private static final int PORT = 8080;
+    private static int PORT = 8080;
+    private static HttpServer server;
+    private static String DB_FILE_PATH = "coincollector.db";
 
     public static void main(String[] args) throws IOException {
         logger.info("✅ Starting CoinCollector...");
 
-        String dbFilePath = "coincollector.db";
-    
+        DB_FILE_PATH = args.length > 0 ? args[0] : "coincollector.db";
+        PORT = args.length > 1 ? Integer.parseInt(args[1]) : 8080;
+
         ApplicationContext context;
         try {
-            context = InitService.initialize(dbFilePath);
+            context = InitService.initialize(DB_FILE_PATH);
         } catch (StorageInitializeException e) {
             logger.error("Application initialization failed: {}", e.getMessage());
             System.exit(1);
             return;
         }
 
-        var server = HttpServer.create(new InetSocketAddress(PORT), 0);
+        server = HttpServer.create(new InetSocketAddress(PORT), 0);
         
         server.createContext("/", exchange -> {
             String path = exchange.getRequestURI().getPath();
@@ -85,7 +88,8 @@ public class App {
 
         server.createContext("/api/groups", SessionFilter.withSessionValidation(context.groupHandler(), context.sessionManager()));
         server.createContext("/api/collections", SessionFilter.withSessionValidation(context.collectionHandler(), context.sessionManager()));
-        server.createContext("/api/collections", SessionFilter.withSessionValidation(context.coinHandler(), context.sessionManager()));
+        server.createContext("/api/coins", SessionFilter.withSessionValidation(context.coinHandler(), context.sessionManager()));
+        server.createContext("/api/logout", SessionFilter.withSessionValidation(context.logoutHandler(), context.sessionManager()));
         
         server.setExecutor(null);
         server.start();
@@ -100,6 +104,13 @@ public class App {
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static void stopServer() {
+        if(server != null){
+            server.stop(0);
+            logger.info("server stopped");
         }
     }
 

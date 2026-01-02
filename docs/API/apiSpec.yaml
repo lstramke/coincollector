@@ -31,6 +31,19 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /api/logout:
+    post:
+      tags:
+        - Login
+      summary: Logs out the current user
+      responses:
+        "204":
+          description: Successfully logged out
+        "401":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /api/registration:
     post:
       tags:
@@ -54,6 +67,16 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "500":
           $ref: "#/components/responses/InternalServerError"
+
+# Internal
+  /api/shutdown:
+    post:
+      tags:
+        - Internal
+      summary: Shuts down the server (for desktop app only)
+      responses:
+        "200":
+          description: Server is shutting down
 
   # GROUP
   /api/groups:
