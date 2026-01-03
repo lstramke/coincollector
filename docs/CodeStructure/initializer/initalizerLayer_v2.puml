@@ -1,0 +1,44 @@
+@startuml initializerLayer_v2
+
+package configuration {
+    interface StorageInitializer {
+        + init() : void
+    }
+
+    class SqliteInitializer {
+        - connection : Connection
+        - logger : Logger
+        - tableNames : List<String>
+        + init() : void
+    }
+
+    StorageInitializer <|-- SqliteInitializer
+
+    class DataSourceAutoActivateForeignKeys {
+        + activate(Connection) : void
+    }
+
+    class InitService {
+        + initialize() : ApplicationContext
+    }
+
+    class ApplicationContext {
+        + SessionManager sessionManager,
+        + LoginHandler loginHandler,
+        + LogoutHandler logoutHandler,
+        + RegistrationHandler registrationHandler,
+        + GroupHandler groupHandler,
+        + CollectionHandler collectionHandler,
+        + CoinHandler coinHandler
+    }
+    note top of ApplicationContext
+        This is a Java record that contains all handlers required for external use.
+    end note
+}
+
+
+InitService ..> StorageInitializer : uses
+InitService ..> DataSourceAutoActivateForeignKeys : uses
+
+
+@enduml
