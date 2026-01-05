@@ -52,13 +52,13 @@ public class App {
                 exchange.getResponseHeaders().set("Content-Type", getContentType(path));
                 exchange.sendResponseHeaders(200, response.length);
                 exchange.getResponseBody().write(response);
-                exchange.getResponseBody().close();
+                exchange.close();
                 is.close();
             } else {
                 String notFound = "404 - Not Found";
                 exchange.sendResponseHeaders(404, notFound.length());
                 exchange.getResponseBody().write(notFound.getBytes());
-                exchange.getResponseBody().close();
+                exchange.close();
             }
         });
 
