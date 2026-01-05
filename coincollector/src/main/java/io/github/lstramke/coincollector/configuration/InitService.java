@@ -31,14 +31,26 @@ import io.github.lstramke.coincollector.services.SessionManagerImpl;
 import io.github.lstramke.coincollector.services.UserStorageServiceImpl;
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * Service for initializing the application context and all dependencies.
+ * Handles database setup, repository creation, service initialization, and handler wiring.
+ * Provides a factory method for bootstrapping the entire application.
+ */
 public class InitService {
     
     private static final Logger logger = LoggerFactory.getLogger(InitService.class);
     
+    /**
+     * Initializes the complete application context with all required dependencies.
+     * Sets up the SQLite database, creates all repositories, services, and handlers.
+     *
+     * @param dbFilePath the file path to the SQLite database file
+     * @return a fully initialized ApplicationContext with all components wired together
+     * @throws StorageInitializeException if database initialization fails
+     */
     public static ApplicationContext initialize(String dbFilePath) throws StorageInitializeException {
         logger.info("Initializing application context...");
         
-        // Database setup
         SQLiteDataSource dataSource = new SQLiteDataSource();
         dataSource.setUrl("jdbc:sqlite:" + dbFilePath);
         
@@ -74,7 +86,6 @@ public class InitService {
         var collectionHandler = new CollectionHandler(collectionStorageService, groupStorageService, mapper);
         var coinHandler = new CoinHandler(coinStorageService, collectionStorageService, groupStorageService, mapper);
 
-        
         logger.info("Application context initialized successfully");
         
         return new ApplicationContext(sessionManager, loginHandler, logoutHandler, registrationHandler, groupHandler, collectionHandler, coinHandler);

@@ -30,6 +30,11 @@ import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageS
 import io.github.lstramke.coincollector.services.EuroCoinCollectionStorageService;
 import io.github.lstramke.coincollector.services.EuroCoinStorageService;
 
+/**
+ * Handler for coin-related HTTP requests.
+ * Manages CRUD operations for Euro coins within collections.
+ * Validates ownership and authorization for all coin operations.
+ */
 public class CoinHandler implements HttpHandler {
     
     private final EuroCoinStorageService coinStorageService;
@@ -39,6 +44,14 @@ public class CoinHandler implements HttpHandler {
     private final static Logger logger = LoggerFactory.getLogger(CoinHandler.class);
     private final static String PREFIX = "/api/coins";
 
+    /**
+     * Constructs a new CoinHandler with required dependencies.
+     *
+     * @param coinStorageService the service for coin storage operations
+     * @param collectionStorageService the service for collection storage operations
+     * @param groupStorageService the service for collection group storage operations
+     * @param mapper the ObjectMapper for JSON serialization/deserialization
+     */
     public CoinHandler(
         EuroCoinStorageService coinStorageService, 
         EuroCoinCollectionStorageService collectionStorageService, 
@@ -69,6 +82,13 @@ public class CoinHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles GET requests to retrieve a specific coin by ID.
+     * Validates that the requesting user owns the coin through the collection hierarchy.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleGet(HttpExchange exchange) throws IOException {
         logger.info("handleGet called");
         String userId = (String) exchange.getAttribute("userId");
@@ -99,6 +119,13 @@ public class CoinHandler implements HttpHandler {
 
     }
 
+    /**
+     * Handles POST requests to create a new coin.
+     * Validates ownership of the target collection before creation.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleCreate(HttpExchange exchange) throws IOException {
         logger.info("handleCreate called");
         String userId = (String) exchange.getAttribute("userId");
@@ -155,6 +182,13 @@ public class CoinHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles PATCH requests to update an existing coin.
+     * Validates ownership of both the source and target collections if the coin is moved.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleUpdate(HttpExchange exchange) throws IOException {
         logger.info("handleUpdate called");
         String userId = (String) exchange.getAttribute("userId");
@@ -217,6 +251,13 @@ public class CoinHandler implements HttpHandler {
 
     }
 
+    /**
+     * Handles DELETE requests to remove a coin.
+     * Validates ownership of the coin through the collection hierarchy.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleDelete(HttpExchange exchange) throws IOException {
         logger.info("handleDelete called");
         String userId = (String) exchange.getAttribute("userId");
@@ -242,6 +283,21 @@ public class CoinHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Validates that the specified user owns the collection through the group hierarchy.
+     * Sends a 404 response and closes the exchange if the user is not the owner.
+     *
+     * @param exchange the HTTP exchange for sending error responses
+     * @param collectionId the ID of the collection to check ownership for
+     * @param userId the ID of the user to validate
+     * @return true if the user is not the owner (response sent and exchange closed), false if the user is the owner
+     * @throws IOException if an I/O error occurs
+     * @throws EuroCoinCollectionGetByIdException if retrieving the collection fails
+     * @throws EuroCoinCollectionNotFoundException if the collection is not found
+     * @throws EuroCoinCollectionCoinsLoadException if loading collection coins fails
+     * @throws EuroCoinCollectionGroupGetByIdException if retrieving the group fails
+     * @throws EuroCoinCollectionGroupNotFoundException if the group is not found
+     */
     private boolean handleIfNotOwnerViaCollection(
         HttpExchange exchange, 
         String collectionId, 

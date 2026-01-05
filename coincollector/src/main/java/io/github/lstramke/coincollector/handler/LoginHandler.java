@@ -17,6 +17,11 @@ import io.github.lstramke.coincollector.model.DTOs.Requests.LoginRequest;
 import io.github.lstramke.coincollector.services.UserStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
 
+/**
+ * Handler for user login HTTP requests.
+ * Manages user authentication and session creation.
+ * Sets HTTP-only session cookies for authenticated users.
+ */
 public class LoginHandler implements HttpHandler {
 
     private final UserStorageService userStorageService;
@@ -24,6 +29,13 @@ public class LoginHandler implements HttpHandler {
     private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(LoginHandler.class);
     
+    /**
+     * Constructs a new LoginHandler with required dependencies.
+     *
+     * @param userStorageService the service for user storage operations
+     * @param sessionManager the service for managing user sessions
+     * @param mapper the ObjectMapper for JSON serialization/deserialization
+     */
     public LoginHandler(UserStorageService userStorageService, SessionManager sessionManager, ObjectMapper mapper) {
         this.userStorageService = userStorageService;
         this.sessionManager = sessionManager;
@@ -45,6 +57,13 @@ public class LoginHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles POST requests for user login.
+     * Validates user credentials, creates a new session, and sets a session cookie.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleLogin(HttpExchange exchange) throws IOException{
         String body = new String(exchange.getRequestBody().readAllBytes());
 

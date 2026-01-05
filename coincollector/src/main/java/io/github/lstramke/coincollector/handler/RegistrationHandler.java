@@ -16,6 +16,11 @@ import io.github.lstramke.coincollector.services.SessionManager;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * Handler for user registration HTTP requests.
+ * Manages new user account creation and automatic session initialization.
+ * Sets HTTP-only session cookies for newly registered users.
+ */
 public class RegistrationHandler implements HttpHandler {
 
     private final UserStorageService userStorageService;
@@ -23,8 +28,13 @@ public class RegistrationHandler implements HttpHandler {
     private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(RegistrationHandler.class);
 
-    
-
+    /**
+     * Constructs a new RegistrationHandler with required dependencies.
+     *
+     * @param userStorageService the service for user storage operations
+     * @param sessionManager the service for managing user sessions
+     * @param mapper the ObjectMapper for JSON serialization/deserialization
+     */
     public RegistrationHandler(UserStorageService userStorageService, SessionManager sessionManager, ObjectMapper mapper) {
         this.userStorageService = userStorageService;
         this.sessionManager = sessionManager;
@@ -46,6 +56,13 @@ public class RegistrationHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles POST requests for user registration.
+     * Creates a new user account, initializes a session, and sets a session cookie.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleRegistration(HttpExchange exchange) throws IOException {
         String body = new String(exchange.getRequestBody().readAllBytes());
 

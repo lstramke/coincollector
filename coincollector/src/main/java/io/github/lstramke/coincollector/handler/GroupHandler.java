@@ -24,6 +24,11 @@ import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageS
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * Handler for collection group-related HTTP requests.
+ * Manages CRUD operations for Euro coin collection groups.
+ * Validates ownership and authorization for all group operations.
+ */
 public class GroupHandler implements HttpHandler {
 
     private final EuroCoinCollectionGroupStorageService groupStorageService;
@@ -31,7 +36,12 @@ public class GroupHandler implements HttpHandler {
     private final static Logger logger = LoggerFactory.getLogger(GroupHandler.class);
     private final static String PREFIX = "/api/groups";
 
-    
+    /**
+     * Constructs a new GroupHandler with required dependencies.
+     *
+     * @param groupStorageService the service for collection group storage operations
+     * @param mapper the ObjectMapper for JSON serialization/deserialization
+     */
     public GroupHandler(EuroCoinCollectionGroupStorageService groupStorageService, ObjectMapper mapper) {
         this.groupStorageService = groupStorageService;
         this.mapper = mapper;
@@ -63,6 +73,12 @@ public class GroupHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles GET requests to retrieve all groups belonging to the authenticated user.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleGetAll(HttpExchange exchange) throws IOException {
         logger.info("handleGetAll called");
         String userId = (String) exchange.getAttribute("userId");
@@ -90,7 +106,14 @@ public class GroupHandler implements HttpHandler {
             exchange.close();
         }
     }    
-    
+
+    /**
+     * Handles POST requests to create a new collection group.
+     * The authenticated user becomes the owner of the created group.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleCreate(HttpExchange exchange) throws IOException {
         logger.info("handleCreate called");
         String userId = (String) exchange.getAttribute("userId");
@@ -129,6 +152,13 @@ public class GroupHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles GET requests to retrieve a specific group by ID.
+     * Validates that the requesting user owns the group.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleGetWithId(HttpExchange exchange) throws IOException {
         logger.info("handleGetWithId called");
         String userId = (String) exchange.getAttribute("userId");
@@ -158,6 +188,13 @@ public class GroupHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles PATCH requests to update an existing group's metadata.
+     * Validates that the requesting user owns the group before updating.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleUpdate(HttpExchange exchange) throws IOException {
         logger.info("handleUpdate called");
         String userId = (String) exchange.getAttribute("userId");
@@ -201,6 +238,13 @@ public class GroupHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles DELETE requests to remove a group.
+     * Validates that the requesting user owns the group before deletion.
+     *
+     * @param exchange the HTTP exchange containing request and response information
+     * @throws IOException if an I/O error occurs during request handling
+     */
     private void handleDelete(HttpExchange exchange) throws IOException {
         logger.info("handleDelete called");
         String userId = (String) exchange.getAttribute("userId");
@@ -224,6 +268,13 @@ public class GroupHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Checks if the given path represents a valid group ID path.
+     * Validates that the path follows the pattern /api/groups/{uuid}.
+     *
+     * @param path the request path to validate
+     * @return true if the path contains a valid UUID after the prefix, false otherwise
+     */
     private boolean isGroupIdPath(String path) {
         if (path.startsWith(PREFIX + "/")) {
             String id = path.substring(PREFIX.length() + 1);
@@ -237,6 +288,16 @@ public class GroupHandler implements HttpHandler {
         return false;
     }
 
+    /**
+     * Validates that the specified user owns the group.
+     * Sends a 404 response and closes the exchange if the user is not the owner.
+     *
+     * @param exchange the HTTP exchange for sending error responses
+     * @param group the group to check ownership for
+     * @param userId the ID of the user to validate
+     * @return true if the user is not the owner (response sent and exchange closed), false if the user is the owner
+     * @throws IOException if an I/O error occurs
+     */
     private boolean handleIfNotOwner(
         HttpExchange exchange, 
         EuroCoinCollectionGroup group, 
