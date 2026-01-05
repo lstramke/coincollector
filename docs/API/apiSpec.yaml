@@ -4,105 +4,128 @@ info:
   version: "1.0"
 
 paths:
-
-# Authentication
+  # Authentication
   /api/login:
     post:
       tags:
-        - User
+        - Login
       summary: Logs in a user if the username exists
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: "#/components/schemas/LoginRequest"
 
       responses:
-        '200':
+        "200":
           description: Successful login
-          content:
-            application/json:
+          headers:
+            Set-Cookie:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                type: string
+              description: The session cookie (sessionId)
+
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/logout:
+    post:
+      tags:
+        - Login
+      summary: Logs out the current user
+      responses:
+        "204":
+          description: Successfully logged out
+        "401":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /api/registration:
     post:
       tags:
-        - User
+        - Registration
       summary: Creates a new user
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegistrationRequest'
+              $ref: "#/components/schemas/RegistrationRequest"
       responses:
-        '200':
+        "201":
           description: Successful registration
-          content:
-            application/json:
+          headers:
+            Set-Cookie:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                type: string
+              description: The session cookie (sessionId)
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
-# GROUP
+# Internal
+  /api/shutdown:
+    post:
+      tags:
+        - Internal
+      summary: Shuts down the server (for desktop app only)
+      responses:
+        "200":
+          description: Server is shutting down
+
+  # GROUP
   /api/groups:
     get:
       tags:
         - Groups
-      summary: Gets all groups
+      summary: Gets all groups for current user
       parameters:
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved all groups
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Group'
-              
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    
+                  $ref: "#/components/schemas/Group"
+
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
     post:
       tags:
         - Groups
       summary: Creates new group
       parameters:
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateGroupRequest'
+              $ref: "#/components/schemas/CreateGroupRequest"
 
       responses:
-        '201':
+        "201":
           description: Successfully created a new group
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Group'
-                
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    
+                $ref: "#/components/schemas/Group"
+
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /api/groups/{id}:
     get:
       tags:
@@ -116,21 +139,20 @@ paths:
             type: string
           description: The unique identifier of the group
           example: "123e4567-e89b-12d3-a456-426614174000"
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved the group
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Group'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/Group"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
     patch:
       tags:
@@ -144,27 +166,26 @@ paths:
             type: string
           description: The unique identifier of the group
           example: "123e4567-e89b-12d3-a456-426614174000"
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupMetadata'
+              $ref: "#/components/schemas/GroupMetadata"
 
       responses:
-        '200':
+        "200":
           description: Successfully updated a groups metadata
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GroupMetadata'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/GroupMetadata"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
     delete:
       tags:
@@ -178,46 +199,43 @@ paths:
             type: string
           description: The unique identifier of the group
           example: "123e4567-e89b-12d3-a456-426614174000"
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       responses:
-        '204':
+        "204":
           description: Successfully deleted a group
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
-
-# COLLECTION
+  # COLLECTION
   /api/collections:
     post:
       tags:
         - Collections
       summary: Creates new collection
       parameters:
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateCollectionRequest'
+              $ref: "#/components/schemas/CreateCollectionRequest"
 
       responses:
-        '201':
+        "201":
           description: Successfully created a new collection
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
-                
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/Collection"
+
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /api/collections/{id}:
     get:
@@ -232,22 +250,21 @@ paths:
             type: string
           description: The unique identifier of the collection
           example: "123e4567-e89b-12d3-a456-426614174000"
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved the collection
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  
+                $ref: "#/components/schemas/Collection"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
     patch:
       tags:
         - Collections
@@ -260,27 +277,26 @@ paths:
             type: string
           description: The unique identifier of the collection
           example: "123e4567-e89b-12d3-a456-426614174000"
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CollectionMetadata'
+              $ref: "#/components/schemas/CollectionMetadata"
 
       responses:
-        '200':
+        "200":
           description: Successfully updated a collections metadata
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollectionMetadata'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/CollectionMetadata"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
     delete:
       tags:
@@ -294,45 +310,45 @@ paths:
             type: string
           description: The unique identifier of the collection
           example: "123e4567-e89b-12d3-a456-426614174000"
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       responses:
-        '204':
+        "204":
           description: Successfully deleted a collection
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
-# COINS
+  # COINS
   /api/coins:
     post:
       tags:
         - Coins
       summary: Creates new coin
       parameters:
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateCoinRequest'
+              $ref: "#/components/schemas/CreateCoinRequest"
 
       responses:
-        '201':
+        "201":
           description: Successfully created a new coin
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Coin'
-                
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/Coin"
+
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Coin already exists in this collection
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /api/coins/{id}:
     get:
@@ -347,22 +363,21 @@ paths:
             type: string
           description: The unique identifier of the coin
           example: "123e4567-e89b-12d3-a456-426614174000"
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved the coin
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Coin'
-                
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/Coin"
+
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
     patch:
       tags:
@@ -376,27 +391,26 @@ paths:
             type: string
           description: The unique identifier of the coin
           example: "123e4567-e89b-12d3-a456-426614174000"
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateCoinRequest'
+              $ref: "#/components/schemas/UpdateCoinRequest"
 
       responses:
-        '200':
+        "200":
           description: Successfully updated a coin
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Coin'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                $ref: "#/components/schemas/Coin"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
     delete:
       tags:
@@ -410,22 +424,19 @@ paths:
             type: string
           description: The unique identifier of the coin
           example: "123e4567-e89b-12d3-a456-426614174000"
-        - $ref: '#/components/parameters/SessionId'
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/SessionId"
       responses:
-        '204':
+        "204":
           description: Successfully deleted a coin
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
 # COMPONENTS
 components:
-
   #PARAMETERS
   parameters:
     SessionId:
@@ -436,16 +447,7 @@ components:
         type: string
       description: The session ID from login
       example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-    
-    UserId:
-      name: userId
-      in: header
-      required: true
-      schema:
-        type: string
-      description: The user ID from login
-      example: "123e4567-e89b-12d3-a456-426614174000"
-  
+
   #RESPONSES
   responses:
     BadRequest:
@@ -454,21 +456,21 @@ components:
         application/json:
           example:
             error: "Request is not valid"
-    
+
     NotFound:
       description: Resource not found
       content:
         application/json:
           example:
             error: "Resource not found"
-    
+
     InternalServerError:
       description: Internal server error
       content:
         application/json:
           example:
             error: "An unexpected error occurred"
-  
+
   #SCHEMAS
   schemas:
     LoginRequest:
@@ -482,56 +484,31 @@ components:
           example: "max.mustermann"
       example:
         username: "max.mustermann"
-    
-    LoginResponse:
-      type: object
-      properties:
-        userId:
-          type: string
-          description: The unique ID of the logged-in user
-          example: "123e4567-e89b-12d3-a456-426614174000"
-        sessionId:
-          type: string
-          description: The session ID for the current session
-          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-      example:
-        userId: "123e4567-e89b-12d3-a456-426614174000"
-        sessionId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
     RegistrationRequest:
       allOf:
-       - $ref: '#/components/schemas/LoginRequest'
-       - type: object
-    
+        - $ref: "#/components/schemas/LoginRequest"
+        - type: object
+
     CreateGroupRequest:
       type: object
       required:
         - name
       properties:
-        name: 
+        name:
           type: string
           description: The name of the group
           example: "Euro Coins 2024"
         collections:
           type: array
-          description: Optional list of collections to add to the group
+          description: Optional list of collectionIds to add to the group
           items:
-            $ref: '#/components/schemas/Collection'
+            type: string
+            description: The id of the collection
+          example: "456e7890-a12b-34c5-d678-901234567def"
       example:
         name: "Euro Coins 2024"
         collections: []
-        
-    GroupActionResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: The unique identifier of the group
-          example: "123e4567-e89b-12d3-a456-426614174000"
-        action:
-          type: string
-          description: The action that was performed
-          example: "created"
 
     GroupMetadata:
       type: object
@@ -548,8 +525,8 @@ components:
     Group:
       type: object
       required:
-      - id
-      - name
+        - id
+        - name
       properties:
         id:
           type: string
@@ -563,19 +540,19 @@ components:
           type: array
           description: List of collections in this group
           items:
-            $ref: '#/components/schemas/Collection'
+            $ref: "#/components/schemas/Collection"
       example:
         id: "123e4567-e89b-12d3-a456-426614174000"
         name: "Euro Coins 2024"
         collections: []
-    
+
     CreateCollectionRequest:
       type: object
       required:
         - name
         - groupId
       properties:
-        name: 
+        name:
           type: string
           description: The name of the collection
           example: "German Euro Coins"
@@ -587,27 +564,11 @@ components:
           type: array
           description: Optional list of coins to add to the collection
           items:
-            $ref: '#/components/schemas/Coin'
+            $ref: "#/components/schemas/Coin"
       example:
         name: "German Euro Coins"
         groupId: "123e4567-e89b-12d3-a456-426614174000"
         coins: []
-
-    CollectionActionResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: The unique identifier of the collection
-          example: "456e7890-a12b-34c5-d678-901234567def"
-        groupId:
-          type: string
-          description: The unique identifier of the group this collection belongs to
-          example: "123e4567-e89b-12d3-a456-426614174000"
-        action:
-          type: string
-          description: The action that was performed
-          example: "created"
 
     CollectionMetadata:
       type: object
@@ -630,9 +591,9 @@ components:
     Collection:
       type: object
       required:
-      - id
-      - name
-      - groupId
+        - id
+        - name
+        - groupId
       properties:
         id:
           type: string
@@ -649,7 +610,7 @@ components:
           type: array
           description: List of coins in this collection
           items:
-            $ref: '#/components/schemas/Coin'
+            $ref: "#/components/schemas/Coin"
       example:
         id: "456e7890-a12b-34c5-d678-901234567def"
         name: "German Euro Coins"
@@ -681,15 +642,15 @@ components:
           example: 200
         country:
           type: string
-          description: The country of origin
-          example: "Germany"
+          description: The ISO 3166-1 alpha-2 code of country of origin
+          example: "DE"
         collectionId:
           type: string
           description: The unique identifier of the collection this coin belongs to
           example: "456e7890-a12b-34c5-d678-901234567def"
         mint:
           type: string
-          description: The mint mark
+          description: The mint mark, required if country is DE
           example: "A"
         description:
           type: string
@@ -698,7 +659,7 @@ components:
       example:
         year: 2024
         value: 200
-        country: "Germany"
+        country: "DE"
         collectionId: "456e7890-a12b-34c5-d678-901234567def"
         mint: "A"
         description: "Special commemorative coin"
@@ -738,36 +699,19 @@ components:
         mint: "A"
         description: "Special commemorative coin"
 
-    CoinActionResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: The unique identifier of the collection
-          example: "456e7890-a12b-34c5-d678-901234567def"
-        groupId:
-          type: string
-          description: The unique identifier of the group this collection belongs to
-          example: "123e4567-e89b-12d3-a456-426614174000"
-        action:
-          type: string
-          description: The action that was performed
-          example: "created"
-
-
     Coin:
       type: object
       required:
-      - id
-      - year
-      - value
-      - country
-      - collectionId
+        - id
+        - year
+        - value
+        - country
+        - collectionId
       properties:
         id:
           type: string
           description: The unique identifier of the coin
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: "GERMANY_TWO_EURO_2024_A"
         year:
           type: integer
           description: The year the coin was minted
@@ -778,8 +722,8 @@ components:
           example: 200
         country:
           type: string
-          description: The country of origin
-          example: "Germany"
+          description: The ISO 3166-1 alpha-2 code of country of origin
+          example: "DE"
         collectionId:
           type: string
           description: The unique identifier of the collection this coin belongs to
@@ -793,17 +737,10 @@ components:
           description: Additional description or notes (optional)
           example: "Special commemorative coin"
       example:
-        id: "789e0123-b45c-67d8-e901-234567890abc"
+        id: "GERMANY_TWO_EURO_2024_A"
         year: 2024
         value: 200
-        country: "Germany"
+        country: "DE"
         collectionId: "456e7890-a12b-34c5-d678-901234567def"
         mint: "A"
         description: "Special commemorative coin"
-
-
-
-
-        
-
-

@@ -79,6 +79,11 @@ public class EuroCoinCollectionGroup implements CollectionGroup<EuroCoin, EuroCo
     }
 
     @Override
+    public void setName(String newName) {
+        this.name = newName;
+    }
+
+    @Override
     public String getOwnerId(){
         return ownerId;
     }
@@ -90,7 +95,7 @@ public class EuroCoinCollectionGroup implements CollectionGroup<EuroCoin, EuroCo
 
     @Override
     public void addCollection(EuroCoinCollection collection) {
-        if (collection == null || collection.getGroupId() != this.id)
+        if (collection == null || !collection.getGroupId().equals(this.id))
             throw new IllegalArgumentException("collection is null or has false groupId");
         this.collections.add(collection);
     }

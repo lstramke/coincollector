@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionAlreadyExistsException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetAllException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionSaveException;
@@ -31,6 +34,8 @@ import io.github.lstramke.coincollector.repositories.EuroCoinCollectionGroupStor
  */
 public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollectionGroupStorageService {
 
+    private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionGroupStorageServiceImpl.class);
+
     private final DataSource dataSource;
     private final EuroCoinCollectionGroupStorageRepository groupStorageRepository;
     private final EuroCoinCollectionStorageService euroCoinCollectionStorageService;
@@ -48,9 +53,10 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
     @Override
     public void save(EuroCoinCollectionGroup group) throws EuroCoinCollectionGroupSaveException {
         if(group == null){
+            logger.error("save() called with null group");
             throw new IllegalArgumentException();
         }
-
+        logger.info("Saving group with id: {}", group.getId());
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -63,11 +69,14 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
                     }
                 }
                 connection.commit();
+                logger.info("Group saved successfully: {}", group.getId());
             } catch (SQLException | EuroCoinCollectionSaveException | EuroCoinCollectionUpdateException e) {
                 connection.rollback();
+                logger.error("Error saving group {}: {}", group.getId(), e.getMessage(), e);
                 throw new EuroCoinCollectionGroupSaveException(group.getId(), e);
             }
         } catch (SQLException e) {
+            logger.error("SQL error saving group {}: {}", group.getId(), e.getMessage(), e);
             throw new EuroCoinCollectionGroupSaveException(group.getId(), e);
         }
     }
@@ -75,6 +84,7 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
     /** {@inheritDoc} */
     @Override
     public EuroCoinCollectionGroup getById(String groupId) throws EuroCoinCollectionGroupGetByIdException, EuroCoinCollectionGroupNotFoundException {
+        logger.info("Fetching group by id: {}", groupId);
         try (Connection connection = dataSource.getConnection()) {
             EuroCoinCollectionGroup group = groupStorageRepository
             .read(connection, groupId)
@@ -82,10 +92,13 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
             euroCoinCollectionStorageService.getAll(connection).stream()
             .filter(collection -> Objects.equals(collection.getGroupId(), groupId))
             .forEach(group::addCollection);
+            logger.info("Group fetched successfully: {}", groupId);
             return group;
         } catch (EuroCoinCollectionGetAllException e) {
+            logger.error("Error fetching collections for group {}: {}", groupId, e.getMessage(), e);
             throw new EuroCoinCollectionGroupGetByIdException(groupId, e);
         } catch (SQLException e) {
+            logger.error("SQL error fetching group {}: {}", groupId, e.getMessage(), e);
             throw new EuroCoinCollectionGroupGetByIdException(groupId, e);
         }
     }
@@ -94,12 +107,15 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
     @Override
     public void updateMetadata(EuroCoinCollectionGroup group) throws EuroCoinCollectionGroupUpdateException {
         if(group == null){
+            logger.error("updateMetadata() called with null group");
             throw new IllegalArgumentException();
         }
-
+        logger.info("Updating group metadata for id: {}", group.getId());
         try (Connection connection = dataSource.getConnection()) {
             groupStorageRepository.update(connection, group);
+            logger.info("Group metadata updated: {}", group.getId());
         } catch (SQLException e) {
+            logger.error("SQL error updating group {}: {}", group.getId(), e.getMessage(), e);
             throw new EuroCoinCollectionGroupUpdateException(group.getId(), e);
         }
     }
@@ -107,9 +123,12 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
     /** {@inheritDoc} */
     @Override
     public void delete(String groupId) throws EuroCoinCollectionGroupDeleteException {
+        logger.info("Deleting group with id: {}", groupId);
         try (Connection connection = dataSource.getConnection()) {
             groupStorageRepository.delete(connection, groupId);
+            logger.info("Group deleted: {}", groupId);
         } catch (SQLException e) {
+            logger.error("SQL error deleting group {}: {}", groupId, e.getMessage(), e);
             throw new EuroCoinCollectionGroupDeleteException(groupId, e);
         }
     }
@@ -117,6 +136,7 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
     /** {@inheritDoc} */
     @Override
     public List<EuroCoinCollectionGroup> getAllByUser(String userId) throws EuroCoinCollectionGroupGetAllException {
+        logger.info("Fetching all groups for user: {}", userId);
         try (Connection connection = dataSource.getConnection()) {
             Map<String, EuroCoinCollectionGroup> groupsByUser = groupStorageRepository
             .getAllByUser(connection, userId)
@@ -126,8 +146,10 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
         for(EuroCoinCollection collection : collections){
             groupsByUser.get(collection.getGroupId()).addCollection(collection);
         }
+        logger.info("Fetched {} groups for user {}", groupsByUser.size(), userId);
         return groupsByUser.values().stream().toList();
         } catch (SQLException | EuroCoinCollectionGetAllException e) {
+           logger.error("Error fetching groups for user {}: {}", userId, e.getMessage(), e);
            throw new EuroCoinCollectionGroupGetAllException(e);
         }
     }

@@ -10,6 +10,7 @@ import java.util.List;
 public interface CollectionGroup<T extends Coin, C extends CoinCollection<T>> {
     String getId();
     String getName();
+    void setName(String newName);
     String getOwnerId();
     List<C> getCollections();
     void addCollection(C collection);

@@ -1,0 +1,642 @@
+@startuml fullCoincollectorStructure_v1
+
+!define SERVICE_COLOR #E1F5FE
+!define REPOSITORY_COLOR #FFF9C4
+!define INTERFACE_COLOR #E8EAF6
+!define EXCEPTION_COLOR #FFCDD2
+!define MODEL_COLOR #C8E6C9
+!define DTOS_COLOR #FFD6A5
+!define CONFIG_COLOR #B3E5FC
+!define HANDLER_COLOR #F3E5F5
+
+top to bottom direction
+
+package configuration CONFIG_COLOR {
+	class ApplicationContext <<record>> {
+		SessionManager sessionManager,
+		LoginHandler loginHandler,
+		LogoutHandler logoutHandler,
+		RegistrationHandler registrationHandler,
+		GroupHandler groupHandler,
+		CollectionHandler collectionHandler,
+		CoinHandler coinHandler
+	}
+	
+	class DataSourceAutoActivateForeignKeys {
+		- delegate : DataSource
+		+ getConnection() : Connection
+		+ getConnection(String, String) : Connection
+		- enableForeignKeys(Connection) : void
+	}
+	
+	class InitService {
+		- {static} logger : Logger
+		+ {static} initialize(String) : ApplicationContext
+	}
+	
+	class SqliteInitializer {
+		- dataSource : DataSource
+		- {static} logger : Logger
+		- tableNames : List<String>
+		+ init() : void
+		- initUserTable(Connection) : void
+		- initEuroCoinCollectionGroupTable(Connection) : void
+		- initEuroCoinCollectionTable(Connection) : void
+		- initEuroCoinTable(Connection) : void
+		- initTable(Connection, String, String) : void
+	}
+	
+	interface StorageInitializer {
+		+ init() : void
+	}
+	
+	StorageInitializer <|.. SqliteInitializer
+	InitService ..> StorageInitializer : uses
+	InitService ..> DataSourceAutoActivateForeignKeys : creates
+	InitService ..> ApplicationContext : creates
+}
+
+package handler HANDLER_COLOR {
+	class CoinHandler {
+		- mapper : ObjectMapper
+		- {static} logger : Logger
+		- {static} PREFIX : String
+		+ handle(HttpExchange) : void
+		- handleGet(HttpExchange) : void
+		- handleCreate(HttpExchange) : void
+		- handleUpdate(HttpExchange) : void
+		- handleDelete(HttpExchange) : void
+		- handleIfNotOwnerViaCollection(HttpExchange, String, String) : boolean
+	}
+	
+	class CollectionHandler {
+		- mapper : ObjectMapper
+		- {static} logger : Logger
+		- {static} PREFIX : String
+		+ handle(HttpExchange) : void
+		- handleGet(HttpExchange) : void
+		- handleCreate(HttpExchange) : void
+		- handleUpdate(HttpExchange) : void
+		- handleDelete(HttpExchange) : void
+		- handleIfNotOwnerViaGroup(HttpExchange, String, String) : boolean
+	}
+	
+	class GroupHandler {
+		- mapper : ObjectMapper
+		- {static} logger : Logger
+		- {static} PREFIX : String
+		+ handle(HttpExchange) : void
+		- handleGetAll(HttpExchange) : void
+		- handleGetWithId(HttpExchange) : void
+		- handleCreate(HttpExchange) : void
+		- handleUpdate(HttpExchange) : void
+		- handleDelete(HttpExchange) : void
+		- isGroupIdPath(String) : boolean
+	}
+	
+	class LoginHandler {
+		- mapper : ObjectMapper
+		- {static} logger : Logger
+		+ handle(HttpExchange) : void
+		- handleLogin(HttpExchange) : void
+	}
+	
+	class LogoutHandler {
+		- {static} logger : Logger
+		+ handle(HttpExchange) : void
+		- handleLogout(HttpExchange) : void
+	}
+	
+	class RegistrationHandler {
+		- mapper : ObjectMapper
+		- {static} logger : Logger
+		+ handle(HttpExchange) : void
+		- handleRegistration(HttpExchange) : void
+	}
+	
+}
+
+package services SERVICE_COLOR {
+	interface EuroCoinCollectionGroupStorageService {
+		+ save(EuroCoinCollectionGroup) : void
+		+ getById(String) : EuroCoinCollectionGroup
+		+ getAllByUser(String) : List<EuroCoinCollectionGroup>
+		+ update(EuroCoinCollectionGroup) : void
+		+ delete(String) : void
+	}
+	
+	class EuroCoinCollectionGroupStorageServiceImpl {
+		- {static} logger : Logger
+		- dataSource : DataSource
+		+ save(EuroCoinCollectionGroup) : void
+		+ getById(String) : EuroCoinCollectionGroup
+		+ getAllByUser(String) : List<EuroCoinCollectionGroup>
+		+ update(EuroCoinCollectionGroup) : void
+		+ delete(String) : void
+	}
+	
+	interface EuroCoinCollectionStorageService {
+		+ save(EuroCoinCollection) : void
+		+ save(EuroCoinCollection, Connection) : void
+		+ getById(String) : EuroCoinCollection
+		+ getAllByGroupId(String) : List<EuroCoinCollection>
+		+ updateMetadata(EuroCoinCollection) : void
+		+ updateMetadata(EuroCoinCollection, Connection) : void
+		+ delete(String) : void
+		+ loadCoins(EuroCoinCollection) : void
+	}
+	
+	class EuroCoinCollectionStorageServiceImpl {
+		- dataSource : DataSource
+		+ save(EuroCoinCollection) : void
+		+ save(EuroCoinCollection, Connection) : void
+		+ getById(String) : EuroCoinCollection
+		+ getAllByGroupId(String) : List<EuroCoinCollection>
+		+ updateMetadata(EuroCoinCollection) : void
+		+ updateMetadata(EuroCoinCollection, Connection) : void
+		+ delete(String) : void
+		+ loadCoins(EuroCoinCollection) : void
+		- executeSave(EuroCoinCollection, Connection) : void
+	}
+	
+	interface EuroCoinStorageService {
+		+ save(EuroCoin) : void
+		+ save(EuroCoin, Connection) : void
+		+ getById(String) : EuroCoin
+		+ getAllByCollectionId(String) : List<EuroCoin>
+		+ update(EuroCoin) : void
+		+ update(EuroCoin, Connection) : void
+		+ delete(String) : void
+	}
+	
+	class EuroCoinStorageServiceImpl {
+		- dataSource : DataSource
+		+ save(EuroCoin) : void
+		+ save(EuroCoin, Connection) : void
+		+ getById(String) : EuroCoin
+		+ getAllByCollectionId(String) : List<EuroCoin>
+		+ update(EuroCoin) : void
+		+ update(EuroCoin, Connection) : void
+		+ delete(String) : void
+		- executeSave(EuroCoin, Connection) : void
+	}
+	
+	class SessionFilter {
+		- {static} logger : Logger
+		+ {static} withSessionValidation(HttpHandler, SessionManager) : HttpHandler
+		+ {static} getSessionCookie(HttpExchange) : String
+	}
+	
+	interface SessionManager {
+		+ createSession(String) : String
+		+ validateSession(String) : boolean
+		+ invalidateSession(String) : void
+		+ getUserId(String) : String
+	}
+	
+	class SessionManagerImpl {
+		- sessions : Map<String, String>
+		+ createSession(String) : String
+		+ validateSession(String) : boolean
+		+ invalidateSession(String) : void
+		+ getUserId(String) : String
+	}
+	
+	interface UserStorageService {
+		+ save(User) : void
+		+ getById(String) : User
+		+ getByUsername(String) : User
+		+ update(User) : void
+		+ delete(String) : void
+	}
+	
+	class UserStorageServiceImpl {
+		- dataSource : DataSource
+		+ save(User) : void
+		+ getById(String) : User
+		+ getByUsername(String) : User
+		+ update(User) : void
+		+ delete(String) : void
+	}
+	
+	EuroCoinCollectionGroupStorageService <|.. EuroCoinCollectionGroupStorageServiceImpl
+	EuroCoinCollectionStorageService <|.. EuroCoinCollectionStorageServiceImpl
+	EuroCoinStorageService <|.. EuroCoinStorageServiceImpl
+	SessionManager <|.. SessionManagerImpl
+	UserStorageService <|.. UserStorageServiceImpl
+
+}
+
+package repositories REPOSITORY_COLOR {
+	interface EuroCoinCollectionGroupStorageRepository {
+		+ create(Connection, EuroCoinCollectionGroup) : void
+		+ read(Connection, String) : Optional<EuroCoinCollectionGroup>
+		+ update(Connection, EuroCoinCollectionGroup) : void
+		+ delete(Connection, String) : void
+		+ getAllByUser(Connection, String) : List<EuroCoinCollectionGroup>
+	}
+	
+	interface EuroCoinCollectionStorageRepository {
+		+ create(Connection, EuroCoinCollection) : void
+		+ read(Connection, String) : Optional<EuroCoinCollection>
+		+ update(Connection, EuroCoinCollection) : void
+		+ delete(Connection, String) : void
+		+ getAllByGroupId(Connection, String) : List<EuroCoinCollection>
+	}
+	
+	interface EuroCoinStorageRepository {
+		+ create(Connection, EuroCoin) : void
+		+ read(Connection, String) : Optional<EuroCoin>
+		+ update(Connection, EuroCoin) : void
+		+ delete(Connection, String) : void
+		+ exists(Connection, String) : boolean
+		+ getAllByCollectionId(Connection, String) : List<EuroCoin>
+	}
+	
+	interface UserStorageRepository {
+		+ create(Connection, User) : void
+		+ read(Connection, String) : Optional<User>
+		+ getByUsername(Connection, String) : Optional<User>
+		+ update(Connection, User) : void
+		+ delete(Connection, String) : void
+	}
+	
+	package sqlite {
+		class EuroCoinCollectionGroupSqliteRepository {
+			- {static} logger : Logger
+			- tableName : String
+			+ create(Connection, EuroCoinCollectionGroup) : void
+			+ read(Connection, String) : Optional<EuroCoinCollectionGroup>
+			+ update(Connection, EuroCoinCollectionGroup) : void
+			+ delete(Connection, String) : void
+			+ getAllByUser(Connection, String) : List<EuroCoinCollectionGroup>
+			- validateEuroCoinCollectionGroup(EuroCoinCollectionGroup) : boolean
+			- mapRowToEuroCoinCollectionGroup(ResultSet) : EuroCoinCollectionGroup
+		}
+		
+		class EuroCoinCollectionSqliteRepository {
+			- {static} logger : Logger
+			- tableName : String
+			+ create(Connection, EuroCoinCollection) : void
+			+ read(Connection, String) : Optional<EuroCoinCollection>
+			+ update(Connection, EuroCoinCollection) : void
+			+ delete(Connection, String) : void
+			+ getAllByGroupId(Connection, String) : List<EuroCoinCollection>
+			- validateEuroCoinCollection(EuroCoinCollection) : boolean
+			- mapRowToEuroCoinCollection(ResultSet) : EuroCoinCollection
+		}
+		
+		class EuroCoinSqliteRepository {
+			- {static} logger : Logger
+			- tableName : String
+			+ create(Connection, EuroCoin) : void
+			+ read(Connection, String) : Optional<EuroCoin>
+			+ update(Connection, EuroCoin) : void
+			+ delete(Connection, String) : void
+			+ exists(Connection, String) : boolean
+			+ getAllByCollectionId(Connection, String) : List<EuroCoin>
+			- validateEuroCoin(EuroCoin) : boolean
+			- mapRowToEuroCoin(ResultSet) : EuroCoin
+		}
+		
+		class UserSqliteRepository {
+			- {static} logger : Logger
+			- tableName : String
+			+ create(Connection, User) : void
+			+ read(Connection, String) : Optional<User>
+			+ getByUsername(Connection, String) : Optional<User>
+			+ update(Connection, User) : void
+			+ delete(Connection, String) : void
+			- validateUser(User) : boolean
+			- mapRowToUser(ResultSet) : User
+		}
+		
+		EuroCoinCollectionGroupStorageRepository <|.. EuroCoinCollectionGroupSqliteRepository
+		EuroCoinCollectionStorageRepository <|.. EuroCoinCollectionSqliteRepository
+		EuroCoinStorageRepository <|.. EuroCoinSqliteRepository
+		UserStorageRepository <|.. UserSqliteRepository
+	}
+}
+
+package model MODEL_COLOR {
+	interface Coin {
+		+ getId() : String
+		+ getValue() : CoinValue
+		+ getYear() : int
+		+ getDescription() : CoinDescription
+		+ setDescription(CoinDescription) : void
+		+ getCollectionId() : String
+	}
+	
+	interface CoinCollection<T> {
+		+ getId() : String
+		+ getName() : String
+		+ setName(String) : void
+		+ setGroupId(String) : void
+		+ getGroupId() : String
+		+ getCoins() : List<T>
+		+ addCoin(T) : void
+		+ removeCoin(T) : void
+		+ getTotalValue() : int
+		+ getCoinCount() : int
+	}
+	
+	enum CoinCountry {
+		AUSTRIA
+		BELGIUM
+		CYPRUS
+		GERMANY
+		ESTONIA
+		SPAIN
+		FINLAND
+		FRANCE
+		GREECE
+		IRELAND
+		ITALY
+		LITHUANIA
+		LUXEMBOURG
+		LATVIA
+		MALTA
+		NETHERLANDS
+		PORTUGAL
+		SLOVENIA
+		SLOVAKIA
+		SAN_MARINO
+		VATICAN_CITY
+		MONACO
+		ANDORRA
+		- isoCode : String
+		- displayName : String
+		+ getIsoCode() : String
+		+ getDisplayName() : String
+		+ {static} fromIsoCode(String) : CoinCountry
+	}
+	
+	class CoinDescription {
+		- text : String
+		+ getText() : String
+		- getGermanCoinDescriptionText(CoinValue, int, CoinCountry, Mint) : String
+	}
+	
+	enum CoinValue {
+		ONE_CENT
+		TWO_CENTS
+		FIVE_CENTS
+		TEN_CENTS
+		TWENTY_CENTS
+		FIFTY_CENTS
+		ONE_EURO
+		TWO_EUROS
+		- centValue : int
+		- displayName : String
+		+ getCentValue() : int
+		+ getDisplayName() : String
+		+ {static} fromCentValue(int) : CoinValue
+	}
+	
+	interface CollectionGroup<T, C> {
+		+ getId() : String
+		+ getName() : String
+		+ setName(String) : void
+		+ getOwnerId() : String
+		+ getCollections() : List<C>
+		+ addCollection(C) : void
+		+ removeCollection(C) : void
+		+ getTotalCollections() : int
+		+ getTotalCoins() : int
+		+ getTotalValue() : int
+	}
+	
+	class EuroCoin {
+		- id : String
+		- year : int
+		- collectionId : String
+		+ getId() : String
+		+ getYear() : int
+		+ getValue() : CoinValue
+		+ getMintCountry() : CoinCountry
+		+ getMint() : Mint
+		+ getDescription() : CoinDescription
+		+ setDescription(CoinDescription) : void
+		+ getCollectionId() : String
+	}
+	
+	class EuroCoinBuilder {
+		~ year : int
+		~ id : String
+		~ collectionId : String
+		+ {static} EURO_COIN_START_YEAR : int
+		+ setYear(int) : EuroCoinBuilder
+		+ setValue(CoinValue) : EuroCoinBuilder
+		+ setMintCountry(CoinCountry) : EuroCoinBuilder
+		+ setDescription(CoinDescription) : EuroCoinBuilder
+		+ setMint(Mint) : EuroCoinBuilder
+		+ setCollectionId(String) : EuroCoinBuilder
+		~ setId(String) : EuroCoinBuilder
+		+ build() : EuroCoin
+		- generateEuroCoinId() : String
+	}
+	
+	class EuroCoinCollection {
+		- id : String
+		- name : String
+		- groupId : String
+		+ getId() : String
+		+ getName() : String
+		+ setName(String) : void
+		+ setGroupId(String) : void
+		+ getGroupId() : String
+		+ getCoins() : List<EuroCoin>
+		+ addCoin(EuroCoin) : void
+		+ removeCoin(EuroCoin) : void
+		+ getTotalValue() : int
+		+ getCoinCount() : int
+		- {static} createCollectionId() : String
+	}
+	
+	class EuroCoinCollectionFactory {
+		- {static} logger : Logger
+		+ fromDataBaseEntry(ResultSet) : EuroCoinCollection
+	}
+	
+	class EuroCoinCollectionGroup {
+		- id : String
+		- name : String
+		- ownerId : String
+		+ getId() : String
+		+ getName() : String
+		+ setName(String) : void
+		+ getOwnerId() : String
+		+ getCollections() : List<EuroCoinCollection>
+		+ addCollection(EuroCoinCollection) : void
+		+ removeCollection(EuroCoinCollection) : void
+		+ getTotalCollections() : int
+		+ getTotalCoins() : int
+		+ getTotalValue() : int
+		- {static} createGroupId() : String
+	}
+	
+	class EuroCoinCollectionGroupFactory {
+		- {static} logger : Logger
+		+ fromDataBaseEntry(ResultSet) : EuroCoinCollectionGroup
+	}
+	
+	class EuroCoinFactory {
+		- {static} logger : Logger
+		+ fromDataBaseEntry(ResultSet) : EuroCoin
+	}
+	
+	enum Mint {
+		BERLIN
+		MUNICH
+		STUTTGART
+		KARLSRUHE
+		HAMBURG
+		- mintMark : String
+		+ getMintMark() : String
+		+ {static} fromMintMark(String) : Mint
+	}
+	
+	class User {
+		- id : String
+		- name : String
+		+ getId() : String
+		+ getName() : String
+		+ setName(String) : void
+		- {static} createUserId() : String
+	}
+	
+	class UserFactory {
+		- {static} logger : Logger
+		+ fromDataBaseEntry(ResultSet) : User
+	}
+	
+	Coin <|.. EuroCoin
+	CoinCollection <|.. EuroCoinCollection
+	CollectionGroup <|.. EuroCoinCollectionGroup
+	EuroCoinBuilder ..> EuroCoin : creates
+	EuroCoinFactory ..> EuroCoin : creates
+	EuroCoinCollectionFactory ..> EuroCoinCollection : creates
+	EuroCoinCollectionGroupFactory ..> EuroCoinCollectionGroup : creates
+	UserFactory ..> User : creates
+	
+	package DTOs DTOS_COLOR {
+		package Requests {
+			class CoinActionRequest <<record>> {
+				+ int year
+				+ int value
+				+ String country
+				+ String collectionId
+				+ String mint
+				+ String description
+			}
+			
+			class CreateCollectionRequest <<record>> {
+				+ String name
+				+ String groupId
+			}
+			
+			class CreateGroupRequest <<record>> {
+				+ String name
+				+ List<String> collectionIds
+			}
+			
+			class LoginRequest <<record>> {
+				+ String username
+			}
+			
+			class RegistrationRequest <<record>> {
+				+ String username
+			}
+			
+			class UpdateCollectionRequest <<record>> {
+				+ String name
+				+ String groupId
+			}
+			
+			class UpdateGroupRequest <<record>> {
+				+ String name
+			}
+		}
+		package Responses {
+			class CoinResponse <<record>> {
+				+ String id
+				+ int year
+				+ int value
+				+ String country
+				+ String mint
+				+ String description
+				+ String collectionId
+				+ {static} fromDomain(EuroCoin) : CoinResponse
+			}
+			
+			class CollectionResponse <<record>> {
+				+ String id
+				+ String name
+				+ String groupId
+				+ {static} fromDomain(EuroCoinCollection) : CollectionResponse
+			}
+			
+			class GroupMetadataResponse <<record>> {
+				+ String name
+			}
+			
+			class GroupsResponse <<record>> {
+				+ String id
+				+ String name
+				+ {static} fromDomain(EuroCoinCollectionGroup) : GroupsResponse
+			}
+		}
+	}
+	
+	EuroCoin ..> CoinValue : uses
+	EuroCoin ..> CoinCountry : uses
+	EuroCoin ..> Mint : uses
+	EuroCoin ..> CoinDescription : uses
+	EuroCoinBuilder ..> CoinValue : uses
+	EuroCoinBuilder ..> CoinCountry : uses
+	EuroCoinBuilder ..> Mint : uses
+	EuroCoinBuilder ..> CoinDescription : uses
+	EuroCoinCollection ..> EuroCoin : contains
+	EuroCoinCollectionGroup ..> EuroCoinCollection : contains
+	CreateCollectionRequest ..> EuroCoin : uses
+	CoinResponse ..> EuroCoin : from
+	CollectionResponse ..> EuroCoinCollection : from
+	CollectionResponse ..> CoinResponse : contains
+	GroupsResponse ..> EuroCoinCollectionGroup : from
+	GroupsResponse ..> CollectionResponse : contains
+}
+
+CoinHandler ..> EuroCoinStorageService : uses
+CoinHandler ..> EuroCoinCollectionStorageService : uses
+CoinHandler ..> EuroCoinCollectionGroupStorageService : uses
+CollectionHandler ..> EuroCoinCollectionStorageService : uses
+CollectionHandler ..> EuroCoinCollectionGroupStorageService : uses
+GroupHandler ..> EuroCoinCollectionGroupStorageService : uses
+LoginHandler ..> UserStorageService : uses
+LoginHandler ..> SessionManager : uses
+LogoutHandler ..> SessionManager : uses
+RegistrationHandler ..> UserStorageService : uses
+RegistrationHandler ..> SessionManager : uses
+
+EuroCoinCollectionGroupStorageServiceImpl ..> EuroCoinCollectionGroupStorageRepository : uses
+EuroCoinCollectionGroupStorageServiceImpl ..> EuroCoinCollectionStorageService : uses
+EuroCoinCollectionStorageServiceImpl ..> EuroCoinCollectionStorageRepository : uses
+EuroCoinCollectionStorageServiceImpl ..> EuroCoinStorageService : uses
+EuroCoinStorageServiceImpl ..> EuroCoinStorageRepository : uses
+UserStorageServiceImpl ..> UserStorageRepository : uses
+SessionFilter ..> SessionManager : uses
+
+SessionFilter ..> RegistrationHandler : wraps
+SessionFilter ..> LoginHandler : wraps
+SessionFilter ..> LogoutHandler : wraps
+SessionFilter ..> GroupHandler : wraps
+SessionFilter ..> CollectionHandler : wraps
+SessionFilter ..> CoinHandler : wraps
+
+EuroCoinCollectionGroupSqliteRepository ..> EuroCoinCollectionGroupFactory : uses
+EuroCoinCollectionSqliteRepository ..> EuroCoinCollectionFactory : uses
+EuroCoinSqliteRepository ..> EuroCoinFactory : uses
+UserSqliteRepository ..> UserFactory : uses
+
+@enduml

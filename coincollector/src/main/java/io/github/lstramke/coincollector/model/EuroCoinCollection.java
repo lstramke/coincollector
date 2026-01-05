@@ -105,7 +105,7 @@ public class EuroCoinCollection implements CoinCollection<EuroCoin> {
 
     @Override
     public void addCoin(EuroCoin coin) {
-        if (coin == null || coin.getCollectionId() != this.id)
+        if (coin == null || !coin.getCollectionId().equals(this.id))
             throw new IllegalArgumentException("coin is null or has false collectionId");
         this.coins.add(coin);
     }
