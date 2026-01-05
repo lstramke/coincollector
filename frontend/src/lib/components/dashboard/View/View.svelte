@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { selection } from "$lib/stores/selectionStore";
+    import { selection } from "$lib/stores/selection.store";
     import GroupView from "./GroupView.svelte";
     import CollectionView from "./CollectionView.svelte";
 </script>

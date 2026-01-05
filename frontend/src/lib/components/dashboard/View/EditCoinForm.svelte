@@ -1,9 +1,9 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
-    import { cityMintMap, mintCityMap } from "$lib/stores/mintCityStore";
+    import { cityMintMap, mintCityMap } from "$lib/stores/mintCity.store";
     import type { DialogField } from "$lib/types/dialogField";
-    import { coinValuesStringMap } from "$lib/stores/coinValuesStore";
-    import { coinCountryMap } from "$lib/stores/coinCountryStore";
+    import { coinValuesStringMap } from "$lib/stores/coinValues.store";
+    import { coinCountryMap } from "$lib/stores/coinCountry.store";
     import type { Coin } from "$lib/types/coin";
 
     let dialog: Dialog;

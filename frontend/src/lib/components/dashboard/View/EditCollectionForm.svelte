@@ -1,7 +1,7 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
-    import { coinCountryMap } from "$lib/stores/coinCountryStore";
-    import { groups, groupMap } from "$lib/stores/groupStore";
+    import { coinCountryMap } from "$lib/stores/coinCountry.store";
+    import { groups, groupMap } from "$lib/stores/group.store";
     import type { Collection } from "$lib/types/collection";
     import type { DialogField } from "$lib/types/dialogField";
 

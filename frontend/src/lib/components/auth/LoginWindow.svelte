@@ -1,17 +1,22 @@
 <script lang="ts">
     import AuthForm from './AuthForm.svelte';
     import type { AuthField } from '$lib/types/authField';
-    import { isAuthenticated } from '$lib/stores/userStore';
+    import { authError, isAuthenticated, login } from '$lib/stores/auth.store';
+
 
     let fields: AuthField[] = [
         { id: 'username', label: 'Benutzername', value: '', required: true },
     ];
 
-    function submit(items: AuthField[]) {
-        if (items.every(f => f.value.trim() !== '')) {
-            isAuthenticated.set(true)
+    async function submit(items: AuthField[]) {
+        const username = items.find( f => f.id === "username")?.value ?? "";
+        if(!username.trim()) {
+            authError.set("Username must be not empty");
+            return;
         }
+        await login(username);     
     }
+
 </script>
 
 <AuthForm
@@ -21,3 +26,7 @@
     {fields}
     onSubmit={submit}
 />
+
+{#if $authError}
+    <div class="error">{$authError}</div>
+{/if}

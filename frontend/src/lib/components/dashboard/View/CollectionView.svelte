@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { selection } from "$lib/stores/selectionStore";
-    import { collectionMap } from "$lib/stores/groupStore";
+    import { selection } from "$lib/stores/selection.store";
+    import { collectionMap } from "$lib/stores/group.store";
     import type { Collection } from "$lib/types/collection";
     import NewCoinForm from "./NewCoinForm.svelte";
     import EditCoinForm from "./EditCoinForm.svelte";
-    import { mintCityMap } from "$lib/stores/mintCityStore";
+    import { mintCityMap } from "$lib/stores/mintCity.store";
 
     const collection = $derived((): Collection | undefined => {
         return $selection?.type === "collection"

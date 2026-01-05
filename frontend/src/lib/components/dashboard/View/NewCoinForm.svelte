@@ -1,11 +1,11 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
-    import { collectionMap } from "$lib/stores/groupStore";
-    import { selection } from "$lib/stores/selectionStore";
-    import { cityMintMap } from "$lib/stores/mintCityStore";
+    import { collectionMap } from "$lib/stores/group.store";
+    import { selection } from "$lib/stores/selection.store";
+    import { cityMintMap } from "$lib/stores/mintCity.store";
     import type { DialogField } from "$lib/types/dialogField";
-    import { stringCoinValuesMap } from "$lib/stores/coinValuesStore";
-    import { coinCountryMap } from "$lib/stores/coinCountryStore";
+    import { stringCoinValuesMap } from "$lib/stores/coinValues.store";
+    import { coinCountryMap } from "$lib/stores/coinCountry.store";
 
     let dialog: Dialog;
 

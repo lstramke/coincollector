@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Collection } from "$lib/types/collection";
-    import { handleSelectCollection } from "$lib/stores/selectionStore";
+    import { handleSelectCollection } from "$lib/stores/selection.store";
     import EditCollectionForm from "./EditCollectionForm.svelte";
 
     let { collection } = $props<{collection: Collection}>();

@@ -1,7 +1,7 @@
 <script lang="ts">
     import Sidebar from './Sidebar/Sidebar.svelte';
     import View from './View/View.svelte';
-    import { groups } from '$lib/stores/groupStore';
+    import { groups } from '$lib/stores/group.store';
         
 </script>
 

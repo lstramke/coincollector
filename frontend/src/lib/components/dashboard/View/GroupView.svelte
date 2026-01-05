@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { selection } from "$lib/stores/selectionStore";
-    import { groups } from "$lib/stores/groupStore";
+    import { selection } from "$lib/stores/selection.store";
+    import { groups } from "$lib/stores/group.store";
     import CollectionCard from "./CollectionCard.svelte";
 
     $: group = $groups.find(g => g.id === $selection?.id);
