@@ -1,4 +1,4 @@
-@startuml dataModel_v8
+@startuml dataModel_v9
 
 ' ENUMS
 enum CoinValue {
@@ -90,6 +90,8 @@ interface CoinCollection<T : Coin> {
     + getId() : String
     + getName() : String
     + setName(newName : String) : void
+    + setGroupId(newGroupId : String) : void
+    + getGroupId() : String
     + getCoins() : List<T>
     + addCoin(coin : T) : void
     + removeCoin(coin : T) : void
@@ -100,6 +102,7 @@ interface CoinCollection<T : Coin> {
 interface CollectionGroup<T : Coin, C : CoinCollection<T>> {
     + getId() : String
     + getName() : String
+    + setName(newName : String) : void
     + getOwnerId() : String
     + getCollections() : List<C>
     + addCollection(collection : C) : void
@@ -140,10 +143,13 @@ class EuroCoinCollection {
     - id : String {final}
     - name : String
     - coins : List<EuroCoin> {final}
+    - groupId : String
     --
     + getId() : String
     + getName() : String
     + setName(String newName) : void
+    + setGroupId(String newGroupId) : void
+    + getGroupId() : String
     + getCoins() : List<EuroCoin>
     + addCoin(EuroCoin coin) : void
     + removeCoin(EuroCoin coin) : void
@@ -156,11 +162,12 @@ EuroCoinCollection --> "*" EuroCoin : -coins
 class EuroCoinCollectionGroup {
     - id : String
     - name : String
-    - ownerID : String
+    - ownerId : String
     - collections : List<EuroCoinCollection>
     --
     + getId() : String
     + getName() : String
+    + setName(String newName) : void
     + getOwnerId() : String
     + getCollections() : List<EuroCoinCollection>
     + addCollection(EuroCoinCollection collection) : void
@@ -213,6 +220,13 @@ class EuroCoinCollectionFactory {
 }
 EuroCoinCollectionFactory .> EuroCoinCollection : creates
 
+class EuroCoinCollectionGroupFactory {
+    - {static} logger : Logger
+    --
+    + fromDataBaseEntry(ResultSet resultSet) : EuroCoinCollectionGroup
+}
+EuroCoinCollectionGroupFactory .> EuroCoinCollectionGroup : creates
+
 ' USER
 class User {
     - id : String
@@ -221,6 +235,96 @@ class User {
     + getId() : String
     + getName() : String
     + setName(String username) : void
+}
+
+class UserFactory {
+    - {static} logger : Logger
+    --
+    + fromDataBaseEntry(ResultSet resultSet) : User
+}
+UserFactory .> User : creates
+
+' DTOs
+package DTOs <<Rectangle>> {
+    package Requests <<Rectangle>> {
+        class CoinActionRequest <<record>> {
+            + year : int
+            + value : int
+            + country : String
+            + collectionId : String
+            + mint : String
+            + description : String
+        }
+
+        class CreateCollectionRequest <<record>> {
+            + name : String
+            + groupId : String
+            + coins : List<EuroCoin>
+        }
+        CreateCollectionRequest ..> EuroCoin : uses
+
+        class CreateGroupRequest <<record>> {
+            + name : String
+            + collectionIds : List<String>
+        }
+
+        class LoginRequest <<record>> {
+            + username : String
+        }
+
+        class RegistrationRequest <<record>> {
+            + username : String
+        }
+
+        class UpdateCollectionRequest <<record>> {
+            + name : String
+            + groupId : String
+        }
+
+        class UpdateGroupRequest <<record>> {
+            + name : String
+        }
+    }
+
+    package Responses <<Rectangle>> {
+        class CoinResponse <<record>> {
+            + id : String
+            + year : int
+            + value : int
+            + country : String
+            + mint : String
+            + description : String
+            + collectionId : String
+            --
+            + {static} fromDomain(EuroCoin coin) : CoinResponse
+        }
+        CoinResponse ..> EuroCoin : from
+
+        class CollectionResponse <<record>> {
+            + id : String
+            + name : String
+            + groupId : String
+            + coins : List<CoinResponse>
+            --
+            + {static} fromDomain(EuroCoinCollection collection) : CollectionResponse
+        }
+        CollectionResponse ..> EuroCoinCollection : from
+        CollectionResponse ..> CoinResponse : uses
+
+        class GroupMetadataResponse <<record>> {
+            + name : String
+        }
+
+        class GroupsResponse <<record>> {
+            + id : String
+            + name : String
+            + collections : List<CollectionResponse>
+            --
+            + {static} fromDomain(EuroCoinCollectionGroup group) : GroupsResponse
+        }
+        GroupsResponse ..> EuroCoinCollectionGroup : from
+        GroupsResponse ..> CollectionResponse : uses
+    }
 }
 
 @enduml
