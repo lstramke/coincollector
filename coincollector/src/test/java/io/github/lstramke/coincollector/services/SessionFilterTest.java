@@ -32,13 +32,13 @@ class SessionFilterTest {
     private static Stream<SessionFilterTestcase> sessionFilterTestcases() {
         return Stream.of(
             new SessionFilterTestcase("sessionId=abc123", true, false, 200, null, "Valid session: handler is called"),
-            new SessionFilterTestcase("sessionId=abc123", false, false, 302, null, "Invalid session: redirect"),
+            new SessionFilterTestcase("sessionId=abc123", false, false, 401, null, "Invalid session: redirect"),
             new SessionFilterTestcase("sessionId=abc123", true, true, 500, "{\"error\":\"An unexpected error occurred\"}", "Handler throws exception: 500 and error message"),
-            new SessionFilterTestcase(null, false, false, 302, null, "No cookie: redirect"),
+            new SessionFilterTestcase(null, false, false, 401, null, "No cookie: redirect"),
             new SessionFilterTestcase("foo=bar; sessionId=abc123", true, false, 200, null, "Valid session: sessionId after another cookie"),
             new SessionFilterTestcase("sessionId=abc123; foo=bar", true, false, 200, null, "Valid session: sessionId before another cookie"),
-            new SessionFilterTestcase("foo=bar", false, false, 302, null, "No sessionId in cookies: redirect"),
-            new SessionFilterTestcase("sessionId=; foo=bar", false, false, 302, null, "Empty sessionId: redirect")
+            new SessionFilterTestcase("foo=bar", false, false, 401, null, "No sessionId in cookies: redirect"),
+            new SessionFilterTestcase("sessionId=; foo=bar", false, false, 401, null, "Empty sessionId: redirect")
         );
     }
 
@@ -74,7 +74,7 @@ class SessionFilterTest {
 
         if (tc.expectedStatus == 200) {
             verify(handler).handle(exchange);
-            verify(exchange, never()).sendResponseHeaders(eq(302), anyLong());
+            verify(exchange, never()).sendResponseHeaders(eq(401), anyLong());
         } else {
             verify(exchange).sendResponseHeaders(eq(tc.expectedStatus), anyLong());
             if (tc.expectedBody != null) {
