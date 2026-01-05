@@ -28,5 +28,10 @@
 />
 
 {#if $authError}
-    <div class="error">{$authError}</div>
+    <div class="flex justify-center mt-4">
+        <div class="px-4 py-2 rounded border"
+            style="background-color: var(--bg-table); border-color: var(--color-destructive); color: var(--color-destructive);">
+            {$authError}
+        </div>
+    </div>
 {/if}
