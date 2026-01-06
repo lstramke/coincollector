@@ -8,7 +8,7 @@
         { id: 'username', label: 'Benutzername', value: '', required: true },
     ];
 
-    async function submit(items: AuthField[]) {
+    async function onSubmit(items: AuthField[]) {
         const username = items.find( f => f.id === "username")?.value ?? "";
         if(!username.trim()) {
             authError.set("Username must be not empty");
@@ -24,7 +24,7 @@
     description="Melden Sie sich mit Ihrem Konto an"
     submitLabel="Anmelden"
     {fields}
-    onSubmit={submit}
+    {onSubmit}
 />
 
 {#if $authError}
