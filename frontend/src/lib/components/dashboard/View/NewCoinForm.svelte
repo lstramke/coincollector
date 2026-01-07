@@ -1,6 +1,6 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
-    import { collectionMap } from "$lib/stores/group.store";
+    import { collectionMap } from "$lib/stores/collection.store";
     import { selection } from "$lib/stores/selection.store";
     import { cityMintMap } from "$lib/stores/mintCity.store";
     import type { DialogField } from "$lib/types/dialogField";
