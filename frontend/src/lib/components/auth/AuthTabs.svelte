@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { systemService } from '$lib/services/system.service';
   import LoginWindow from './LoginWindow.svelte';
   import RegisterWindow from './RegisterWindow.svelte';
   
@@ -54,7 +55,7 @@
       <button
         type="button"
         class="rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 text-[var(--text-secondary)] bg-[var(--bg-login-bar)] hover:bg-[var(--color-destructive)] hover:text-[var(--text-white)]"
-        onclick={() => console.log("end app")}
+        onclick={systemService.shutdown}
       >
         Beenden
       </button>
