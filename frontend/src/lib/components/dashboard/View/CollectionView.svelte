@@ -75,7 +75,7 @@
                         </td>
 
                         <td class="px-4 py-3 align-middle text-[var(--text-secondary)]">
-                            {coin.mintCity ? $mintCityMap[coin.mintCity] : '-'}
+                            {coin.mint ? $mintCityMap[coin.mint] : '-'}
                         </td>
 
                         <td class="px-4 py-3 align-middle text-[var(--text-primary)]">

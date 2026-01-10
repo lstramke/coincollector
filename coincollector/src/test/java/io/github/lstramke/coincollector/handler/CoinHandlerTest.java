@@ -1743,7 +1743,7 @@ public class CoinHandlerTest {
                 }, 
                 500, 
                 "{\"error\":\"Internal server error\"}",
-                "PATCH: error in mint translation because mint is not existing (IllegalArgumentException)"
+                "PATCH: error in mint translation because mint is not existing "
             ),
             new CoinHandleTestcase(
                 "POST", 

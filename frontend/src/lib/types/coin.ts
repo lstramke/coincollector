@@ -3,7 +3,7 @@ export interface Coin {
     value: number;
     country: string;
     year: number;
-    mintCity?: string | null
+    mint?: string | null
     description: string
     collectionId: string
 }

@@ -15,14 +15,10 @@ export const collectionMap = derived(collections, $collections => {
 });
 
 export async function getCollection(id: string): Promise<Collection | undefined> {
-	const map = get(collectionMap);
-	if (map[id]) return map[id];
 	try {
 		const col = await collectionService.getCollection(id);
 		const current = get(collections);
-		if (!current.find(c => c.id === col.id)) {
-			collections.set([...current, col]);
-		}
+		collections.set([...current, col]);
 		return col;
 	} catch {
 		return undefined;

@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { Coin } from '$lib/types/coin';
 import { coinService } from '$lib/services/coin.service';
-import { getCollection} from './collection.store';
+import { getCollection } from './collection.store';
 
 export const coins = writable<Coin[]>([]);
 

@@ -79,11 +79,14 @@ public class EuroCoinBuilder {
         if (collectionId == null){
             throw new IllegalStateException("CollectionId cannot be null");
         }
+        if(mintCountry == CoinCountry.GERMANY && (mint == null || mint.equals(Mint.UNKOWN))){
+            throw new IllegalStateException("Mint cannot be null or unknown if country is Germany");
+        }
+        if(mintCountry != CoinCountry.GERMANY) {
+            mint = Mint.UNKOWN;
+        }
         if (id == null || id.isBlank()){
             this.id = generateId();
-        }
-        if(mintCountry == CoinCountry.GERMANY && mint == null){
-            throw new IllegalStateException("Mint cannot be null if country is Germany");
         }
         
         return new EuroCoin(this);
