@@ -19,7 +19,7 @@
 
 </script>
 
-<aside class="flex h-full min-h-screen flex-col bg-[var(--bg-sidebar)] text-[var(--text-white)]">
+<aside class="flex h-screen flex-col bg-[var(--bg-sidebar)] text-[var(--text-white)]">
     <SidebarHeader />
     <nav class="flex-1 space-y-3 overflow-y-auto px-4 py-6">
         {#each groups as group (group.id)}

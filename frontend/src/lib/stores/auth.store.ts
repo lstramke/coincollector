@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 import type { User } from '$lib/types/user';
 import { authService } from '$lib/services/auth.service';
 import { isAxiosError } from 'axios';
+import { loadGroups, setGroups } from './group.store';
 
 
 export const currentUser = writable<User | null>(null);
@@ -14,6 +15,7 @@ export async function login(username: string) {
         await authService.login({username});
         currentUser.set({username});
         isAuthenticated.set(true);
+        loadGroups();
     } catch (error) {
         isAuthenticated.set(false);
         currentUser.set(null);
@@ -46,6 +48,7 @@ export async function logout() {
     authError.set(null);
     try {
         await authService.logout();
+        setGroups([]);
     } catch (error) {
         if (isAxiosError(error)) {
             authError.set(error.response?.data?.message || "Logout fehlgeschlagen");
