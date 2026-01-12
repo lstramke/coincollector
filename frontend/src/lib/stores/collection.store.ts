@@ -6,6 +6,9 @@ import { loadGroup, groups } from './group.store';
 
 export const collections = writable<Collection[]>([]);
 
+/**
+ * Derived store mapping collection IDs to collection objects for quick lookup
+ */
 export const collectionMap = derived(collections, $collections => {
 	const map: Record<string, Collection> = {};
 	for (const c of $collections) {
@@ -14,6 +17,11 @@ export const collectionMap = derived(collections, $collections => {
 	return map;
 });
 
+/**
+ * Fetches a collection by ID and caches it
+ * @param id - Collection ID
+ * @returns Collection or undefined if not found
+ */
 export async function getCollection(id: string): Promise<Collection | undefined> {
 	try {
 		const col = await collectionService.getCollection(id);
@@ -25,6 +33,10 @@ export async function getCollection(id: string): Promise<Collection | undefined>
 	}
 }
 
+/**
+ * Creates a new collection
+ * @returns true if successful, false otherwise
+ */
 export async function createCollection(data: Parameters<typeof collectionService.createCollection>[0]): Promise<boolean> {
 	try {
 		const col = await collectionService.createCollection(data);
@@ -38,6 +50,11 @@ export async function createCollection(data: Parameters<typeof collectionService
 	}
 }
 
+/**
+ * Updates an existing collection
+ * @param id - Collection ID
+ * @returns true if successful, false otherwise
+ */
 export async function updateCollection(id: string, data: Parameters<typeof collectionService.updateCollection>[1]): Promise<boolean> {
 	try {
 		const prev = get(collections).find(c => c.id === id);
@@ -59,6 +76,11 @@ export async function updateCollection(id: string, data: Parameters<typeof colle
 	}
 }
 
+/**
+ * Deletes a collection
+ * @param id - Collection ID
+ * @returns true if successful, false otherwise
+ */
 export async function deleteCollection(id: string): Promise<boolean> {
 	try {
 		const prev = get(collections).find(c => c.id === id);

@@ -9,6 +9,10 @@ export const currentUser = writable<User | null>(null);
 export const isAuthenticated = writable<boolean>(false);
 export const authError = writable<string | null>(null);
 
+/**
+ * Authenticates user and loads their groups
+ * @param username - Username to login with
+ */
 export async function login(username: string) {
     authError.set(null);
     try {
@@ -27,6 +31,10 @@ export async function login(username: string) {
     }
 }
 
+/**
+ * Registers new user account
+ * @param username - Username to register
+ */
 export async function register(username: string) {
     authError.set(null);
     try {
@@ -44,6 +52,9 @@ export async function register(username: string) {
     }
 }
 
+/**
+ * Logs out user and clears session data
+ */
 export async function logout() {
     authError.set(null);
     try {

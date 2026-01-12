@@ -10,6 +10,9 @@ import { groupService } from '$lib/services/group.service';
 export const groupError = writable<string | null>(null);
 export const groups = writable<Group[]>([]);
 
+/**
+ * Derived store mapping group IDs to group objects for quick lookup
+ */
 export const groupMap = derived(groups, $groups => {
     const map: Record<string, Group> = {};
     for (const g of $groups) {
@@ -18,6 +21,10 @@ export const groupMap = derived(groups, $groups => {
     return map;
 });
 
+/**
+ * Sets groups and syncs coins and collections stores
+ * @param data - Array of groups with nested collections and coins
+ */
 export function setGroups(data: Group[]) {
     groups.set(data);
 
@@ -28,6 +35,9 @@ export function setGroups(data: Group[]) {
     collections.set(allCollections);
 }
 
+/**
+ * Loads all groups from server
+ */
 export async function loadGroups() {
     groupError.set(null);
     try {
@@ -42,6 +52,10 @@ export async function loadGroups() {
     }
 }
 
+/**
+ * Loads a specific group by ID and updates store
+ * @param id - Group ID
+ */
 export async function loadGroup(id: string): Promise<void> {
     groupError.set(null);
     try {
@@ -58,6 +72,10 @@ export async function loadGroup(id: string): Promise<void> {
     }
 }
 
+/**
+ * Creates a new group
+ * @returns true if successful, false otherwise
+ */
 export async function addGroup(data: Parameters<typeof groupService.createGroup>[0]): Promise<boolean> {
     groupError.set(null);
     try {
@@ -75,6 +93,11 @@ export async function addGroup(data: Parameters<typeof groupService.createGroup>
     }
 }
 
+/**
+ * Updates an existing group
+ * @param id - Group ID
+ * @returns true if successful, false otherwise
+ */
 export async function updateGroup(id: string, data: Parameters<typeof groupService.updateGroup>[1]): Promise<boolean> {
     groupError.set(null);
     try {
@@ -93,6 +116,11 @@ export async function updateGroup(id: string, data: Parameters<typeof groupServi
     }
 }
 
+/**
+ * Deletes a group
+ * @param id - Group ID
+ * @returns true if successful, false otherwise
+ */
 export async function deleteGroup(id: string): Promise<boolean> {
     groupError.set(null);
     try {

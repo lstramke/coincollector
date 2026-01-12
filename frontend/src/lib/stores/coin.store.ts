@@ -5,6 +5,9 @@ import { getCollection } from './collection.store';
 
 export const coins = writable<Coin[]>([]);
 
+/**
+ * Derived store mapping coin IDs to coin objects for quick lookup
+ */
 export const coinMap = derived(coins, $coins => {
 	const map: Record<string, Coin> = {};
 	for (const c of $coins) {
@@ -13,6 +16,11 @@ export const coinMap = derived(coins, $coins => {
 	return map;
 });
 
+/**
+ * Fetches a coin by ID and caches it
+ * @param id - Coin ID
+ * @returns Coin or undefined if not found
+ */
 export async function getCoin(id: string): Promise<Coin | undefined> {
 	const map = get(coinMap);
 	if (map[id]) return map[id];
@@ -28,6 +36,10 @@ export async function getCoin(id: string): Promise<Coin | undefined> {
 	}
 }
 
+/**
+ * Creates a new coin
+ * @returns true if successful, false otherwise
+ */
 export async function createCoin(data: Parameters<typeof coinService.createCoin>[0]): Promise<boolean> {
 	try {
 		const coin = await coinService.createCoin(data);
@@ -41,6 +53,11 @@ export async function createCoin(data: Parameters<typeof coinService.createCoin>
 	}
 }
 
+/**
+ * Updates an existing coin
+ * @param id - Coin ID
+ * @returns true if successful, false otherwise
+ */
 export async function updateCoin(id: string, data: Parameters<typeof coinService.updateCoin>[1]): Promise<boolean> {
 	try {
 		const prev = get(coins).find(c => c.id === id);
@@ -62,6 +79,11 @@ export async function updateCoin(id: string, data: Parameters<typeof coinService
 	}
 }
 
+/**
+ * Deletes a coin
+ * @param id - Coin ID
+ * @returns true if successful, false otherwise
+ */
 export async function deleteCoin(id: string): Promise<boolean> {
 	try {
 		const prev = get(coins).find(c => c.id === id);

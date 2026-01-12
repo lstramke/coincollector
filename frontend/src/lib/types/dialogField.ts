@@ -1,3 +1,4 @@
+/** Input field for dialog/form components */
 export type DialogField = {
     id: string;
     label: string;
