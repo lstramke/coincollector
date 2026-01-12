@@ -31,7 +31,7 @@
                 value: "",
                 type: "select",
                 required: true,
-                options: Object.entries($coinCountryMap).map(([name, code]) => name)
+                options: Object.entries($coinCountryMap).map(([name, code]) => name).sort()
             },
             {
                 id: "year",

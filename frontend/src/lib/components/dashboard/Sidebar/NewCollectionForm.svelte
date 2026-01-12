@@ -29,7 +29,7 @@
             type: "select" as const,
             required: true,
             placeholder: "Land eingeben",
-            options: countryNames
+            options: countryNames.sort()
         },
         {
             id: "year",

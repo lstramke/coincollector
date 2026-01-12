@@ -32,7 +32,7 @@
             value: "",
             type: "select" as const,
             required: true,
-            options: countryNames
+            options: countryNames.sort()
         },
         {
             id: "value",

@@ -23,7 +23,8 @@ const countryToCode: Record<string, string> = {
     "San Marino": "SM",
     "Vatikanstadt": "VA",
     "Monaco": "MC",
-    "Andorra": "AD"
+    "Andorra": "AD",
+    "Bulgarien":"BG"
 };
 
 const codeToCountry: Record<string, string> = Object.fromEntries(
