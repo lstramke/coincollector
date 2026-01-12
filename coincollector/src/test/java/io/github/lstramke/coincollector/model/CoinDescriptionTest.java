@@ -33,9 +33,9 @@ public class CoinDescriptionTest {
             new AutoDescriptionGERTestcase(CoinValue.ONE_EURO, 2020, null, Mint.BERLIN, 
                 null, IllegalArgumentException.class, "null CoinValue -> IllegalArgumentException"),
             new AutoDescriptionGERTestcase(CoinValue.TWO_EUROS, 2024, CoinCountry.GERMANY, Mint.BERLIN, 
-                "2 Euro Münze aus Deutschland vom Jahr 2024 aus der Prägestätte BERLIN", null, "validFall - with mint BERLIN"),
+                "2 Euro Münze aus Deutschland aus dem Jahr 2024 aus der Prägestätte A", null, "validFall - with mint BERLIN"),
             new AutoDescriptionGERTestcase(CoinValue.TWO_EUROS, 2024, CoinCountry.ITALY, null, 
-                "2 Euro Münze aus Italien vom Jahr 2024", null, "valid - without mint")
+                "2 Euro Münze aus Italien aus dem Jahr 2024", null, "valid - without mint")
         );
     }
 
@@ -49,7 +49,7 @@ public class CoinDescriptionTest {
             );
         } else {
             CoinDescription desc = new CoinDescription(testcase.value, testcase.year, testcase.country, testcase.mint);
-            Assertions.assertEquals(testcase.expectedString, desc.getText(),
+            Assertions.assertEquals(testcase.expectedString, desc.toString(),
                 "Result value mismatch for: " + testcase.description);
         }
     }

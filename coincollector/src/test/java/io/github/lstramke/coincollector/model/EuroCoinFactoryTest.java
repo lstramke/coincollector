@@ -90,7 +90,7 @@ public class EuroCoinFactoryTest {
 			assertEquals(testcase.countryIso, coin.getMintCountry().getIsoCode());
 			assertEquals(testcase.expectedMintMark, coin.getMint().getMintMark());
 			assertEquals(testcase.collectionId, coin.getCollectionId());
-			assertEquals(testcase.description, coin.getDescription().getText());
+			assertEquals(testcase.description, coin.getDescription().toString());
 
 			verify(rs, times(1)).getString("coin_id");
 			verify(rs, times(1)).getInt("year");

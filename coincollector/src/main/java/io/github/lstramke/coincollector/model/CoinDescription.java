@@ -31,17 +31,13 @@ public class CoinDescription {
     private String getGermanCoinDescriptionText(CoinValue value, int year, CoinCountry country, Mint mint) {
         String valueText = value.getDisplayName();
         String countryText = country.getDisplayName();
-        String mintText = mint != null ? " aus der Prägestätte " + mint.name() : "";
+        String mintText = mint != null ? " aus der Prägestätte " + mint.getMintMark() : "";
         
-        return String.format("%s Münze aus %s vom Jahr %d%s", valueText, countryText, year, mintText);
+        return String.format("%s Münze aus %s aus dem Jahr %d%s", valueText, countryText, year, mintText);
     }
 
     @Override
     public String toString() {
-        return "CoinDescription[text=" + text + "]";
-    }
-
-    public String getText() {
         return text;
     }
 
