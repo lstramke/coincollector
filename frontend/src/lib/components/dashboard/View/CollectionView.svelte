@@ -6,6 +6,7 @@
     import EditCoinForm from "./EditCoinForm.svelte";
     import { mintCityMap } from "$lib/stores/mintCity.store";
     import { deleteCoin } from "$lib/stores/coin.store";
+    import { coinCountryCodeMap } from "$lib/stores/coinCountry.store";
 
     let collection = $derived((): Collection | undefined => {
         return $selection?.type === "collection"
@@ -68,7 +69,7 @@
                         </td>
 
                         <td class="px-4 py-3 align-middle text-[var(--text-primary)]">
-                            {coin.country}
+                            {$coinCountryCodeMap[coin.country]}
                         </td>
 
                         <td class="px-4 py-3 align-middle text-[var(--text-primary)]">
