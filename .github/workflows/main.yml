@@ -30,7 +30,7 @@ jobs:
     
     - name: Build with Maven
       working-directory: ./coincollector
-      run: mvn clean package -DskipTests
+      run: mvn clean package
     
     - name: Build MSI with jpackage
       run: |
