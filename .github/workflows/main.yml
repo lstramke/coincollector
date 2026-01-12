@@ -116,7 +116,6 @@ jobs:
           --win-shortcut `
           --win-dir-chooser `
           --win-per-user-install `
-          --resource-dir src/main/resources
     
     - name: Upload MSI
       uses: actions/upload-artifact@v4
