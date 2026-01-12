@@ -1,4 +1,4 @@
-name: Build Windows MSI Installer
+name: Build and Release
 
 on:
   push:
@@ -8,8 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-msi:
-    runs-on: windows-latest
+  test:
+    name: Test
+    runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
@@ -28,23 +29,94 @@ jobs:
         distribution: 'temurin'
         cache: maven
     
-    - name: Build with Maven
+    - name: Run Tests
       working-directory: ./coincollector
-      run: mvn clean package
+      run: mvn test
+
+  build-jar:
+    name: Build JAR
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    
+    - name: Build with Maven (skip tests)
+      working-directory: ./coincollector
+      run: mvn clean package -DskipTests
+    
+    - name: Upload JAR
+      uses: actions/upload-artifact@v4
+      with:
+        name: jar-artifact
+        path: coincollector/target/coincollector-1.0.0.jar
+
+  build-msi:
+    name: Build Windows MSI
+    needs: build-jar
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+    
+    - name: Download JAR
+      uses: actions/download-artifact@v4
+      with:
+        name: jar-artifact
+        path: target
+    
+    - name: Analyze required modules
+      run: |
+        jdeps --ignore-missing-deps --print-module-deps --multi-release 21 target/coincollector-1.0.0.jar > modules.txt
+        type modules.txt
+    
+    - name: Create custom JRE with jlink
+      run: |
+        $modules = Get-Content modules.txt
+        jlink `
+          --add-modules $modules `
+          --strip-debug `
+          --no-man-pages `
+          --no-header-files `
+          --compress=2 `
+          --output custom-jre
     
     - name: Build MSI with jpackage
       run: |
         jpackage `
-          --input coincollector/target `
+          --input target `
           --name CoinCollector `
           --main-jar coincollector-1.0.0.jar `
           --main-class io.github.lstramke.coincollector.App `
           --type msi `
           --app-version 1.0.0 `
           --vendor "lstramke" `
+          --runtime-image custom-jre `
           --win-menu `
           --win-shortcut `
-          --win-dir-chooser
+          --win-dir-chooser `
+          --win-per-user-install `
+          --resource-dir src/main/resources
     
     - name: Upload MSI
       uses: actions/upload-artifact@v4
