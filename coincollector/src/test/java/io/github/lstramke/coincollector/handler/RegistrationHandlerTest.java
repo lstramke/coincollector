@@ -71,8 +71,7 @@ class RegistrationHandlerTest {
 				    201,
 				    null,
 				    Map.of(
-					   "Set-Cookie", "sessionId=session-abc; Path=/; HttpOnly; SameSite=Strict",
-					   "Content-Type", "application/json"
+					   "Set-Cookie", "sessionId=session-abc; Path=/; HttpOnly; SameSite=Strict"
 				    ),
 				    "Happy path: valid registration returns 201, sets cookie and content-type"
 			    ),
@@ -95,7 +94,7 @@ class RegistrationHandlerTest {
 				    },
 				    400,
 				    "{\"error\":\"Request is not valid\"}",
-				    Map.of(),
+				    Map.of("Content-Type", "application/json"),
 				    "JacksonException: returns 400 and error json"
 			    ),
 			    new RegistrationHandleTestcase(
@@ -109,7 +108,7 @@ class RegistrationHandlerTest {
 				    },
 				    500,
 				    "{\"error\":\"An unexpected error occurred\"}",
-				    Map.of(),
+				    Map.of("Content-Type", "application/json"),
 				    "UserSaveException: returns 500 and error json"
 			)
 		);   

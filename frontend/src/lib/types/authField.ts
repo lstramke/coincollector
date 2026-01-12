@@ -1,3 +1,4 @@
+/** Input field for authentication forms */
 export type AuthField = {
         id: string;
         label: string;

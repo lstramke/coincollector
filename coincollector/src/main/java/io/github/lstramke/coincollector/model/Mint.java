@@ -12,7 +12,8 @@ public enum Mint {
     MUNICH("D"),
     STUTTGART("F"),
     KARLSRUHE("G"),
-    HAMBURG("J");
+    HAMBURG("J"),
+    UNKOWN("UNKNOWN");
 
     private final String mintMark;
 
@@ -35,13 +36,12 @@ public enum Mint {
     /**
      * Lookup by mint mark letter.
      * @param mintMark letter
-     * @return mint enum
-     * @throws IllegalArgumentException if unknown
+     * @return mint enum if known, UNKOWN else
      */
     public static Mint fromMintMark(String mintMark) throws IllegalArgumentException {
         Mint mint =  MINT_MAP.get(mintMark);
         if (mint == null){
-            throw new IllegalArgumentException("Unknown mintmark: " + mintMark);
+            return UNKOWN;
         }
         return mint;
     }

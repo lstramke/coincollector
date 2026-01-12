@@ -1,12 +1,13 @@
 <script lang="ts">
     import type { DialogField } from "$lib/types/dialogField";
 
-    let {title , description, fields, buttonText, onSubmit} = $props<{
+    let {title , description, fields, buttonText, onSubmit, errorText} = $props<{
         title: string;
         description: string;
         fields: DialogField[];
         buttonText: string;
         onSubmit?: (fields: DialogField[]) => void;
+        errorText?: string | null;
     }>();
 
     let isOpen = $state(false);
@@ -92,6 +93,9 @@
                     </button>
                 </div>
             </form>
+            {#if errorText}
+                <div class="text-red-600 mt-2">{errorText}</div>
+            {/if}
         </div>
     </div>
 {/if}

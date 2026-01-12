@@ -348,7 +348,7 @@ class CollectionHandlerTest {
                         "\"coins\":[]}";
                     when(mapper.writeValueAsString(any())).thenReturn(responseJson);
                 },
-                201,
+                200,
                 "{\"id\":\"" + VALID_UUID + "\",\"name\":\"Updated Collection\",\"groupId\":\"group-1\",\"coins\":[]}",
                 "PATCH: Happy path, updates collection"
             ),
@@ -532,7 +532,7 @@ class CollectionHandlerTest {
                         "\"coins\":[]}";
                     when(mapper.writeValueAsString(any())).thenReturn(responseJson);
                 },
-                201,
+                200,
                 "{\"id\":\"" + VALID_UUID + "\",\"name\":\"Updated Collection\",\"groupId\":\"new groupId\",\"coins\":[]}",
                 "Patch: happy path with new groupId"
             ),

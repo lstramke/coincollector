@@ -19,15 +19,6 @@
         <button
             class="flex w-full items-center gap-3 rounded-lg border border-[var(--border-transparent)] bg-[var(--btn-background)] px-3 py-2 text-sm font-medium transition hover:bg-[var(--btn-hover)]"
             type="button"
-            onclick={() => newCollectionDialog.show()}
-        >
-            <span class="flex h-6 w-6 items-center justify-center rounded-md text-base leading-none text-[var(--text-white)]">+</span>
-            Neue Collection
-        </button>
-
-        <button
-            class="flex w-full items-center gap-3 rounded-lg border border-[var(--border-transparent)] bg-[var(--btn-background)] px-3 py-2 text-sm font-medium transition hover:bg-[var(--btn-hover)]"
-            type="button"
             onclick={() => newGroupDialog.show()}
         >
             <span class="flex h-6 w-6 items-center justify-center rounded-md text-base leading-none text-[var(--text-white)]">
@@ -37,6 +28,15 @@
             </span>
             Neue Gruppe
         </button>
+        <button
+            class="flex w-full items-center gap-3 rounded-lg border border-[var(--border-transparent)] bg-[var(--btn-background)] px-3 py-2 text-sm font-medium transition hover:bg-[var(--btn-hover)]"
+            type="button"
+            onclick={() => newCollectionDialog.show()}
+        >
+            <span class="flex h-6 w-6 items-center justify-center rounded-md text-base leading-none text-[var(--text-white)]">+</span>
+            Neue Collection
+        </button>
+
     </div>
 
     <div class="mt-4 border-t border-[var(--border-transparent)] pt-3 text-xs leading-5 text-[var(--text-white)]/70">

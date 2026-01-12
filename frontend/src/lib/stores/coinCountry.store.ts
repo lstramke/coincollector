@@ -1,9 +1,6 @@
 import { writable } from "svelte/store";
 
-export const coinCountryMap = writable<Record<string, string>>();
-
-coinCountryMap.set(
-    {
+const countryToCode: Record<string, string> = {
     "Österreich": "AT",
     "Belgien": "BE",
     "Zypern": "CY",
@@ -26,5 +23,13 @@ coinCountryMap.set(
     "San Marino": "SM",
     "Vatikanstadt": "VA",
     "Monaco": "MC",
-    "Andorra": "AD"
-})
+    "Andorra": "AD",
+    "Bulgarien":"BG"
+};
+
+const codeToCountry: Record<string, string> = Object.fromEntries(
+    Object.entries(countryToCode).map(([country, code]) => [code, country])
+);
+
+export const coinCountryMap = writable<Record<string, string>>(countryToCode);
+export const coinCountryCodeMap = writable<Record<string, string>>(codeToCountry);

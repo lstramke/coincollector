@@ -122,7 +122,7 @@ public class AppIntegrationTest {
                 "{\"name\":\"TestGroup\"}",
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Create group without session cookie"
             ),
@@ -147,7 +147,7 @@ public class AppIntegrationTest {
                 null, 
                 null, 
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 }, 
                 "Get groups without sessionId cookie"
             ),
@@ -192,7 +192,7 @@ public class AppIntegrationTest {
                 null, 
                 null, 
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 }, 
                 "Get specific group without sessionId cookie"
             ),
@@ -228,7 +228,7 @@ public class AppIntegrationTest {
                 "{\"name\":\"UpdatedGroupName\"}",
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Update second group without session cookie"
             ),
@@ -248,7 +248,7 @@ public class AppIntegrationTest {
                 null,
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Delete second group without sesssion cookie"
             ),
@@ -258,7 +258,7 @@ public class AppIntegrationTest {
                 "{\"name\":\"TestCollection\",\"groupId\":\"" + groupId + "\"}",
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Create collection without session cookie"
             ),
@@ -300,7 +300,7 @@ public class AppIntegrationTest {
                 null,
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Get collection without sessionId cookie"
             ),
@@ -324,7 +324,7 @@ public class AppIntegrationTest {
                 "{\"name\":\"TestCollectionNewName\",\"groupId\":\"" + groupId + "\"}",
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Update collection without sessionId cookie"
             ),
@@ -334,7 +334,7 @@ public class AppIntegrationTest {
                 "{\"year\":2024,\"value\":200,\"country\":\"DE\",\"collectionId\":\"" + collcetionId + "\",\"mint\":\"A\"}",
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Add coin to collection without sessionId cookie"
             ),
@@ -383,7 +383,7 @@ public class AppIntegrationTest {
                 null,
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Get coin without sessionId cookie"
             ),
@@ -414,7 +414,7 @@ public class AppIntegrationTest {
                 "{\"year\":2024,\"value\":5,\"country\":\"DE\",\"collectionId\":\"" + collcetionId + "\",\"mint\":\"A\"}",
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Update coin without sessionId cookie"
             ),
@@ -424,7 +424,7 @@ public class AppIntegrationTest {
                 null,
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Delete coin without sessionId cookie"
             ),
@@ -444,7 +444,7 @@ public class AppIntegrationTest {
                 null,
                 null,
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 },
                 "Delete collection without sessionid cookie"
             ),
@@ -478,7 +478,7 @@ public class AppIntegrationTest {
                 null, 
                 "sessionId=" + sessionId, 
                 response -> {
-                    assertEquals(302, response.statusCode());
+                    assertEquals(401, response.statusCode());
                 }, 
                 "Get groups with sessionId cookie after session logout"
             ),

@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionAlreadyExistsException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionCoinsLoadException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionDeleteException;
@@ -42,6 +45,8 @@ import io.github.lstramke.coincollector.repositories.EuroCoinCollectionStorageRe
  */
 public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionStorageService {
     
+    private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionStorageServiceImpl.class);
+    
     private final EuroCoinCollectionStorageRepository euroCoinCollectionStorageRepository;
     private final DataSource dataSource;
     private final EuroCoinStorageService euroCoinStorageService;
@@ -60,16 +65,24 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     /** {@inheritDoc} */
     @Override
     public void save(EuroCoinCollection euroCoinCollection) throws EuroCoinCollectionSaveException, EuroCoinCollectionAlreadyExistsException {
+        if(euroCoinCollection == null){
+            logger.error("save() called with null collection");
+            throw new IllegalArgumentException();
+        }
+        logger.info("Saving collection with id: {}", euroCoinCollection.getId());
         try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
             try {
-                connection.setAutoCommit(false);
                 executeSave(euroCoinCollection, connection);
                 connection.commit();
+                logger.info("Collection saved successfully: {}", euroCoinCollection.getId());
             } catch (SQLException | EuroCoinSaveException | EuroCoinUpdateException e) {
                 connection.rollback();
+                logger.error("Error saving collection {}: {}", euroCoinCollection.getId(), e.getMessage(), e);
                 throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
             }
         } catch (SQLException e) {
+            logger.error("SQL error saving collection {}: {}", euroCoinCollection.getId(), e.getMessage(), e);
             throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
         }
     }
@@ -113,11 +126,16 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     /** {@inheritDoc} */
     @Override
     public EuroCoinCollection getById(String collectionId) throws EuroCoinCollectionNotFoundException, EuroCoinCollectionCoinsLoadException, EuroCoinCollectionGetByIdException {
+        logger.info("Fetching collection by id: {}", collectionId);
         try (Connection connection = dataSource.getConnection()) {
-            return executeGetById(collectionId, connection);
+            EuroCoinCollection collection = executeGetById(collectionId, connection);
+            logger.info("Collection fetched successfully: {}", collectionId);
+            return collection;
         } catch(EuroCoinGetAllException e) {
+            logger.error("Error fetching coins for collection {}: {}", collectionId, e.getMessage(), e);
             throw new EuroCoinCollectionCoinsLoadException(collectionId, e);
         } catch (SQLException e) {
+            logger.error("SQL error fetching collection {}: {}", collectionId, e.getMessage(), e);
             throw new EuroCoinCollectionGetByIdException(collectionId, e);
         }
     }
@@ -159,9 +177,16 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     /** {@inheritDoc} */
     @Override
     public void updateMetadata(EuroCoinCollection euroCoinCollection) throws EuroCoinCollectionUpdateException {
+        if(euroCoinCollection == null){
+            logger.error("updateMetadata() called with null collection");
+            throw new IllegalArgumentException();
+        }
+        logger.info("Updating collection metadata for id: {}", euroCoinCollection.getId());
         try (Connection connection = dataSource.getConnection()) {
             euroCoinCollectionStorageRepository.update(connection, euroCoinCollection);
+            logger.info("Collection metadata updated: {}", euroCoinCollection.getId());
         } catch (SQLException e) {
+            logger.error("SQL error updating collection {}: {}", euroCoinCollection.getId(), e.getMessage(), e);
            throw new EuroCoinCollectionUpdateException(euroCoinCollection.getId(), e);
         }
     }
@@ -179,9 +204,12 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     /** {@inheritDoc} */
     @Override
     public void delete(String collectionId) throws EuroCoinCollectionDeleteException {
+        logger.info("Deleting collection with id: {}", collectionId);
         try (Connection connection = dataSource.getConnection()) {
             euroCoinCollectionStorageRepository.delete(connection, collectionId);
+            logger.info("Collection deleted: {}", collectionId);
         } catch (SQLException e) {
+            logger.error("SQL error deleting collection {}: {}", collectionId, e.getMessage(), e);
            throw new EuroCoinCollectionDeleteException(collectionId, e);
         }
     }
@@ -199,9 +227,13 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     /** {@inheritDoc} */
     @Override
     public List<EuroCoinCollection> getAll() throws EuroCoinCollectionGetAllException {
+        logger.info("Fetching all collections");
         try (Connection connection = dataSource.getConnection()) {
-            return executeGetAll(connection);
+            List<EuroCoinCollection> collections = executeGetAll(connection);
+            logger.info("Fetched {} collections", collections.size());
+            return collections;
         } catch (SQLException | EuroCoinGetAllException e) {
+            logger.error("Error fetching collections: {}", e.getMessage(), e);
             throw new EuroCoinCollectionGetAllException(e);
         }
     }

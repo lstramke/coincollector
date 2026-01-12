@@ -144,7 +144,9 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
             .collect(Collectors.toMap(EuroCoinCollectionGroup::getId, c -> c));
         List<EuroCoinCollection> collections = euroCoinCollectionStorageService.getAll(connection);
         for(EuroCoinCollection collection : collections){
-            groupsByUser.get(collection.getGroupId()).addCollection(collection);
+            if(groupsByUser.containsKey(collection.getGroupId())){
+                groupsByUser.get(collection.getGroupId()).addCollection(collection);
+            }
         }
         logger.info("Fetched {} groups for user {}", groupsByUser.size(), userId);
         return groupsByUser.values().stream().toList();

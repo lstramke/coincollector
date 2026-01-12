@@ -1,5 +1,6 @@
 package io.github.lstramke.coincollector.repositories.sqlite;
 
+import io.github.lstramke.coincollector.model.CoinCountry;
 import io.github.lstramke.coincollector.model.EuroCoin;
 import io.github.lstramke.coincollector.model.EuroCoinBuilder;
 import io.github.lstramke.coincollector.model.EuroCoinFactory;
@@ -58,8 +59,8 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             preparedStatement.setInt(2, coin.getYear());
             preparedStatement.setInt(3, coin.getValue().getCentValue());
             preparedStatement.setString(4, coin.getMintCountry().getIsoCode());
-            preparedStatement.setString(5, coin.getMint().getMintMark());
-            preparedStatement.setString(6, coin.getDescription().getText());
+            preparedStatement.setString(5, coin.getMintCountry().equals(CoinCountry.GERMANY) ? coin.getMint().getMintMark() : null);
+            preparedStatement.setString(6, coin.getDescription().toString());
             preparedStatement.setString(7, coin.getCollectionId());
 
             int rowsAffected = preparedStatement.executeUpdate();
@@ -160,8 +161,8 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             preparedStatement.setInt(1, coin.getYear());
             preparedStatement.setInt(2, coin.getValue().getCentValue());
             preparedStatement.setString(3, coin.getMintCountry().getIsoCode());
-            preparedStatement.setString(4, coin.getMint().getMintMark());
-            preparedStatement.setString(5, coin.getDescription().getText());
+            preparedStatement.setString(4, coin.getMintCountry().equals(CoinCountry.GERMANY) ? coin.getMint().getMintMark() : null);
+            preparedStatement.setString(5, coin.getDescription().toString());
             preparedStatement.setString(6, coin.getCollectionId());
             preparedStatement.setString(7, coin.getId());
 
@@ -307,7 +308,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             return false;
         }
 
-        if (coin.getMint() == null) {
+        if (coin.getMintCountry().equals(CoinCountry.GERMANY) && coin.getMint() == null) {
             return false;
         }
 

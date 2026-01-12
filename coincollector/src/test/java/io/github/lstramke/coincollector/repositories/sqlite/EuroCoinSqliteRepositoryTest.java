@@ -492,7 +492,7 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<ValidationTestcase> validateEuroCoinTestcases() {
         CoinValue mockCoinValue = mock(CoinValue.class);
-        CoinCountry mockMintCountry = mock(CoinCountry.class);
+        CoinCountry mockMintCountry = CoinCountry.GERMANY;
         Mint mockMint = mock(Mint.class);
 
         return Stream.of(
@@ -504,7 +504,8 @@ class EuroCoinSqliteRepositoryTest {
             new ValidationTestcase("valid-id", 1998, mockCoinValue, mockMintCountry, mockMint, "collection-123", false, false, "Coin with year before 1999"),
             new ValidationTestcase("valid-id", 2020, null, mockMintCountry, mockMint, "collection-123", false, false, "Coin with null CoinValue"),
             new ValidationTestcase("valid-id", 2020, mockCoinValue, null, mockMint, "collection-123", false, false, "Coin with null MintCountry"),
-            new ValidationTestcase("valid-id", 2020, mockCoinValue, mockMintCountry, null, "collection-123", false, false, "Coin with null Mint"),
+            new ValidationTestcase("valid-id", 2020, mockCoinValue, mockMintCountry, null, "collection-123", false, false, "German Coin with null Mint"),
+            new ValidationTestcase("valid-id", 2020, mockCoinValue, CoinCountry.FRANCE, null, "collection-123", true, false, "Not German Coin with null Mint"),
             new ValidationTestcase("valid-id", 2020, mockCoinValue, mockMintCountry, mockMint, null, false, false, "Coin with null CollectionId"),
             new ValidationTestcase("valid-id", 2020, mockCoinValue, mockMintCountry, mockMint, "", false, false, "Coin with empty CollectionId")
         );

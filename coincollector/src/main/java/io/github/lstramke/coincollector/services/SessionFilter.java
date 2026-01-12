@@ -10,14 +10,14 @@ import com.sun.net.httpserver.HttpHandler;
  * Provides a filter for HTTP handlers to validate user sessions.
  * <p>
  * This class wraps an {@link HttpHandler} and checks for a valid session before allowing access.
- * Unauthorized access attempts are logged and denied with a redirect response.
+ * Unauthorized access attempts are logged and denied.
  */
 public class SessionFilter {
     private final static Logger logger = LoggerFactory.getLogger(SessionFilter.class);
 
     /**
      * Wraps an {@link HttpHandler} with session validation logic.
-     * If the session is invalid, logs the attempt and sends a redirect response.
+     * If the session is invalid, logs the attempt.
      *
      * @param handler The original HTTP handler to wrap
      * @param sessionManager The session manager to use for validation
@@ -28,7 +28,7 @@ public class SessionFilter {
             String sessionId = getSessionCookie(exchange);
             if (!sessionManager.validateSession(sessionId)) {
                 logger.warn("Unauthorized access attempt: SessionId=" + sessionId + ", RemoteAddress=" + exchange.getRemoteAddress());
-                exchange.sendResponseHeaders(302, -1);
+                exchange.sendResponseHeaders(401, -1);
                 exchange.close();
                 return;
             }

@@ -1,6 +1,7 @@
 package io.github.lstramke.coincollector.model.DTOs.Responses;
 
 import io.github.lstramke.coincollector.model.EuroCoin;
+import io.github.lstramke.coincollector.model.Mint;
 
 public record CoinResponse(
     String id,
@@ -18,7 +19,7 @@ public record CoinResponse(
             coin.getYear(),
             coin.getValue().getCentValue(),
             coin.getMintCountry().getIsoCode(),
-            coin.getMint() != null ? coin.getMint().getMintMark() : null,
+            coin.getMint() != Mint.UNKOWN && coin.getMint() != null ? coin.getMint().getMintMark() : null,
             coin.getDescription().toString(),
             coin.getCollectionId()
         );

@@ -5,7 +5,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Euro issuing countries with ISO code and localized German display name.
+ * Euro issuing countries with ISO 3166-1 alpha-2 code and localized German display name.
  */
 public enum CoinCountry {
     AUSTRIA("AT", "Österreich"),
@@ -30,7 +30,8 @@ public enum CoinCountry {
     SAN_MARINO("SM", "San Marino"),
     VATICAN_CITY("VA", "Vatikanstadt"),
     MONACO("MC", "Monaco"),
-    ANDORRA("AD", "Andorra");
+    ANDORRA("AD", "Andorra"),
+    BULGARIA("BG", "Bulgarien");
 
     private final String isoCode;
     private final String displayName;

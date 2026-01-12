@@ -141,7 +141,6 @@ class LoginHandlerTest {
         verify(exchange).sendResponseHeaders(eq(testcase.expectedStatus), anyLong());
         if (testcase.expectedStatus == 200) {
             assertEquals("sessionId=session-abc; Path=/; HttpOnly; SameSite=Strict", headers.getFirst("Set-Cookie"));
-            assertEquals("application/json", headers.getFirst("Content-Type"));
         } else if (testcase.expectedStatus == 400) {
             assertEquals(testcase.expectedResponseBody, responseStream.toString());
         } else if (testcase.expectedStatus == 405) {

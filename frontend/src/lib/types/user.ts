@@ -1,4 +1,4 @@
+/** Current authenticated user */
 export interface User {
-  id: number;
   username: string;
 }

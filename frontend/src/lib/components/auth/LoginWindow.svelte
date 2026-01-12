@@ -1,17 +1,22 @@
 <script lang="ts">
     import AuthForm from './AuthForm.svelte';
     import type { AuthField } from '$lib/types/authField';
-    import { isAuthenticated } from '$lib/stores/userStore';
+    import { authError, isAuthenticated, login } from '$lib/stores/auth.store';
+
 
     let fields: AuthField[] = [
         { id: 'username', label: 'Benutzername', value: '', required: true },
     ];
 
-    function submit(items: AuthField[]) {
-        if (items.every(f => f.value.trim() !== '')) {
-            isAuthenticated.set(true)
+    async function onSubmit(items: AuthField[]) {
+        const username = items.find( f => f.id === "username")?.value ?? "";
+        if(!username.trim()) {
+            authError.set("Username must be not empty");
+            return;
         }
+        await login(username);     
     }
+
 </script>
 
 <AuthForm
@@ -19,5 +24,14 @@
     description="Melden Sie sich mit Ihrem Konto an"
     submitLabel="Anmelden"
     {fields}
-    onSubmit={submit}
+    {onSubmit}
 />
+
+{#if $authError}
+    <div class="flex justify-center mt-4">
+        <div class="px-4 py-2 rounded border"
+            style="background-color: var(--bg-table); border-color: var(--color-destructive); color: var(--color-destructive);">
+            {$authError}
+        </div>
+    </div>
+{/if}
