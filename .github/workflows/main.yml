@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - master
-      - '**-feat-*'
-      - '**-fix-*'
-      - '**-chore-*'
   pull_request:
     branches:
       - master
