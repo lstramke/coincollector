@@ -2,9 +2,14 @@ name: Build and Release
 
 on:
   push:
-    branches: [ main ]
-    tags:
-      - 'v*'
+    branches:
+      - master
+      - '**-feat-*'
+      - '**-fix-*'
+      - '**-chore-*'
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
@@ -35,6 +40,7 @@ jobs:
 
   build-jar:
     name: Build JAR
+    if: github.ref == 'refs/heads/master'
     needs: test
     runs-on: ubuntu-latest
     
@@ -67,6 +73,7 @@ jobs:
 
   build-msi:
     name: Build Windows MSI
+    if: github.ref == 'refs/heads/master'
     needs: build-jar
     runs-on: windows-latest
     
