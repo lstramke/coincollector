@@ -61,8 +61,12 @@ export async function loadGroup(id: string): Promise<void> {
     try {
         const updatedGroup = await groupService.getGroup(id);
         const currentGroups = get(groups);
-        const newGroups = currentGroups.map(g => g.id === updatedGroup.id ? updatedGroup : g);
-        groups.set(newGroups);
+        const exists = currentGroups.some(g => g.id === updatedGroup.id);
+        if (exists) {
+            groups.set(currentGroups.map(g => g.id === updatedGroup.id ? updatedGroup : g));
+        } else {
+            groups.set([...currentGroups, updatedGroup]);
+        }
     } catch (error) {
         if (isAxiosError(error)) {
             groupError.set(error.response?.data?.message || "Failed to load group");
