@@ -4,7 +4,7 @@
     import CollectionView from "./CollectionView.svelte";
 </script>
 
-<div class="flex h-full w-full flex-col bg-[var(--bg-main)] p-10">
+<div class="flex h-full w-full flex-col bg-[var(--bg-main)] p-10 max-h-screen overflow-y-auto">
     {#if $selection?.type === 'collection'}
         <CollectionView />
     {:else if $selection?.type === 'group'}
