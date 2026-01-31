@@ -26,7 +26,15 @@ export async function getCollection(id: string): Promise<Collection | undefined>
 	try {
 		const col = await collectionService.getCollection(id);
 		const current = get(collections);
-		collections.set([...current, col]);
+		const exists = current.some(c => c.id === col.id);
+		if (exists) {
+			collections.set(current.map(c => c.id === col.id ? col : c));
+		} else {
+			collections.set([...current, col]);
+		}
+		if(col.groupId){
+			await loadGroup(col.groupId);
+		}
 		return col;
 	} catch {
 		return undefined;
