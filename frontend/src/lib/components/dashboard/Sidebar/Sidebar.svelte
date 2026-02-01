@@ -8,10 +8,6 @@
 
     let { groups } = $props<{ groups: Group[] }>();
 
-    let groupsSorted = $derived(
-        groups.slice().sort((a: Group, b: Group) => a.name.localeCompare(b.name))
-    );
-
     const collectionCount = $derived(
         groups.reduce((sum: any, group: { collections: string | any[]; }) => sum + group.collections.length, 0)
     );
@@ -26,7 +22,7 @@
 <aside class="flex h-screen flex-col bg-[var(--bg-sidebar)] text-[var(--text-white)]">
     <SidebarHeader />
     <nav class="flex-1 space-y-3 overflow-y-auto px-4 py-6">
-        {#each groupsSorted as group (group.id)}
+        {#each groups as group (group.id)}
             <GroupDropdown
                 {group}
                 {selectedId}
