@@ -113,7 +113,7 @@ jobs:
           $tag = $env:GITHUB_REF.Substring(10)
           $ver = $tag.TrimStart('v')
         } else {
-          $ver = "0.0.0-dev"
+          $ver = "0.0.0"
         }
 
         "APP_VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Append
