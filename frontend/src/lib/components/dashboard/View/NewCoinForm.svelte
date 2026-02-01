@@ -46,9 +46,9 @@
             id: "year",
             label: "Prägejahr*",
             value: "",
-            type: "number" as const,
+            type: "select" as const,
             required: true,
-            placeholder: "Jahr eingeben"
+            options: Array.from({ length: new Date().getFullYear() - 1999 + 1 }, (_, i) => (1999 + i).toString())
         },
         {
             id: "mintCity",
