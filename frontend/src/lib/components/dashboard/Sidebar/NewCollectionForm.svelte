@@ -57,6 +57,10 @@
             errorText = 'Bitte einen gültigen Namen eingeben.';
             return;
         }
+        if (name.length > 40) {
+            errorText = 'Der Name darf maximal 40 Zeichen lang sein.';
+            return;
+        }
 
         const success = await createCollection({ name, groupId });
         if (success) {
