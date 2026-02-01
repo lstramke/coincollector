@@ -26,12 +26,19 @@ export const groupMap = derived(groups, $groups => {
  * @param data - Array of groups with nested collections and coins
  */
 export function setGroups(data: Group[]) {
-    groups.set(data);
+    const sortedGroups = data
+        .map(g => ({
+            ...g,
+            collections: [...g.collections].sort((a: Collection, b: Collection) => a.name.localeCompare(b.name))
+        }))
+        .sort((a: Group, b: Group) => a.name.localeCompare(b.name));
 
-    const allCoins: Coin[] = data.flatMap(g => g.collections.flatMap(c => c.coins));
+    groups.set(sortedGroups);
+
+    const allCoins: Coin[] = sortedGroups.flatMap(g => g.collections.flatMap(c => c.coins));
     coins.set(allCoins);
 
-    const allCollections: Collection[] = data.flatMap(g => g.collections);
+    const allCollections: Collection[] = sortedGroups.flatMap(g => g.collections);
     collections.set(allCollections);
 }
 
@@ -63,9 +70,9 @@ export async function loadGroup(id: string): Promise<void> {
         const currentGroups = get(groups);
         const exists = currentGroups.some(g => g.id === updatedGroup.id);
         if (exists) {
-            groups.set(currentGroups.map(g => g.id === updatedGroup.id ? updatedGroup : g));
+            setGroups(currentGroups.map(g => g.id === updatedGroup.id ? updatedGroup : g));
         } else {
-            groups.set([...currentGroups, updatedGroup]);
+            setGroups([...currentGroups, updatedGroup]);
         }
     } catch (error) {
         if (isAxiosError(error)) {
@@ -107,8 +114,7 @@ export async function updateGroup(id: string, data: Parameters<typeof groupServi
     try {
         const updated = await groupService.updateGroup(id, data);
         const current = get(groups);
-        const updatedGroups = current.map(g => g.id === id ? { ...g, ...updated } : g);
-        setGroups(updatedGroups);
+        setGroups(current.map(g => g.id === id ? { ...g, ...updated } : g));
         return true;
     } catch (error) {
         if (isAxiosError(error)) {

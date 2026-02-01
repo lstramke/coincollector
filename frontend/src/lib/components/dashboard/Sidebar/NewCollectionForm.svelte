@@ -11,7 +11,6 @@
 
     const groupOptions = $derived.by(() => Object.fromEntries($groups.map(g => [g.name, g.id])));
     const groupNames = $derived($groups.map(g => g.name));
-    const countryNames = $derived(Object.keys($coinCountryMap || {}));
 
     let fields = $derived.by(() => [
         {
@@ -23,22 +22,13 @@
             options: groupNames
         },
         {
-            id: "country",
-            label: "Land*",
+            id: "collectionName",
+            label: "Collection Name*",
             value: "",
-            type: "select" as const,
+            type: "text" as const,
             required: true,
-            placeholder: "Land eingeben",
-            options: countryNames.sort()
+            placeholder: "Name der Collection eingeben"
         },
-        {
-            id: "year",
-            label: "Jahr*",
-            value: "",
-            type: "number" as const,
-            required: true,
-            placeholder: "Jahr eingeben"
-        }
     ]);
 
     function resetFields() {
@@ -49,32 +39,29 @@
         errorText = null;
 
         const groupName = flds.find(f => f.id === 'group')?.value as string;
-        const countryName = flds.find(f => f.id === 'country')?.value as string;
-        const yearRaw = flds.find(f => f.id === 'year')?.value;
+        const collectionName = flds.find(f => f.id === 'collectionName')?.value as string;
 
-        if (!groupName || !countryName || !yearRaw) {
+        if (!groupName || !collectionName) {
             errorText = 'Bitte alle Felder ausfüllen.';
             return;
         }
 
         const groupId = groupOptions[groupName];
-        const countryCode = $coinCountryMap[countryName];
-        const year = parseInt(String(yearRaw), 10);
-
         if (!groupId) {
             errorText = 'Ausgewählte Gruppe nicht gefunden.';
             return;
         }
-        if (!countryCode) {
-            errorText = 'Ausgewähltes Land nicht gefunden.';
+
+        const name = collectionName.trim();
+        if (!name) {
+            errorText = 'Bitte einen gültigen Namen eingeben.';
             return;
         }
-        if (isNaN(year)) {
-            errorText = 'Bitte ein gültiges Jahr eingeben.';
+        if (name.length > 40) {
+            errorText = 'Der Name darf maximal 40 Zeichen lang sein.';
             return;
         }
 
-        const name = `${countryName} ${year}`;
         const success = await createCollection({ name, groupId });
         if (success) {
             resetFields();

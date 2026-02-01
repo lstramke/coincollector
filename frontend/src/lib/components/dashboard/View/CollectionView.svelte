@@ -7,6 +7,7 @@
     import { mintCityMap } from "$lib/stores/mintCity.store";
     import { deleteCoin } from "$lib/stores/coin.store";
     import { coinCountryCodeMap } from "$lib/stores/coinCountry.store";
+    import type { Coin } from "$lib/types/coin";
 
     let collection = $derived((): Collection | undefined => {
         return $selection?.type === "collection"
@@ -17,6 +18,11 @@
     function formatValue(value: number) {
         if (value >= 100) return `${value / 100} Euro`;
         return `${value} Cent`;
+    }
+
+    let sortAsc = $state(true);
+    function toggleSort() {
+        sortAsc = !sortAsc;
     }
 
     let newCoinDialog: NewCoinForm;
@@ -50,7 +56,19 @@
         <table class="w-full table-fixed text-sm border-collapse">
             <thead class="bg-[var(--bg-table-header)] text-sm font-semibold text-[var(--text-primary)]">
                 <tr class="h-12">
-                    <th class="px-4 text-left w-[110px]">Wert</th>
+                    <th class="px-4 text-left w-[110px] cursor-pointer select-none" onclick={toggleSort}>
+                        <span class="inline-flex items-center gap-1">
+                            Wert
+                            <svg
+                                class="h-3 w-3 transition-transform"
+                                style="transform: rotate({sortAsc ? '0deg' : '180deg'});"
+                                viewBox="0 0 10 10"
+                                fill="none"
+                            >
+                                <path d="M1.5 8L5 2 8.5 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </span>
+                    </th>
                     <th class="px-4 text-left">Prägeland</th>
                     <th class="px-4 text-left w-[96px]">Prägejahr</th>
                     <th class="px-4 text-left w-[140px]">Prägestadt</th>
@@ -60,7 +78,7 @@
             </thead>
 
             <tbody>
-                {#each col?.coins as coin (coin.id)}
+                {#each col?.coins.sort((a: Coin, b: Coin) => sortAsc ? a.value - b.value : b.value - a.value) as coin (coin.id)}
                     <tr class="bg-[var(--bg-white)] border-b border-[var(--border-table)]">
                         <td class="px-4 py-3 align-middle">
                             <span class="inline-block rounded-full border border-[var(--border-table)] bg-[var(--bg-main)] px-3 py-1 text-xs font-medium text-[var(--text-primary)]">
