@@ -11,6 +11,11 @@
       - `feature/infrastructure/`: Infrastruktur-/Repository-Implementierungen 
   - Logging klarer machen, routenaufruf -> service -> ... <- antwort, vielleicht bietet spring da auch schon was
 
+### Config
+  - wenn auf DI mit spring umgestiegen wird, wedren ApplicationContext und Initservcie obsolet,
+  - db über flyway migrieren und auch erstellen -> sqlInit... kann auch weg
+  - dafür muss spring rein
+
 ### Datenmodell
   - In den Interfaces Coin, CoinCollection, CollectionGroup das Werfen von Exceptions in den Methodenbeschreibungen ergänzen
   - Die Struktur der Coin -> Collection -> Group Struktur überdenken, Generisches Composite-Pattern wie am Anfang bereits mal überlegt ==> eine Änderung hätte starke Auswirkungen (API, DB), lohnt wenn Flexibilität notwendig ist -> bei der nächsten DB Migration einfügbar
@@ -20,7 +25,7 @@
 
 ### Datenbankmodell
   - Check Constraints für die Enum Wertebereiche ergänzen
-  - Über Migrations gedanken machen: Wo? Womit? Wann?
+  - Über Migrations gedanken machen: Wo? Womit? Wann? --> siehe Config flyway
   - Datenbankdatei nicht im Programmverzeichnis speichern:
   Die SQLite-Datenbank sollte betriebssystemabhängig im Benutzerprofil abgelegt werden (z. B. %LOCALAPPDATA%/CoinCollector/data/coincollector.db unter Windows, ~/.config/CoinCollector/coincollector.db unter Linux/Mac).
   Wichtig: Die Datenbank bleibt nur dann bei Updates/Neuinstallationen erhalten, wenn der Datenordner nicht vom Installer/Updater gelöscht wird. 
