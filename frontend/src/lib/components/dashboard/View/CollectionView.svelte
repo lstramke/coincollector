@@ -52,9 +52,9 @@
         </div>
     </div>
 
-    <div class="rounded-md bg-[var(--bg-table)] p-0 overflow-hidden">
-        <table class="w-full table-fixed text-sm border-collapse">
-            <thead class="bg-[var(--bg-table-header)] text-sm font-semibold text-[var(--text-primary)]">
+    <div class="rounded-md bg-[var(--bg-table)] p-0 overflow-hidden overflow-y-auto">
+        <table class="w-full table-fixed text-base border-collapse">
+            <thead class="bg-[var(--bg-table-header)] text-base font-semibold text-[var(--text-primary)] sticky top-0 z-10">
                 <tr class="h-12">
                     <th class="px-4 text-left w-[110px] cursor-pointer select-none" onclick={toggleSort}>
                         <span class="inline-flex items-center gap-1">
@@ -78,10 +78,10 @@
             </thead>
 
             <tbody>
-                {#each col?.coins.sort((a: Coin, b: Coin) => sortAsc ? a.value - b.value : b.value - a.value) as coin (coin.id)}
-                    <tr class="bg-[var(--bg-white)] border-b border-[var(--border-table)]">
+                {#each col?.coins.sort((a: Coin, b: Coin) => sortAsc ? a.value - b.value : b.value - a.value) as coin, i (coin.id)}
+                    <tr class="border-b border-[var(--border-table)] {i % 2 === 0 ? 'bg-[var(--bg-white)]' : 'bg-[var(--bg-table)]'}">
                         <td class="px-4 py-3 align-middle">
-                            <span class="inline-block rounded-full border border-[var(--border-table)] bg-[var(--bg-main)] px-3 py-1 text-xs font-medium text-[var(--text-primary)]">
+                            <span class="inline-block rounded-full border border-[var(--border-table)] bg-[var(--bg-table-header)] px-3 py-1 text-xs font-medium text-[var(--text-primary)]">
                                 {formatValue(coin.value)}
                             </span>
                         </td>
@@ -94,7 +94,7 @@
                             {coin.year}
                         </td>
 
-                        <td class="px-4 py-3 align-middle text-[var(--text-secondary)]">
+                        <td class="px-4 py-3 align-middle text-[var(--text-primary)]">
                             {coin.mint ? $mintCityMap[coin.mint] : '-'}
                         </td>
 
