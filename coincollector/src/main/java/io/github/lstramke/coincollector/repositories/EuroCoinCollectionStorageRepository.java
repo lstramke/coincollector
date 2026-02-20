@@ -33,7 +33,7 @@ public interface EuroCoinCollectionStorageRepository {
      * @param connection open JDBC connection; must not be {@code null}
      * @param collection aggregate to create; must not be {@code null} and must have a non-null / non-blank id & group id
      * @throws SQLException if a database access error occurs or the insert affects an unexpected number of rows
-    * @throws IllegalArgumentException if {@code connection} is {@code null} or if {@code collection} violates validation constraints
+     * @throws IllegalArgumentException if {@code connection} is {@code null} or if {@code collection} violates validation constraints
      */
     void create(Connection connection, EuroCoinCollection collection) throws SQLException;
 
@@ -44,7 +44,7 @@ public interface EuroCoinCollectionStorageRepository {
      * @param collectionId identifier of the collection; must not be {@code null} or blank
      * @return optional containing the collection when found; otherwise empty
      * @throws SQLException if a database access error occurs
-    * @throws IllegalArgumentException if {@code connection} is {@code null} or if {@code collectionId} is {@code null} or blank
+     * @throws IllegalArgumentException if {@code connection} is {@code null} or if {@code collectionId} is {@code null} or blank
      */
     Optional<EuroCoinCollection> read(Connection connection, String collectionId) throws SQLException;
 
@@ -54,7 +54,7 @@ public interface EuroCoinCollectionStorageRepository {
      * @param connection open JDBC connection; must not be {@code null}
      * @param collection updated aggregate; must not be {@code null} and must reference an existing collection id
      * @throws SQLException if a database access error occurs or the update affects an unexpected number of rows
-    * @throws IllegalArgumentException if {@code connection} is {@code null} or if {@code collection} violates validation constraints
+     * @throws IllegalArgumentException if {@code connection} is {@code null} or if {@code collection} violates validation constraints
      */
     void update(Connection connection, EuroCoinCollection collection) throws SQLException;
 
@@ -64,7 +64,7 @@ public interface EuroCoinCollectionStorageRepository {
      * @param connection open JDBC connection; must not be {@code null}
      * @param collectionId identifier of the collection to delete; must not be {@code null} or blank
      * @throws SQLException if a database access error occurs
-    * @throws IllegalArgumentException if {@code connection} is {@code null} or if {@code collectionId} is {@code null} or blank
+     * @throws IllegalArgumentException if {@code connection} is {@code null} or if {@code collectionId} is {@code null} or blank
      */
     void delete(Connection connection, String collectionId) throws SQLException;
 
@@ -74,7 +74,7 @@ public interface EuroCoinCollectionStorageRepository {
      * @param connection open JDBC connection; must not be {@code null}
      * @return list of collections (never {@code null}); may be empty
      * @throws SQLException if a database access error occurs
-    * @throws IllegalArgumentException if {@code connection} is {@code null}
+     * @throws IllegalArgumentException if {@code connection} is {@code null}
      */
     List<EuroCoinCollection> getAll(Connection connection) throws SQLException;
 
