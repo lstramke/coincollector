@@ -2,6 +2,8 @@ package io.github.lstramke.coincollector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -17,19 +19,20 @@ import io.github.lstramke.coincollector.configuration.InitService;
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 import io.github.lstramke.coincollector.services.SessionFilter;
 
+@SpringBootApplication
 public class App {
 
     private static final Logger logger = LoggerFactory.getLogger(App.class);
-    private static int PORT = 8080;
     private static HttpServer server;
-    private static String DB_FILE_PATH = "coincollector.db";
 
     public static void main(String[] args) throws IOException {
         logger.info("✅ Starting CoinCollector...");
 
-        DB_FILE_PATH = args.length > 0 ? args[0] : "coincollector.db";
-        PORT = args.length > 1 ? Integer.parseInt(args[1]) : 8080;
-
+        var ctx = SpringApplication.run(App.class, args);
+        var env = ctx.getEnvironment();
+        final String DB_FILE_PATH = env.getProperty("coincollector.db-file");
+        final int PORT = Integer.parseInt(env.getProperty("coincollector.port"));
+        
         ApplicationContext context;
         try {
             context = InitService.initialize(DB_FILE_PATH);
