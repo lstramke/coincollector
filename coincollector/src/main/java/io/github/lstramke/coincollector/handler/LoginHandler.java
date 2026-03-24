@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
@@ -17,6 +19,7 @@ import io.github.lstramke.coincollector.model.DTOs.Requests.LoginRequest;
 import io.github.lstramke.coincollector.services.UserStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
 
+@Component
 /**
  * Handler for user login HTTP requests.
  * Manages user authentication and session creation.
@@ -29,6 +32,7 @@ public class LoginHandler implements HttpHandler {
     private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(LoginHandler.class);
     
+    @Autowired
     /**
      * Constructs a new LoginHandler with required dependencies.
      *

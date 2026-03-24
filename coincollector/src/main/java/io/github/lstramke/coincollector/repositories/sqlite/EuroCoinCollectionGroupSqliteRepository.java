@@ -10,11 +10,15 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
+import io.github.lstramke.coincollector.configuration.DatabaseTableProperties;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroup;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroupFactory;
 import io.github.lstramke.coincollector.repositories.EuroCoinCollectionGroupStorageRepository;
 
+@Repository
 /**
  * SQLite-backed implementation of {@link EuroCoinCollectionGroupStorageRepository} providing CRUD
  * access to {@link EuroCoinCollectionGroup} rows in a configurable table. Responsibilities:
@@ -36,8 +40,9 @@ public class EuroCoinCollectionGroupSqliteRepository implements EuroCoinCollecti
     private final String tableName;
     private final EuroCoinCollectionGroupFactory euroCoinCollectionGroupFactory;
 
-    public EuroCoinCollectionGroupSqliteRepository(String tableName, EuroCoinCollectionGroupFactory euroCoinCollectionGroupFactory) {
-        this.tableName = tableName;
+    @Autowired
+    public EuroCoinCollectionGroupSqliteRepository(DatabaseTableProperties tableProperties, EuroCoinCollectionGroupFactory euroCoinCollectionGroupFactory) {
+        this.tableName = tableProperties.euroCoinCollectionGroup();
         this.euroCoinCollectionGroupFactory = euroCoinCollectionGroupFactory;
     }
 

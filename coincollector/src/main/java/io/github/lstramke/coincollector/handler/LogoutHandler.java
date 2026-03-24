@@ -4,13 +4,15 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import io.github.lstramke.coincollector.services.SessionFilter;
 import io.github.lstramke.coincollector.services.SessionManager;
 
+@Component
 /**
  * Handler for user logout HTTP requests.
  * Manages session invalidation and removes session cookies.
@@ -21,6 +23,7 @@ public class LogoutHandler implements HttpHandler {
     private final SessionManager sessionManager;
     private final static Logger logger = LoggerFactory.getLogger(LoginHandler.class);
 
+    @Autowired
     /**
      * Constructs a new LogoutHandler with required dependencies.
      *

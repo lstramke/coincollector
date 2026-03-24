@@ -3,23 +3,26 @@ package io.github.lstramke.coincollector.configuration;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 
+@Component
 public class SqliteInitializer implements StorageInitializer{
     private final DataSource dataSource;
     private static final Logger logger = LoggerFactory.getLogger(SqliteInitializer.class);
-    private final List<String> tableNames;
+    private final DatabaseTableProperties tableProperties;
 
-    public SqliteInitializer(DataSource dataSource, List<String> tableNames) {
+    @Autowired
+    public SqliteInitializer(DataSource dataSource, DatabaseTableProperties tableProperties) {
         this.dataSource = dataSource;
-        this.tableNames = tableNames;
+        this.tableProperties = tableProperties;
     }
 
     @Override
@@ -44,7 +47,7 @@ public class SqliteInitializer implements StorageInitializer{
     }
 
     private void initUserTable(Connection connection) throws StorageInitializeException  {
-        String tableName = tableNames.get(0);
+        String tableName = tableProperties.user();
         String sql = String.format("""
             CREATE TABLE IF NOT EXISTS %s (
                 user_id TEXT PRIMARY KEY,
@@ -55,7 +58,7 @@ public class SqliteInitializer implements StorageInitializer{
     }
 
     private void initEuroCoinCollectionGroupTable(Connection connection) throws StorageInitializeException {
-        String tableName = tableNames.get(1);
+        String tableName = tableProperties.euroCoinCollectionGroup();
         String sql = String.format("""
                 CREATE TABLE IF NOT EXISTS %s (
                     group_id TEXT PRIMARY KEY,
@@ -68,7 +71,7 @@ public class SqliteInitializer implements StorageInitializer{
     }
 
     private void initEuroCoinCollectionTable(Connection connection) throws StorageInitializeException {
-        String tableName = tableNames.get(2);
+        String tableName = tableProperties.euroCoinCollection();
         String sql = String.format("""
                 CREATE TABLE IF NOT EXISTS %s (
                     collection_id TEXT PRIMARY KEY,
@@ -81,7 +84,7 @@ public class SqliteInitializer implements StorageInitializer{
     }
     
     private void initEuroCoinTable(Connection connection) throws StorageInitializeException {
-        String tableName = tableNames.get(3);
+        String tableName = tableProperties.euroCoin();
         String sql = String.format("""
                 CREATE TABLE IF NOT EXISTS %s (
                     coin_id TEXT PRIMARY KEY,

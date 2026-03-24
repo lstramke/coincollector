@@ -1,11 +1,15 @@
-package io.github.lstramke.coincollector.services;
+package io.github.lstramke.coincollector.handler;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+import io.github.lstramke.coincollector.services.SessionManager;
+
+@Component
 /**
  * Provides a filter for HTTP handlers to validate user sessions.
  * <p>
@@ -14,6 +18,11 @@ import com.sun.net.httpserver.HttpHandler;
  */
 public class SessionFilter {
     private final static Logger logger = LoggerFactory.getLogger(SessionFilter.class);
+    private final SessionManager sessionManager;
+
+    public SessionFilter(SessionManager sessionManager){
+        this.sessionManager = sessionManager;
+    }
 
     /**
      * Wraps an {@link HttpHandler} with session validation logic.
@@ -23,7 +32,7 @@ public class SessionFilter {
      * @param sessionManager The session manager to use for validation
      * @return A new {@link HttpHandler} with session validation
      */
-    public static HttpHandler withSessionValidation(HttpHandler handler, SessionManager sessionManager) {
+    public HttpHandler withSessionValidation(HttpHandler handler) {
         return exchange -> {
             String sessionId = getSessionCookie(exchange);
             if (!sessionManager.validateSession(sessionId)) {

@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -23,6 +25,7 @@ import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageS
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
+@Component
 /**
  * Handler for collection-related HTTP requests.
  * Manages CRUD operations for Euro coin collections within groups.
@@ -36,6 +39,7 @@ public class CollectionHandler implements HttpHandler {
     private final static Logger logger = LoggerFactory.getLogger(CollectionHandler.class);
     private final static String PREFIX = "/api/collections";
 
+    @Autowired
     /**
      * Constructs a new CollectionHandler with required dependencies.
      *

@@ -21,14 +21,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import io.github.lstramke.coincollector.configuration.DatabaseTableProperties;
 import io.github.lstramke.coincollector.model.EuroCoinCollection;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroup;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroupFactory;
 
 @ExtendWith(MockitoExtension.class)
 public class EuroCoinCollectionGroupRepositoryTest {
-    private static final String tableName = "test_groups";
     private static final EuroCoinCollectionGroup dummyCollectionGroup = new EuroCoinCollectionGroup("dummy group", "test_owner");
+    private static final DatabaseTableProperties properties = new DatabaseTableProperties("users", "euroCoins", "euroCoinCollections", "test_groups");
 
     record CreateTestcase(
         EuroCoinCollectionGroup group,
@@ -58,7 +59,7 @@ public class EuroCoinCollectionGroupRepositoryTest {
     @MethodSource("createTestcases")
     void testCreate(CreateTestcase testcase){
         EuroCoinCollectionGroupFactory groupFactory = mock(EuroCoinCollectionGroupFactory.class);
-        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(tableName, groupFactory);
+        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(properties, groupFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
@@ -125,7 +126,7 @@ public class EuroCoinCollectionGroupRepositoryTest {
     @MethodSource("readTestcases")
     void testRead(ReadTestcase testcase){
         EuroCoinCollectionGroupFactory groupFactory = mock(EuroCoinCollectionGroupFactory.class);
-        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(tableName, groupFactory);
+        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(properties, groupFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
@@ -209,7 +210,7 @@ public class EuroCoinCollectionGroupRepositoryTest {
     @MethodSource("updateTestcases")
     void testUpdate(UpdateTestcase testcase){
         EuroCoinCollectionGroupFactory groupFactory = mock(EuroCoinCollectionGroupFactory.class);
-        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(tableName, groupFactory);
+        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(properties, groupFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
@@ -272,7 +273,7 @@ public class EuroCoinCollectionGroupRepositoryTest {
     @MethodSource("deleteTestcases")
     void testDelete(DeleteTestcase testcase){
         EuroCoinCollectionGroupFactory groupFactory = mock(EuroCoinCollectionGroupFactory.class);
-        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(tableName, groupFactory);
+        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(properties, groupFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
@@ -342,7 +343,7 @@ public class EuroCoinCollectionGroupRepositoryTest {
     @MethodSource("getAllByUserTestcases")
     void testGetAllByUser(GetAllByUserTestcase testcase){
         EuroCoinCollectionGroupFactory groupFactory = mock(EuroCoinCollectionGroupFactory.class);
-        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(tableName, groupFactory);
+        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(properties, groupFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
@@ -424,7 +425,7 @@ public class EuroCoinCollectionGroupRepositoryTest {
     @MethodSource("existsTestcases")
     void testExists(ExistsTestcase testcase){
         EuroCoinCollectionGroupFactory groupFactory = mock(EuroCoinCollectionGroupFactory.class);
-        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(tableName, groupFactory);
+        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(properties, groupFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
@@ -497,7 +498,7 @@ public class EuroCoinCollectionGroupRepositoryTest {
     @MethodSource("validationTestcases")
     void testValidateEuroCoinCollectionGroup(ValidationTestcase testcase){
         EuroCoinCollectionGroupFactory groupFactory = mock(EuroCoinCollectionGroupFactory.class);
-        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(tableName, groupFactory);
+        EuroCoinCollectionGroupSqliteRepository repository = new EuroCoinCollectionGroupSqliteRepository(properties, groupFactory);
 
         EuroCoinCollectionGroup group = null;
         if(!testcase.description.contains("null group")){

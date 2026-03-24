@@ -3,6 +3,9 @@ package io.github.lstramke.coincollector.services;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+@Service
 /**
  * Concrete implementation of the {@link SessionManager} interface.
  * <p>

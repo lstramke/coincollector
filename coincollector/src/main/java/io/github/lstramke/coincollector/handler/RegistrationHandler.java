@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -16,6 +18,7 @@ import io.github.lstramke.coincollector.services.SessionManager;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
+@Component
 /**
  * Handler for user registration HTTP requests.
  * Manages new user account creation and automatic session initialization.
@@ -28,6 +31,7 @@ public class RegistrationHandler implements HttpHandler {
     private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(RegistrationHandler.class);
 
+    @Autowired
     /**
      * Constructs a new RegistrationHandler with required dependencies.
      *

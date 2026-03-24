@@ -1,4 +1,4 @@
-package io.github.lstramke.coincollector.services;
+package io.github.lstramke.coincollector.handler;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -11,6 +11,8 @@ import java.util.stream.Stream;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+
+import io.github.lstramke.coincollector.services.SessionManager;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -68,7 +70,9 @@ class SessionFilterTest {
             doThrow(new RuntimeException("fail")).when(handler).handle(exchange);
         }
 
-        HttpHandler filtered = SessionFilter.withSessionValidation(handler, sessionManager);
+        SessionFilter sessionFilter = new SessionFilter(sessionManager);
+
+        HttpHandler filtered = sessionFilter.withSessionValidation(handler);
 
         filtered.handle(exchange);
 

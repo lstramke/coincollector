@@ -1,5 +1,6 @@
 package io.github.lstramke.coincollector.repositories.sqlite;
 
+import io.github.lstramke.coincollector.configuration.DatabaseTableProperties;
 import io.github.lstramke.coincollector.model.EuroCoinCollection;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionFactory;
 import io.github.lstramke.coincollector.repositories.EuroCoinCollectionStorageRepository;
@@ -12,7 +13,10 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
+@Repository
 /**
  * SQLite-backed implementation of {@link EuroCoinCollectionStorageRepository} providing CRUD
  * access to {@link EuroCoinCollection} rows in a configurable table. Responsibilities:
@@ -34,8 +38,9 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
     private final String tableName;
     private final EuroCoinCollectionFactory euroCoinCollectionFactory;
 
-    public EuroCoinCollectionSqliteRepository(String tableName, EuroCoinCollectionFactory euroCoinCollectionFactory) {
-        this.tableName = tableName;
+    @Autowired
+    public EuroCoinCollectionSqliteRepository(DatabaseTableProperties tableProperties, EuroCoinCollectionFactory euroCoinCollectionFactory) {
+        this.tableName = tableProperties.euroCoinCollection();
         this.euroCoinCollectionFactory = euroCoinCollectionFactory;
     }
 

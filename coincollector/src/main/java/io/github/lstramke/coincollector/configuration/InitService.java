@@ -1,6 +1,4 @@
-package io.github.lstramke.coincollector.configuration;
-
-import java.util.List;
+package io.github.lstramke.coincollector.configuration;          
 
 import javax.sql.DataSource;
 
@@ -31,11 +29,14 @@ import io.github.lstramke.coincollector.services.SessionManagerImpl;
 import io.github.lstramke.coincollector.services.UserStorageServiceImpl;
 import tools.jackson.databind.ObjectMapper;
 
+@Deprecated
 /**
  * Service for initializing the application context and all dependencies.
  * Handles database setup, repository creation, service initialization, and handler wiring.
  * Provides a factory method for bootstrapping the entire application.
- */
+*/
+
+
 public class InitService {
     
     private static final Logger logger = LoggerFactory.getLogger(InitService.class);
@@ -55,8 +56,8 @@ public class InitService {
         dataSource.setUrl("jdbc:sqlite:" + dbFilePath);
         
         DataSource configuredDataSource = new DataSourceAutoActivateForeignKeys(dataSource);
-        List<String> tableNames = List.of("users", "euroCoinCollectionGroups", "euroCoinCollections", "euroCoins");
-        StorageInitializer storageInitializer = new SqliteInitializer(configuredDataSource, tableNames);
+        DatabaseTableProperties properties = new DatabaseTableProperties("users", "euroCoinCollectionGroups", "euroCoinCollections", "euroCoins");
+        StorageInitializer storageInitializer = new SqliteInitializer(configuredDataSource, properties);
         
         storageInitializer.init();
         logger.info("Database initialized successfully");
@@ -68,10 +69,10 @@ public class InitService {
         var collectionFactory = new EuroCoinCollectionFactory();
         var coinFactory = new EuroCoinFactory();
         
-        var userStorageRepository = new UserSqliteRepository(tableNames.get(0), userFactory);
-        var groupStorageRepository = new EuroCoinCollectionGroupSqliteRepository(tableNames.get(1), groupFactory);
-        var collectionStorageRepository = new EuroCoinCollectionSqliteRepository(tableNames.get(2), collectionFactory);
-        var coinStorageRepository = new EuroCoinSqliteRepository(tableNames.get(3), coinFactory);
+        var userStorageRepository = new UserSqliteRepository(properties, userFactory);
+        var groupStorageRepository = new EuroCoinCollectionGroupSqliteRepository(properties, groupFactory);
+        var collectionStorageRepository = new EuroCoinCollectionSqliteRepository(properties, collectionFactory);
+        var coinStorageRepository = new EuroCoinSqliteRepository(properties, coinFactory);
         
         var userStorageService = new UserStorageServiceImpl(userStorageRepository, configuredDataSource);
         var coinStorageService = new EuroCoinStorageServiceImpl(coinStorageRepository, configuredDataSource);

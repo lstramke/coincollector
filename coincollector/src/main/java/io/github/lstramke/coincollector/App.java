@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -14,11 +15,18 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import io.github.lstramke.coincollector.configuration.ApplicationContext;
-import io.github.lstramke.coincollector.configuration.InitService;
+import io.github.lstramke.coincollector.configuration.DatabaseTableProperties;
+import io.github.lstramke.coincollector.configuration.SqliteInitializer;
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
-import io.github.lstramke.coincollector.services.SessionFilter;
+import io.github.lstramke.coincollector.handler.CoinHandler;
+import io.github.lstramke.coincollector.handler.CollectionHandler;
+import io.github.lstramke.coincollector.handler.GroupHandler;
+import io.github.lstramke.coincollector.handler.LoginHandler;
+import io.github.lstramke.coincollector.handler.LogoutHandler;
+import io.github.lstramke.coincollector.handler.RegistrationHandler;
+import io.github.lstramke.coincollector.handler.SessionFilter;
 
+@EnableConfigurationProperties(DatabaseTableProperties.class)
 @SpringBootApplication
 public class App {
 
@@ -28,19 +36,28 @@ public class App {
     public static void main(String[] args) throws IOException {
         logger.info("✅ Starting CoinCollector...");
 
-        var ctx = SpringApplication.run(App.class, args);
+        var app = new SpringApplication(App.class);
+        app.setHeadless(false);
+        var ctx = app.run(args);
         var env = ctx.getEnvironment();
-        final String DB_FILE_PATH = env.getProperty("coincollector.db-file");
         final int PORT = Integer.parseInt(env.getProperty("coincollector.port"));
-        
-        ApplicationContext context;
+
+        var dbInitializer = ctx.getBean(SqliteInitializer.class);
         try {
-            context = InitService.initialize(DB_FILE_PATH);
+            dbInitializer.init();
         } catch (StorageInitializeException e) {
-            logger.error("Application initialization failed: {}", e.getMessage());
+            logger.error("Database initialization failed: {}", e.getMessage());
             System.exit(1);
             return;
         }
+
+        var loginHandler = ctx.getBean(LoginHandler.class);
+        var registrationHandler = ctx.getBean(RegistrationHandler.class);
+        var logoutHandler = ctx.getBean(LogoutHandler.class);
+        var groupHandler = ctx.getBean(GroupHandler.class);
+        var collectionHandler = ctx.getBean(CollectionHandler.class);
+        var coinHandler = ctx.getBean(CoinHandler.class);
+        var sessionFilter = ctx.getBean(SessionFilter.class);
 
         server = HttpServer.create(new InetSocketAddress(PORT), 0);
         
@@ -67,7 +84,7 @@ public class App {
 
         server.createContext("/api/login", exchange -> {
             try {
-                context.loginHandler().handle(exchange);
+                loginHandler.handle(exchange);
             } catch (IOException | RuntimeException e) {
                 String errorJson = "{\"error\":\"An unexpected error occurred\"}";
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -79,7 +96,7 @@ public class App {
 
         server.createContext("/api/registration", exchange -> {
             try{
-                context.registrationHandler().handle(exchange);
+                registrationHandler.handle(exchange);
             } catch (IOException | RuntimeException e) {
                 String errorJson = "{\"error\":\"An unexpected error occurred\"}";
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -109,10 +126,10 @@ public class App {
             }
         });
 
-        server.createContext("/api/groups", SessionFilter.withSessionValidation(context.groupHandler(), context.sessionManager()));
-        server.createContext("/api/collections", SessionFilter.withSessionValidation(context.collectionHandler(), context.sessionManager()));
-        server.createContext("/api/coins", SessionFilter.withSessionValidation(context.coinHandler(), context.sessionManager()));
-        server.createContext("/api/logout", SessionFilter.withSessionValidation(context.logoutHandler(), context.sessionManager()));
+        server.createContext("/api/groups", sessionFilter.withSessionValidation(groupHandler));
+        server.createContext("/api/collections", sessionFilter.withSessionValidation(collectionHandler));
+        server.createContext("/api/coins", sessionFilter.withSessionValidation(coinHandler));
+        server.createContext("/api/logout", sessionFilter.withSessionValidation(logoutHandler));
 
         server.setExecutor(null);
         server.start();
