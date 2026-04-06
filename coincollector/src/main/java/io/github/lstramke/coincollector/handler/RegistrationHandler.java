@@ -1,99 +1,70 @@
 package io.github.lstramke.coincollector.handler;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
-import io.github.lstramke.coincollector.exceptions.userExceptions.UserSaveException;
 import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.model.DTOs.Requests.RegistrationRequest;
 import io.github.lstramke.coincollector.services.UserStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 
-@Component
 /**
- * Handler for user registration HTTP requests.
- * Manages new user account creation and automatic session initialization.
- * Sets HTTP-only session cookies for newly registered users.
+ * REST controller for user registration.
+ *
+ * <p>Handles registration requests, creates a new user account and a server-side
+ * session, and returns a sessionId cookie. Errors are handled centrally by
+ * {@code GlobalExceptionHandler}.</p>
  */
-public class RegistrationHandler implements HttpHandler {
+@RestController
+@RequestMapping("/api/v1")
+public class RegistrationHandler {
 
     private final UserStorageService userStorageService;
     private final SessionManager sessionManager;
-    private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(RegistrationHandler.class);
 
-    @Autowired
     /**
-     * Constructs a new RegistrationHandler with required dependencies.
-     *
-     * @param userStorageService the service for user storage operations
-     * @param sessionManager the service for managing user sessions
-     * @param mapper the ObjectMapper for JSON serialization/deserialization
-     */
-    public RegistrationHandler(UserStorageService userStorageService, SessionManager sessionManager, ObjectMapper mapper) {
+     * Creates a new registration controller with the required services.
+    *
+    * @param userStorageService Service for user persistence
+    * @param sessionManager Service for session management
+    */
+    @Autowired
+    public RegistrationHandler(UserStorageService userStorageService, SessionManager sessionManager) {
         this.userStorageService = userStorageService;
         this.sessionManager = sessionManager;
-        this.mapper = mapper;
-    }
-
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
-        
-        logger.info("Route called: {} {}", method, path);
-        switch (method) {
-            case "POST" -> handleRegistration(exchange);
-            default -> {
-                exchange.sendResponseHeaders(405, -1);
-                exchange.close();
-            }
-        }
     }
 
     /**
-     * Handles POST requests for user registration.
-     * Creates a new user account, initializes a session, and sets a session cookie.
+     * Processes a registration request.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * <p>Expects a JSON body of type {@link RegistrationRequest}. Creates the
+     * user, opens a session and returns a Set-Cookie header with the session id.</p>
+     *
+     * @param request {@link RegistrationRequest} containing the username
+     * @return {@link ResponseEntity} with Set-Cookie header on success
      */
-    private void handleRegistration(HttpExchange exchange) throws IOException {
-        String body = new String(exchange.getRequestBody().readAllBytes());
+    @PostMapping("/registration")
+    public ResponseEntity<?> handleRegistration(@RequestBody RegistrationRequest request) {
+        logger.info("Registration attempt with username: {}", request.username());
 
-        
-        try {
-            var registrationRequest = mapper.readValue(body, RegistrationRequest.class);
-            User user = new User(registrationRequest.username());
-            userStorageService.save(user);
+        User user = new User(request.username());
+        userStorageService.save(user);
+        String sessionId = sessionManager.createSession(user.getId());
+        String cookie = ResponseCookie.from("sessionId", sessionId)
+            .path("/")
+            .httpOnly(true)
+            .sameSite("Strict")
+            .build().toString();
 
-            String sessionId = sessionManager.createSession(user.getId());
-            exchange.getResponseHeaders().add(
-                "Set-Cookie", 
-                "sessionId=" + sessionId + "; Path=/; HttpOnly; SameSite=Strict"
-            );
-
-            exchange.sendResponseHeaders(201, 0);
-            exchange.close();
-        } catch (JacksonException e) {
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.close();
-        } catch (UserSaveException e) {
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"An unexpected error occurred\"}".getBytes());
-            exchange.close();
-        }
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie).build();
     }
 }

@@ -1,100 +1,70 @@
 package io.github.lstramke.coincollector.handler;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
-import io.github.lstramke.coincollector.exceptions.userExceptions.UserNotFoundException;
 import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.model.DTOs.Requests.LoginRequest;
 import io.github.lstramke.coincollector.services.UserStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
 
-@Component
 /**
- * Handler for user login HTTP requests.
- * Manages user authentication and session creation.
- * Sets HTTP-only session cookies for authenticated users.
+ * REST controller for user login.
+ *
+ * <p>Handles login requests, creates a session via the {@code SessionManager}
+ * and returns a sessionId cookie. Errors (e.g. invalid JSON or user not found)
+ * are handled centrally by {@code GlobalExceptionHandler}.</p>
  */
-public class LoginHandler implements HttpHandler {
+@RestController
+@RequestMapping("/api/v1")
+public class LoginHandler {
 
     private final UserStorageService userStorageService;
     private final SessionManager sessionManager;
-    private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(LoginHandler.class);
     
-    @Autowired
     /**
-     * Constructs a new LoginHandler with required dependencies.
-     *
-     * @param userStorageService the service for user storage operations
-     * @param sessionManager the service for managing user sessions
-     * @param mapper the ObjectMapper for JSON serialization/deserialization
-     */
-    public LoginHandler(UserStorageService userStorageService, SessionManager sessionManager, ObjectMapper mapper) {
+     * Creates a new login controller with the required services.
+    *
+    * @param userStorageService Service for user access
+    * @param sessionManager Service for session management
+    */
+    @Autowired
+    public LoginHandler(UserStorageService userStorageService, SessionManager sessionManager) {
         this.userStorageService = userStorageService;
         this.sessionManager = sessionManager;
-        this.mapper = mapper;
-    }
-
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
-        
-        logger.info("Route called: {} {}", method, path);
-        switch (method) {
-            case "POST" -> handleLogin(exchange);
-            default -> {
-                exchange.sendResponseHeaders(405, -1);
-                exchange.close();
-            }
-        }
     }
 
     /**
-     * Handles POST requests for user login.
-     * Validates user credentials, creates a new session, and sets a session cookie.
+     * Processes a login request.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * <p>Expects a JSON body of type {@link LoginRequest}. On successful
+     * authentication a server-side session is created and an HttpOnly cookie is
+     * returned.</p>
+     *
+     * @param request {@link LoginRequest} containing the username and password
+     * @return {@link ResponseEntity} with a Set-Cookie header on success
      */
-    private void handleLogin(HttpExchange exchange) throws IOException{
-        String body = new String(exchange.getRequestBody().readAllBytes());
+    @PostMapping("/login")
+    public ResponseEntity<?> handleLogin(@RequestBody LoginRequest request) {
+        logger.info("Login attempt for {}", request.username());
 
-        try {
-            LoginRequest loginRequest = mapper.readValue(body, LoginRequest.class);
-            
-            User user = userStorageService.getByUsername(loginRequest.username());
-            String sessionId = sessionManager.createSession(user.getId());
+        User user = userStorageService.getByUsername(request.username());
+        String sessionId = sessionManager.createSession(user.getId());
+        String cookie = ResponseCookie.from("sessionId", sessionId)
+            .path("/")
+            .httpOnly(true)
+            .sameSite("Strict")
+            .build().toString();
 
-            exchange.getResponseHeaders().add(
-                "Set-Cookie", 
-                "sessionId=" + sessionId + "; Path=/; HttpOnly; SameSite=Strict"
-            );
-
-            exchange.sendResponseHeaders(200, 0);
-            exchange.close();
-        } catch (JacksonException e) {
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.close();
-        } catch (UserNotFoundException e) {
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.close();
-        }
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie).build();
     }
-    
 }

@@ -21,9 +21,7 @@ import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 import io.github.lstramke.coincollector.handler.CoinHandler;
 import io.github.lstramke.coincollector.handler.CollectionHandler;
 import io.github.lstramke.coincollector.handler.GroupHandler;
-import io.github.lstramke.coincollector.handler.LoginHandler;
 import io.github.lstramke.coincollector.handler.LogoutHandler;
-import io.github.lstramke.coincollector.handler.RegistrationHandler;
 import io.github.lstramke.coincollector.handler.SessionFilter;
 
 @EnableConfigurationProperties(DatabaseTableProperties.class)
@@ -51,8 +49,6 @@ public class App {
             return;
         }
 
-        var loginHandler = ctx.getBean(LoginHandler.class);
-        var registrationHandler = ctx.getBean(RegistrationHandler.class);
         var logoutHandler = ctx.getBean(LogoutHandler.class);
         var groupHandler = ctx.getBean(GroupHandler.class);
         var collectionHandler = ctx.getBean(CollectionHandler.class);
@@ -81,50 +77,7 @@ public class App {
                 exchange.close();
             }
         });
-
-        server.createContext("/api/login", exchange -> {
-            try {
-                loginHandler.handle(exchange);
-            } catch (IOException | RuntimeException e) {
-                String errorJson = "{\"error\":\"An unexpected error occurred\"}";
-                exchange.getResponseHeaders().set("Content-Type", "application/json");
-                exchange.sendResponseHeaders(500, errorJson.length());
-                exchange.getResponseBody().write(errorJson.getBytes());
-                exchange.close();
-            }
-        });
-
-        server.createContext("/api/registration", exchange -> {
-            try{
-                registrationHandler.handle(exchange);
-            } catch (IOException | RuntimeException e) {
-                String errorJson = "{\"error\":\"An unexpected error occurred\"}";
-                exchange.getResponseHeaders().set("Content-Type", "application/json");
-                exchange.sendResponseHeaders(500, errorJson.length());
-                exchange.getResponseBody().write(errorJson.getBytes());
-                exchange.close();
-            }
-        });
-
-        server.createContext("/api/shutdown", exchange -> {
-            String method = exchange.getRequestMethod();
-            String path = exchange.getRequestURI().getPath();
-            logger.info("Route called: {} {}", method, path);
-            switch (method) {
-                case "POST" -> {
-                    exchange.sendResponseHeaders(200, -1);
-                    exchange.close();
-                    new Thread(() -> {
-                        try { Thread.sleep(100); } catch (InterruptedException ignored) {}
-                        App.stopServer();
-                    }).start();
-                }
-                default -> {
-                    exchange.sendResponseHeaders(405, -1);
-                    exchange.close();
-                }
-            }
-        });
+        
 
         server.createContext("/api/groups", sessionFilter.withSessionValidation(groupHandler));
         server.createContext("/api/collections", sessionFilter.withSessionValidation(collectionHandler));
