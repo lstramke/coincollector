@@ -9,13 +9,13 @@ import com.sun.net.httpserver.HttpHandler;
 
 import io.github.lstramke.coincollector.services.SessionManager;
 
-@Component
 /**
  * Provides a filter for HTTP handlers to validate user sessions.
  * <p>
  * This class wraps an {@link HttpHandler} and checks for a valid session before allowing access.
  * Unauthorized access attempts are logged and denied.
- */
+*/
+@Component
 public class SessionFilter {
     private final static Logger logger = LoggerFactory.getLogger(SessionFilter.class);
     private final SessionManager sessionManager;
@@ -43,7 +43,7 @@ public class SessionFilter {
             }
 
             String userId = sessionManager.getUserId(sessionId);
-            exchange.setAttribute("userId", userId);
+            exchange.setAttribute("userId", userId);                  
 
             try {
                 handler.handle(exchange);

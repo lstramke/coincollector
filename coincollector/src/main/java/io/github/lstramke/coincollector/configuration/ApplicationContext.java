@@ -21,6 +21,7 @@ import io.github.lstramke.coincollector.services.SessionManager;
  * @param collectionHandler the handler for collection operations
  * @param coinHandler the handler for coin operations
  */
+@Deprecated
 public record ApplicationContext(
     SessionManager sessionManager,
     LoginHandler loginHandler,

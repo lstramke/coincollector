@@ -3,6 +3,8 @@ info:
   title: "CoinCollector API"
   version: "1.0"
 
+# TODO: adjust apis after spring web refactor if neccessary
+
 paths:
   # Authentication
   /api/login:

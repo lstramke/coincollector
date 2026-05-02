@@ -29,14 +29,12 @@ import io.github.lstramke.coincollector.services.SessionManagerImpl;
 import io.github.lstramke.coincollector.services.UserStorageServiceImpl;
 import tools.jackson.databind.ObjectMapper;
 
-@Deprecated
 /**
  * Service for initializing the application context and all dependencies.
  * Handles database setup, repository creation, service initialization, and handler wiring.
  * Provides a factory method for bootstrapping the entire application.
 */
-
-
+@Deprecated
 public class InitService {
     
     private static final Logger logger = LoggerFactory.getLogger(InitService.class);
@@ -44,11 +42,12 @@ public class InitService {
     /**
      * Initializes the complete application context with all required dependencies.
      * Sets up the SQLite database, creates all repositories, services, and handlers.
-     *
-     * @param dbFilePath the file path to the SQLite database file
-     * @return a fully initialized ApplicationContext with all components wired together
-     * @throws StorageInitializeException if database initialization fails
-     */
+    *
+    * @param dbFilePath the file path to the SQLite database file
+    * @return a fully initialized ApplicationContext with all components wired together
+    * @throws StorageInitializeException if database initialization fails
+    */
+    @Deprecated
     public static ApplicationContext initialize(String dbFilePath) throws StorageInitializeException {
         logger.info("Initializing application context...");
         
@@ -80,9 +79,9 @@ public class InitService {
         var groupStorageService = new EuroCoinCollectionGroupStorageServiceImpl(configuredDataSource, groupStorageRepository, collectionStorageService);
         
         var mapper = new ObjectMapper();
-        var loginHandler = new LoginHandler(userStorageService, sessionManager, mapper);
+        var loginHandler = new LoginHandler(userStorageService, sessionManager);
         var logoutHandler = new LogoutHandler(sessionManager);
-        var registrationHandler = new RegistrationHandler(userStorageService, sessionManager, mapper);
+        var registrationHandler = new RegistrationHandler(userStorageService, sessionManager);
         var groupHandler = new GroupHandler(groupStorageService, mapper);
         var collectionHandler = new CollectionHandler(collectionStorageService, groupStorageService, mapper);
         var coinHandler = new CoinHandler(coinStorageService, collectionStorageService, groupStorageService, mapper);

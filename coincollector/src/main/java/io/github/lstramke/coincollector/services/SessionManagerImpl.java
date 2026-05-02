@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
-@Service
+
 /**
  * Concrete implementation of the {@link SessionManager} interface.
  * <p>
@@ -14,7 +14,8 @@ import org.springframework.stereotype.Service;
  * Sessions are created, validated, invalidated, and queried via the methods defined in the interface.
  * <p>
  * <b>Note:</b> This implementation is not persistent and is suitable only for single-instance applications.
- */
+*/
+@Service
 public class SessionManagerImpl implements SessionManager {
     private final Map<String, String> sessions = new HashMap<>();
 
