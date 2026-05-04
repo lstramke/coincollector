@@ -1,7 +1,5 @@
 package io.github.lstramke.coincollector.handler;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +30,8 @@ import io.github.lstramke.coincollector.model.DTOs.Responses.CollectionResponse;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageService;
 
 /**
- * Handler for collection-related HTTP requests.
- * Manages CRUD operations for Euro coin collections within groups.
- * Validates ownership and authorization for all collection operations.
+ * Handles REST endpoints for collection operations.
+ * Validates ownership and authorization for all operations.
  */
 @RestController
 @RequestMapping("/api/v1/collections")
@@ -45,11 +42,11 @@ public class CollectionHandler {
     private final static Logger logger = LoggerFactory.getLogger(CollectionHandler.class);
 
     /**
-     * Constructs a new CollectionHandler with required dependencies.
-    *
-    * @param collectionStorageService the service for collection storage operations
-    * @param groupStorageService the service for collection group storage operations
-    */
+     * Constructs a new CollectionHandler.
+     *
+     * @param collectionStorageService service for collection storage
+     * @param groupStorageService service for group storage
+     */
     @Autowired
     public CollectionHandler(EuroCoinCollectionStorageService collectionStorageService, EuroCoinCollectionGroupStorageService groupStorageService) {
         this.collectionStorageService = collectionStorageService;
@@ -57,11 +54,12 @@ public class CollectionHandler {
     }
 
     /**
-     * Handles GET requests to retrieve a specific collection by ID.
-     * Validates that the requesting user owns the collection through the group hierarchy.
+     * Retrieves a collection by ID.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param collectionId the collection ID
+     * @param authentication the authenticated user
+     * @return the collection response
+     * @throws ResponseStatusException if not found or unauthorized
      */
     @GetMapping("/{collectionId}")
     private ResponseEntity<CollectionResponse> getCollection(@PathVariable String collectionId, Authentication authentication) {
@@ -80,11 +78,12 @@ public class CollectionHandler {
     }
 
     /**
-     * Handles POST requests to create a new collection.
-     * Validates ownership of the target group before creation.
+     * Creates a new collection.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param request the collection creation request
+     * @param authentication the authenticated user
+     * @return the created collection response
+     * @throws ResponseStatusException if group not found or unauthorized
      */
     @PostMapping
     private ResponseEntity<CollectionResponse> handleCreate(@RequestBody CreateCollectionRequest request, Authentication authentication) {
@@ -105,11 +104,13 @@ public class CollectionHandler {
     }
 
     /**
-     * Handles PATCH requests to update an existing collection.
-     * Validates ownership of both the source and target groups if the collection is moved.
+     * Updates an existing collection.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param collectionId the collection ID
+     * @param request the update request
+     * @param authentication the authenticated user
+     * @return the updated collection response
+     * @throws ResponseStatusException if collection not found or unauthorized
      */
     @PatchMapping("/{collectionId}")
     private ResponseEntity<CollectionResponse> handleUpdate(
@@ -142,11 +143,12 @@ public class CollectionHandler {
     }
 
     /**
-     * Handles DELETE requests to remove a collection.
-     * Validates ownership of the collection through the group hierarchy.
+     * Deletes a collection by ID.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param collectionId the collection ID
+     * @param authentication the authenticated user
+     * @return no content response
+     * @throws ResponseStatusException if collection not found or unauthorized
      */
     @DeleteMapping("/{collectionId}")
     private ResponseEntity<Void> handleDelete(@PathVariable String collectionId, Authentication authentication) {
@@ -168,10 +170,11 @@ public class CollectionHandler {
     }
 
     /**
-     * Checks whether the authenticated user owns the given group.
+     * Asserts that the user owns the collection's group.
      *
-     * @param groupId the group to verify
-     * @param userId the authenticated user
+     * @param groupId the group ID
+     * @param userId the user ID
+     * @throws ResponseStatusException if user does not own the group
      */
     private void assertOwnerViaGroup(String groupId, String userId) {
         var group = this.groupStorageService.getById(groupId);
@@ -183,7 +186,11 @@ public class CollectionHandler {
     }
 
         /**
-     * Extracts the user id from the Spring Security authentication.
+     * Extracts the user ID from authentication.
+     *
+     * @param authentication the Spring Security authentication
+     * @return the user ID
+     * @throws ResponseStatusException if authentication is missing
      */
     private String requireUserId(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {

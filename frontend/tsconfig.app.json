@@ -11,7 +11,6 @@
     "noEmit": true,
     "isolatedModules": true,
     "types": ["svelte", "vite/client"],
-    "baseUrl": ".",
     "paths": {
       "$lib": ["./src/lib"],
       "$lib/*": ["./src/lib/*"]

@@ -59,7 +59,12 @@ public class CoinHandler {
     }
 
     /**
-     * Returns a single coin if the authenticated user owns it.
+     * Retrieves a coin by ID.
+     *
+     * @param coinId the coin ID
+     * @param authentication the authenticated user
+     * @return the coin response
+     * @throws ResponseStatusException if not found or unauthorized
      */
     @GetMapping("/{coinId}")
     public ResponseEntity<CoinResponse> getCoin(@PathVariable String coinId, Authentication authentication) {
@@ -78,7 +83,12 @@ public class CoinHandler {
     }
 
     /**
-     * Creates a new coin for the authenticated user's collection.
+     * Creates a new coin in a collection.
+     *
+     * @param request the coin creation request
+     * @param authentication the authenticated user
+     * @return the created coin response
+     * @throws ResponseStatusException if collection not found or coin already exists
      */
     @PostMapping
     public ResponseEntity<CoinResponse> createCoin(@RequestBody CoinActionRequest request, Authentication authentication) {
@@ -116,6 +126,12 @@ public class CoinHandler {
 
     /**
      * Updates an existing coin.
+     *
+     * @param coinId the coin ID
+     * @param request the update request
+     * @param authentication the authenticated user
+     * @return the updated coin response
+     * @throws ResponseStatusException if coin not found or unauthorized
      */
     @PatchMapping("/{coinId}")
     public ResponseEntity<CoinResponse> updateCoin(
@@ -160,7 +176,12 @@ public class CoinHandler {
     }
 
     /**
-     * Deletes a coin if the authenticated user owns it.
+     * Deletes a coin by ID.
+     *
+     * @param coinId the coin ID
+     * @param authentication the authenticated user
+     * @return no content response
+     * @throws ResponseStatusException if coin not found or unauthorized
      */
     @DeleteMapping("/{coinId}")
     public ResponseEntity<Void> deleteCoin(@PathVariable String coinId, Authentication authentication) {
@@ -183,7 +204,11 @@ public class CoinHandler {
     }
 
     /**
-     * Checks that the authenticated user owns the given collection.
+     * Asserts that the user owns the collection.
+     *
+     * @param collectionId the collection ID
+     * @param userId the user ID
+     * @throws ResponseStatusException if user does not own the collection
      */
     private void assertOwnerViaCollection(String collectionId, String userId) {
         var collection = collectionStorageService.getById(collectionId);
@@ -196,7 +221,11 @@ public class CoinHandler {
     }
 
     /**
-     * Extracts the user id from the Spring Security authentication.
+     * Extracts the user ID from authentication.
+     *
+     * @param authentication the Spring Security authentication
+     * @return the user ID
+     * @throws ResponseStatusException if authentication is missing
      */
     private String requireUserId(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
