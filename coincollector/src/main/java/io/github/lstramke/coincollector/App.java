@@ -51,8 +51,6 @@ public class App {
 
         var logoutHandler = ctx.getBean(LogoutHandler.class);
         var groupHandler = ctx.getBean(GroupHandler.class);
-        var collectionHandler = ctx.getBean(CollectionHandler.class);
-        var coinHandler = ctx.getBean(CoinHandler.class);
         var sessionFilter = ctx.getBean(SessionFilter.class);
 
         server = HttpServer.create(new InetSocketAddress(PORT), 0);
@@ -80,7 +78,6 @@ public class App {
         
 
         server.createContext("/api/groups", sessionFilter.withSessionValidation(groupHandler));
-        server.createContext("/api/collections", sessionFilter.withSessionValidation(collectionHandler));
         server.createContext("/api/logout", sessionFilter.withSessionValidation(logoutHandler));
 
         server.setExecutor(null);
