@@ -24,7 +24,7 @@ import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.services.SessionManager;
 import io.github.lstramke.coincollector.services.UserStorageService;
 
-@WebMvcTest(value = LoginHandler.class, properties = "spring.main.web-application-type=servlet")
+@WebMvcTest(value = LoginHandler.class)
 class LoginHandlerTest {
 
     @MockitoBean

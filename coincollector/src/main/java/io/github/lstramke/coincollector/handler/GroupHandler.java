@@ -1,15 +1,22 @@
 package io.github.lstramke.coincollector.handler;
 
-import java.io.IOException;
-import java.util.UUID;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupDeleteException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupGetAllException;
@@ -23,297 +30,191 @@ import io.github.lstramke.coincollector.model.DTOs.Requests.UpdateGroupRequest;
 import io.github.lstramke.coincollector.model.DTOs.Responses.GroupMetadataResponse;
 import io.github.lstramke.coincollector.model.DTOs.Responses.GroupsResponse;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageService;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 
-@Component
 /**
  * Handler for collection group-related HTTP requests.
  * Manages CRUD operations for Euro coin collection groups.
  * Validates ownership and authorization for all group operations.
  */
-public class GroupHandler implements HttpHandler {
+@RestController
+@RequestMapping("/api/v1/groups")
+public class GroupHandler {
 
     private final EuroCoinCollectionGroupStorageService groupStorageService;
-    private final ObjectMapper mapper;
     private final static Logger logger = LoggerFactory.getLogger(GroupHandler.class);
-    private final static String PREFIX = "/api/groups";
 
+/**
+     * Constructs a new GroupHandler.
+     *
+     * @param groupStorageService service for group storage
+     */
     @Autowired
-    /**
-     * Constructs a new GroupHandler with required dependencies.
-     *
-     * @param groupStorageService the service for collection group storage operations
-     * @param mapper the ObjectMapper for JSON serialization/deserialization
-     */
-    public GroupHandler(EuroCoinCollectionGroupStorageService groupStorageService, ObjectMapper mapper) {
+    public GroupHandler(EuroCoinCollectionGroupStorageService groupStorageService) {
         this.groupStorageService = groupStorageService;
-        this.mapper = mapper;
-    }
-
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
-
-        logger.info("Route called: {} {}", method, path);
-        switch (method) {
-            case "GET" -> {
-                if (path.equals(PREFIX)) {
-                    handleGetAll(exchange);
-                } else if(isGroupIdPath(path)) {
-                    handleGetWithId(exchange);
-                } else {
-                    exchange.sendResponseHeaders(405, -1);
-                }
-            }
-            case "POST" -> handleCreate(exchange);
-            case "PATCH" -> handleUpdate(exchange);
-            case "DELETE" -> handleDelete(exchange);
-            default -> {
-               exchange.sendResponseHeaders(405, -1);
-               exchange.close();
-            }
-        }
     }
 
     /**
-     * Handles GET requests to retrieve all groups belonging to the authenticated user.
+     * Retrieves all groups for the authenticated user.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param authentication the authenticated user
+     * @return list of groups
+     * @throws ResponseStatusException if retrieval fails
      */
-    private void handleGetAll(HttpExchange exchange) throws IOException {
-        logger.info("handleGetAll called");
-        String userId = (String) exchange.getAttribute("userId");
+    @GetMapping
+    private ResponseEntity<List<GroupsResponse>> handleGetAll(Authentication authentication) {
+        logger.info("Group read requested for user");
+        String userId = requireUserId(authentication);
 
         try {
             var allGroupsForUser = this.groupStorageService.getAllByUser(userId);
-            var response = allGroupsForUser.stream()
+            logger.info("Groups read: count={}", allGroupsForUser.size());
+            return ResponseEntity.ok(
+                allGroupsForUser.stream()
                 .map(GroupsResponse::fromDomain)
-                .toList();
-            
-            String responseJson = mapper.writeValueAsString(response);
-            
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, responseJson.getBytes().length);
-            exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.close();
-            
+                .toList()
+            );
         } catch (EuroCoinCollectionGroupGetAllException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
     }    
 
     /**
-     * Handles POST requests to create a new collection group.
-     * The authenticated user becomes the owner of the created group.
+     * Creates a new group.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param request the group creation request
+     * @param authentication the authenticated user
+     * @return the created group response
+     * @throws ResponseStatusException if creation fails
      */
-    private void handleCreate(HttpExchange exchange) throws IOException {
-        logger.info("handleCreate called");
-        String userId = (String) exchange.getAttribute("userId");
-        String body = new String(exchange.getRequestBody().readAllBytes());
-
-        CreateGroupRequest createGroupRequest;
-        try {
-            createGroupRequest = mapper.readValue(body, CreateGroupRequest.class);
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.close();
-            return;
-        }
+    @PostMapping
+    private ResponseEntity<GroupsResponse> handleCreate(@RequestBody CreateGroupRequest request, Authentication authentication) {
+        logger.info("Group create requested: name={}", request.name());
+        String userId = requireUserId(authentication);
 
         try {
-            var requestedGroup = new EuroCoinCollectionGroup(createGroupRequest.name(), userId);
+            var requestedGroup = new EuroCoinCollectionGroup(request.name(), userId);
             this.groupStorageService.save(requestedGroup);
-
-            var response = GroupsResponse.fromDomain(requestedGroup);
-            String responseJson = mapper.writeValueAsString(response);
-
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(201, responseJson.getBytes().length);
-            exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.close();
-            
+            logger.info("Group created: id={}", requestedGroup.getId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(GroupsResponse.fromDomain(requestedGroup));
         } catch (EuroCoinCollectionGroupSaveException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
     }
 
     /**
-     * Handles GET requests to retrieve a specific group by ID.
-     * Validates that the requesting user owns the group.
+     * Retrieves a group by ID.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param groupId the group ID
+     * @param authentication the authenticated user
+     * @return the group response
+     * @throws ResponseStatusException if group not found or unauthorized
      */
-    private void handleGetWithId(HttpExchange exchange) throws IOException {
-        logger.info("handleGetWithId called");
-        String userId = (String) exchange.getAttribute("userId");
-        String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
+    @GetMapping("/{groupId}")
+    private ResponseEntity<GroupsResponse> handleGetWithId(@PathVariable String groupId, Authentication authentication) {
+        logger.info("Group read requested: id={}", groupId);
+        String userId = requireUserId(authentication);
 
         try {
             var group = this.groupStorageService.getById(groupId);
-            
-            if(handleIfNotOwner(exchange, group, userId)) return;
-            
-            var response = GroupsResponse.fromDomain(group);
-            
-            String responseJson = mapper.writeValueAsString(response);
-            
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, responseJson.getBytes().length);
-            exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.close();
+            assertOwnerViaGroup(group, userId);
+            return ResponseEntity.ok(GroupsResponse.fromDomain(group));
         } catch (EuroCoinCollectionGroupNotFoundException e) {
-            exchange.sendResponseHeaders(404, 0);
-            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
         } catch (EuroCoinCollectionGroupGetByIdException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
     }
 
     /**
-     * Handles PATCH requests to update an existing group's metadata.
-     * Validates that the requesting user owns the group before updating.
+     * Updates an existing group.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param groupId the group ID
+     * @param request the update request
+     * @param authentication the authenticated user
+     * @return the updated group response
+     * @throws ResponseStatusException if group not found or unauthorized
      */
-    private void handleUpdate(HttpExchange exchange) throws IOException {
-        logger.info("handleUpdate called");
-        String userId = (String) exchange.getAttribute("userId");
-        String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
-        String body = new String(exchange.getRequestBody().readAllBytes());
-
-        UpdateGroupRequest request;
-        try {
-            request = mapper.readValue(body, UpdateGroupRequest.class);
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Request is not valid\"}".getBytes());
-            exchange.close();
-            return;
-        }
+    @PatchMapping("/{groupId}")
+    private ResponseEntity<GroupMetadataResponse> handleUpdate(
+        @PathVariable String groupId, 
+        @RequestBody UpdateGroupRequest request, 
+        Authentication authentication 
+    ) {
+        logger.info("Group update requested: id={}", groupId);
+        String userId = requireUserId(authentication);
 
         try {
             var groupToUpdate = this.groupStorageService.getById(groupId);
-            if(handleIfNotOwner(exchange, groupToUpdate, userId)) return;
+            assertOwnerViaGroup(groupToUpdate, userId);
 
             groupToUpdate.setName(request.name());
             this.groupStorageService.updateMetadata(groupToUpdate);
+            logger.info("Group updated: id={}", groupId);
 
             var response = new GroupMetadataResponse(groupToUpdate.getName());
-            String responseJson = mapper.writeValueAsString(response);
-            
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            
-            exchange.sendResponseHeaders(200, responseJson.getBytes().length);
-            exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.close();
+            return ResponseEntity.ok(response);
             
         } catch (EuroCoinCollectionGroupNotFoundException e) {
-            exchange.sendResponseHeaders(404, 0);
-            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.close();
-        } catch (JacksonException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupUpdateException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
+        } catch (EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionGroupUpdateException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
     }
 
     /**
-     * Handles DELETE requests to remove a group.
-     * Validates that the requesting user owns the group before deletion.
+     * Deletes a group by ID.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param groupId the group ID
+     * @param authentication the authenticated user
+     * @return no content response
+     * @throws ResponseStatusException if group not found or unauthorized
      */
-    private void handleDelete(HttpExchange exchange) throws IOException {
-        logger.info("handleDelete called");
-        String userId = (String) exchange.getAttribute("userId");
-        String groupId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
+    @DeleteMapping("/{groupId}")
+    private ResponseEntity<Void> handleDelete(@PathVariable String groupId, Authentication authentication) {
+        logger.info("Group delete requested: id={}", groupId);
+        String userId = requireUserId(authentication);
 
         try {
             var groupToDelete = this.groupStorageService.getById(groupId);
-            if(handleIfNotOwner(exchange, groupToDelete, userId)) return;
+            assertOwnerViaGroup(groupToDelete, userId);
 
             this.groupStorageService.delete(groupId);
-            exchange.sendResponseHeaders(204, -1);
-            exchange.close();
+            logger.info("Group deleted: id={}", groupId);
+            return ResponseEntity.noContent().build();
         } catch (EuroCoinCollectionGroupDeleteException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         } catch (EuroCoinCollectionGroupNotFoundException e) {
-            exchange.sendResponseHeaders(404, 0);
-            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
         }
     }
 
     /**
-     * Checks if the given path represents a valid group ID path.
-     * Validates that the path follows the pattern /api/groups/{uuid}.
+     * Asserts that the user owns the group.
      *
-     * @param path the request path to validate
-     * @return true if the path contains a valid UUID after the prefix, false otherwise
+     * @param group the group to check
+     * @param userId the user ID
+     * @throws ResponseStatusException if user does not own the group
      */
-    private boolean isGroupIdPath(String path) {
-        if (path.startsWith(PREFIX + "/")) {
-            String id = path.substring(PREFIX.length() + 1);
-            try {
-                UUID.fromString(id);
-                return true;
-            } catch (IllegalArgumentException e) {
-                return false;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Validates that the specified user owns the group.
-     * Sends a 404 response and closes the exchange if the user is not the owner.
-     *
-     * @param exchange the HTTP exchange for sending error responses
-     * @param group the group to check ownership for
-     * @param userId the ID of the user to validate
-     * @return true if the user is not the owner (response sent and exchange closed), false if the user is the owner
-     * @throws IOException if an I/O error occurs
-     */
-    private boolean handleIfNotOwner(
-        HttpExchange exchange, 
-        EuroCoinCollectionGroup group, 
-        String userId
-    ) throws IOException {
+    private void assertOwnerViaGroup(EuroCoinCollectionGroup group, String userId) {
         if (!group.getOwnerId().equals(userId)) {
-            exchange.sendResponseHeaders(404, 0);
-            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.close();
-            return true;
+            logger.warn("Group access denied: groupId={}, userId={}", group.getId(), userId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found");
         }
-        return false;
+    }
+
+    /**
+     * Extracts the user ID from authentication.
+     *
+     * @param authentication the Spring Security authentication
+     * @return the user ID
+     * @throws ResponseStatusException if authentication is missing
+     */
+    private String requireUserId(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            logger.debug("UserUd required but not existent");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        return authentication.getPrincipal().toString();
     }
     
 }

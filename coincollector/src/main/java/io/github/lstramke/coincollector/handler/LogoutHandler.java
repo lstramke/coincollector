@@ -1,71 +1,58 @@
 package io.github.lstramke.coincollector.handler;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import io.github.lstramke.coincollector.services.SessionManager;
 
-@Component
 /**
- * Handler for user logout HTTP requests.
- * Manages session invalidation and removes session cookies.
- * Ensures proper cleanup of user authentication state.
+ * Handles user logout REST endpoints.
  */
-public class LogoutHandler implements HttpHandler {
+@RestController
+@RequestMapping("/api/v1")
+public class LogoutHandler {
     
+    private final static Logger logger = LoggerFactory.getLogger(LogoutHandler.class);
     private final SessionManager sessionManager;
-    private final static Logger logger = LoggerFactory.getLogger(LoginHandler.class);
 
     @Autowired
-    /**
-     * Constructs a new LogoutHandler with required dependencies.
-     *
-     * @param sessionManager the service for managing user sessions
-     */
     public LogoutHandler(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
     }
 
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
-
-        logger.info("Route called: {} {}", method, path);
-
-        switch (method) {
-            case "POST" -> handleLogout(exchange);
-            default -> {
-                exchange.sendResponseHeaders(405, -1);
-                exchange.close();
-            }
-        }
-    }
-
     /**
-     * Handles POST requests for user logout.
-     * Invalidates the user's session and removes the session cookie.
-     * Returns 401 if no valid session cookie is present.
+     * Logs out the authenticated user and invalidates the session.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param authentication the authenticated user
+     * @return no content response
+     * @throws ResponseStatusException if user is not authenticated
      */
-    private void handleLogout(HttpExchange exchange) throws IOException {
-        String sessionId = SessionFilter.getSessionCookie(exchange);
-        if(sessionId != null) {
-            sessionManager.invalidateSession(sessionId);
-            exchange.getResponseHeaders().add("Set-Cookie", "sessionId=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict");
-            exchange.sendResponseHeaders(204, -1);
-        } else {
-            exchange.sendResponseHeaders(401, -1);
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(Authentication authentication) {
+        logger.debug("Logout requested");
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            logger.debug("Logout aborted: no authenticated user");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
-        exchange.close();
+
+        String userId = authentication.getPrincipal().toString();
+        
+        try {
+            sessionManager.invalidateSession(userId);
+            logger.info("User logged out: id={}", userId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            logger.warn("Session invalidation failed: userId={}", userId);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
+        }
     }
 }
