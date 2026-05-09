@@ -9,6 +9,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -51,6 +52,13 @@ public class GlobalExceptionHandler {
         logger.warn("Endpoint not found: {}", e.getMessage());
         return ResponseEntity.status(404)
             .body(Map.of("error", "Endpoint not found"));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> handleResponseStatus(ResponseStatusException e) {
+        logger.warn("Response status exception: status={}, reason={}", e.getStatusCode(), e.getReason());
+        return ResponseEntity.status(e.getStatusCode())
+            .body(Map.of("error", e.getReason()));
     }
 
     @ExceptionHandler(Exception.class)
