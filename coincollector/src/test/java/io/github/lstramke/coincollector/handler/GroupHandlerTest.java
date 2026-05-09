@@ -144,6 +144,17 @@ class GroupHandlerTest {
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "DELETE group triggers not found exception and returns 404"
+            ),
+            new GroupHandlerDeleteGetTestcase(
+                "DELETE",
+                PREFIX + "/" + VALID_UUID,
+                USER_ID,
+                (service, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(false);
+                },
+                401,
+                "{\"error\":\"Unauthorized\"}",
+                "DELETE unauthenticated returns 401"
             )
         );
     }
@@ -166,11 +177,16 @@ class GroupHandlerTest {
             actionResult.andExpect(content().json(testcase.expectedResponseBody));
         }
 
-        verify(groupStorageService).getById(VALID_UUID);
-        if (testcase.expectedStatus == 204) {
-            verify(groupStorageService).delete(VALID_UUID);
-        } else if(testcase.expectedStatus != 500) {
+        if (testcase.expectedStatus == 401) {
+            verify(groupStorageService, never()).getById(VALID_UUID);
             verify(groupStorageService, never()).delete(VALID_UUID);
+        } else {
+            verify(groupStorageService).getById(VALID_UUID);
+            if (testcase.expectedStatus == 204) {
+                verify(groupStorageService).delete(VALID_UUID);
+            } else if(testcase.expectedStatus != 500) {
+                verify(groupStorageService, never()).delete(VALID_UUID);
+            }
         }
     }
 
@@ -264,6 +280,28 @@ class GroupHandlerTest {
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "GET by ID fails owner check and returns 404"
+            ),
+            new GroupHandlerDeleteGetTestcase(
+                "GET",
+                PREFIX,
+                USER_ID,
+                (service, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(false);
+                },
+                401,
+                "{\"error\":\"Unauthorized\"}",
+                "GET all unauthenticated returns 401"
+            ),
+            new GroupHandlerDeleteGetTestcase(
+                "GET",
+                PREFIX + "/" + VALID_UUID,
+                USER_ID,
+                (service, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(false);
+                },
+                401,
+                "{\"error\":\"Unauthorized\"}",
+                "GET by ID unauthenticated returns 401"
             )
         );
     }
@@ -287,9 +325,17 @@ class GroupHandlerTest {
         }
 
         if (testcase.path.equals(PREFIX)) {
-            verify(groupStorageService).getAllByUser(USER_ID);
+            if (testcase.expectedStatus == 401) {
+                verify(groupStorageService, never()).getAllByUser(USER_ID);
+            } else {
+                verify(groupStorageService).getAllByUser(USER_ID);
+            }
         } else {
-            verify(groupStorageService).getById(VALID_UUID);
+            if (testcase.expectedStatus == 401) {
+                verify(groupStorageService, never()).getById(VALID_UUID);
+            } else {
+                verify(groupStorageService).getById(VALID_UUID);
+            }
         }
     }
 
@@ -338,6 +384,31 @@ class GroupHandlerTest {
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "POST create group: EuroCoinCollectionGroupSaveException (500)"
+            ),
+            new GroupHandlerPostPatchTestcase(
+                "POST",
+                PREFIX,
+                "{invalid json}",
+                USER_ID,
+                (service, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
+                },
+                400,
+                "{\"error\":\"Request is not valid\"}",
+                "POST invalid JSON returns 400"
+            ),
+            new GroupHandlerPostPatchTestcase(
+                "POST",
+                PREFIX,
+                "{\"name\":\"test group\",\"collectionIds\":[]}",
+                USER_ID,
+                (service, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(false);
+                },
+                401,
+                "{\"error\":\"Unauthorized\"}",
+                "POST unauthenticated returns 401"
             )
         );
     }
@@ -366,7 +437,12 @@ class GroupHandlerTest {
             verify(groupStorageService).save(any(EuroCoinCollectionGroup.class));
         } else if (testcase.expectedResponseBody != null) {
             actionResult.andExpect(content().json(testcase.expectedResponseBody));
+        }
+
+        if (testcase.expectedStatus == 201 || testcase.expectedStatus == 500) {
             verify(groupStorageService).save(any(EuroCoinCollectionGroup.class));
+        } else {
+            verify(groupStorageService, never()).save(any(EuroCoinCollectionGroup.class));
         }
 
     }
@@ -453,6 +529,31 @@ class GroupHandlerTest {
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "PATCH update group: Owner check fails (404)"
+            ),
+            new GroupHandlerPostPatchTestcase(
+                "PATCH",
+                PREFIX + "/" + VALID_UUID,
+                "{invalid json}",
+                USER_ID,
+                (service, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
+                },
+                400,
+                "{\"error\":\"Request is not valid\"}",
+                "PATCH invalid JSON returns 400"
+            ),
+            new GroupHandlerPostPatchTestcase(
+                "PATCH",
+                PREFIX + "/" + VALID_UUID,
+                "{\"name\":\"new group name\"}",
+                USER_ID,
+                (service, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(false);
+                },
+                401,
+                "{\"error\":\"Unauthorized\"}",
+                "PATCH unauthenticated returns 401"
             )
         );
     }
@@ -476,12 +577,12 @@ class GroupHandlerTest {
         if(testcase.expectedResponseBody != null) {
             actionResult.andExpect(content().json(testcase.expectedResponseBody));
         }
-
-        verify(groupStorageService).getById(VALID_UUID);
         
         if (testcase.expectedStatus == 200) {
+            verify(groupStorageService).getById(VALID_UUID);
             verify(groupStorageService).updateMetadata(any(EuroCoinCollectionGroup.class));
-        } else if(testcase.expectedStatus != 500) {
+        } else if(testcase.expectedStatus == 400 || testcase.expectedStatus == 401) {
+            verify(groupStorageService, never()).getById(VALID_UUID);
             verify(groupStorageService, never()).updateMetadata(any(EuroCoinCollectionGroup.class));
         }
 
