@@ -16,6 +16,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,8 +24,10 @@ import io.github.lstramke.coincollector.exceptions.userExceptions.UserNotFoundEx
 import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.services.SessionManager;
 import io.github.lstramke.coincollector.services.UserStorageService;
+import io.github.lstramke.security.SecurityConfig;
 
 @WebMvcTest(value = LoginHandler.class)
+@Import(SecurityConfig.class)
 class LoginHandlerTest {
 
     @MockitoBean
@@ -105,7 +108,7 @@ class LoginHandlerTest {
 
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("loginHandleTestcases")
-    void TestHandle(LoginHandleTestcase testcase) throws Exception {
+    void TestLoginHandler(LoginHandleTestcase testcase) throws Exception {
         try {
             testcase.mockSetup.setup(userService, sessionManager);
         } catch (Exception e) {

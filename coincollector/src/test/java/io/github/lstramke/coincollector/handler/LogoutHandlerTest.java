@@ -1,120 +1,120 @@
 package io.github.lstramke.coincollector.handler;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
+import jakarta.servlet.http.Cookie;
 
 import io.github.lstramke.coincollector.services.SessionManager;
+import io.github.lstramke.security.SecurityConfig;
 
+@WebMvcTest(value = LogoutHandler.class)
+@Import(SecurityConfig.class)
 public class LogoutHandlerTest {
+
+    @MockitoBean
+    SessionManager sessionManager;
+
+    @Autowired
+    MockMvc mockMvc;
+
     @FunctionalInterface
     interface MockSetup {
         void setup(SessionManager sessionManager) throws Exception;
     }
 
-    private record LogoutHandleTestcase(
+    private record LogoutHandlerTestcase(
         String method,
-        String path,
-        String cookieHeader,
+        String endpoint,
+        String sessionId,
         MockSetup mockSetup,
         int expectedStatus,
-        String expectedSetCookie,
         String description
     ) {
         @Override
-        public String toString() { return description; }
+        public String toString() {
+            return description;
+        }
     }
 
-    private static Stream<LogoutHandleTestcase> logoutHandleTestcases() {
+    private static Stream<LogoutHandlerTestcase> logoutHandlerTestcases() {
         return Stream.of(
-            new LogoutHandleTestcase(
+            new LogoutHandlerTestcase(
                 "POST",
-                "/api/logout",
-                "sessionId=session-abc",
+                "/api/v1/logout",
+                "session-abc",
                 sessionManager -> {
-                    doNothing().when(sessionManager).invalidateSession("session-abc");
+                    doNothing().when(sessionManager).invalidateSession("testuser");
                 },
                 204,
-                "sessionId=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict",
-                "Happy path: valid session, logout returns 204 and deletes cookie"
+                "Happy path: authenticated user logout returns 204"
             ),
-            new LogoutHandleTestcase(
+            new LogoutHandlerTestcase(
                 "POST",
-                "/api/logout",
+                "/api/v1/logout",
                 null,
                 sessionManager -> {},
                 401,
-                null,
-                "No session cookie: returns 401"
+                "No authentication: returns 401"
             ),
-            new LogoutHandleTestcase(
+            new LogoutHandlerTestcase(
                 "POST",
-                "/api/logout",
-                "sessionId=",
+                "/api/v1/logout",
+                "session-abc",
                 sessionManager -> {
-                    doNothing().when(sessionManager).invalidateSession(null);
+                    doThrow(new RuntimeException("Session error")).when(sessionManager).invalidateSession("testuser");
                 },
-                401,
-                null,
-                "Empty session: returns 401"
+                500,
+                "Session invalidation fails: returns 500"
             ),
-            new LogoutHandleTestcase(
+            new LogoutHandlerTestcase(
                 "GET",
-                "/api/logout",
-                "sessionId=session-abc",
+                "/api/v1/logout",
+                "session-abc",
                 sessionManager -> {},
                 405,
-                null,
                 "Unsupported method: GET returns 405"
             )
         );
     }
 
     @ParameterizedTest(name = "{index} - {0}")
-    @MethodSource("logoutHandleTestcases")
-    void testHandle(LogoutHandleTestcase testcase) throws IOException {
-        var sessionManager = mock(SessionManager.class);
-        LogoutHandler handler = new LogoutHandler(sessionManager);
-        var responseStream = new ByteArrayOutputStream();
-
-        HttpExchange exchange = mock(HttpExchange.class);
-        Headers headers = new Headers();
-        when(exchange.getResponseHeaders()).thenReturn(headers);
-        when(exchange.getRequestMethod()).thenReturn(testcase.method());
-        when(exchange.getRequestURI()).thenReturn(URI.create(testcase.path()));
-        when(exchange.getResponseBody()).thenReturn(responseStream);
-
-        if (testcase.cookieHeader() != null) {
-            Headers reqHeaders = new Headers();
-            reqHeaders.add("Cookie", testcase.cookieHeader());
-            when(exchange.getRequestHeaders()).thenReturn(reqHeaders);
-        } else {
-            when(exchange.getRequestHeaders()).thenReturn(new Headers());
-        }
-
+    @MethodSource("logoutHandlerTestcases")
+    void testLogoutHandler(LogoutHandlerTestcase testcase) throws Exception {
         try {
             testcase.mockSetup().setup(sessionManager);
         } catch (Exception e) {
             fail("Unexpected exception in setup");
         }
 
-        handler.handle(exchange);
+        var requestBuilder = switch (testcase.method()) {
+            case "POST" -> post(testcase.endpoint());
+            case "GET" -> get(testcase.endpoint());
+            default -> throw new IllegalArgumentException("Unsupported method: " + testcase.method());
+        };
 
-        verify(exchange).sendResponseHeaders(eq(testcase.expectedStatus()), anyLong());
-        if (testcase.expectedSetCookie() != null) {
-            assertEquals(testcase.expectedSetCookie(), headers.getFirst("Set-Cookie"));
-        } else {
-            assertNull(headers.getFirst("Set-Cookie"));
+        if (testcase.sessionId() != null) {
+            when(sessionManager.validateSession(testcase.sessionId())).thenReturn(true);
+            when(sessionManager.getUserId(testcase.sessionId())).thenReturn("testuser");
+            requestBuilder.cookie(new Cookie("sessionId", testcase.sessionId()));
         }
+
+        mockMvc.perform(requestBuilder)
+            .andExpect(status().is(testcase.expectedStatus()));
     }
 }

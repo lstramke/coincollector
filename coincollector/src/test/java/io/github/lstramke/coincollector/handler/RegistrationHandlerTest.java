@@ -17,6 +17,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,8 +25,10 @@ import io.github.lstramke.coincollector.exceptions.userExceptions.UserSaveExcept
 import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.services.SessionManager;
 import io.github.lstramke.coincollector.services.UserStorageService;
+import io.github.lstramke.security.SecurityConfig;
 
-@WebMvcTest(value = RegistrationHandler.class, properties = "spring.main.web-application-type=servlet")
+@WebMvcTest(value = RegistrationHandler.class)
+@Import(SecurityConfig.class)
 class RegistrationHandlerTest {
 
 	@MockitoBean
@@ -107,7 +110,7 @@ class RegistrationHandlerTest {
 
 	@ParameterizedTest(name = "{index} - {0}")
 	@MethodSource("registrationHandleTestcases")
-	void testHandle(RegistrationHandleTestcase testcase) throws Exception {
+	void testRegistrationHandler(RegistrationHandleTestcase testcase) throws Exception {
 		testcase.mockSetup.setup(userService, sessionManager);
 
 		var requestBuilder = switch (testcase.method()) {

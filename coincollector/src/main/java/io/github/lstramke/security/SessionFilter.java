@@ -5,7 +5,6 @@ import java.util.Collections;
 
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -70,8 +69,9 @@ public class SessionFilter extends OncePerRequestFilter {
                 logger.debug("Cleared SecurityContext for request {}");
             }
         } else {
-            logger.warn("Unauthorized access attempt: sessionId={} request={} {} from {}", sessionId, request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
-            throw new AuthenticationCredentialsNotFoundException("No valid session");
+            // Leave unauthenticated requests to the security chain for a proper 401 response.
+            logger.debug("No valid session for request {} {} from {}", request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
+            filterChain.doFilter(request, response);
         }
     }
 }
