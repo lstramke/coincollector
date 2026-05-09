@@ -2,6 +2,7 @@ package io.github.lstramke.coincollector.handler;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -125,6 +126,9 @@ class RegistrationHandlerTest {
 
 		if (testcase.expectedCookie != null) {
 			resultActions.andExpect(header().string("Set-Cookie", testcase.expectedCookie));
+			verify(sessionManager, times(1)).createSession(any(String.class));
+		} else {
+			resultActions.andExpect(header().doesNotExist("Set-Cookie"));
 		}
 
 		if (testcase.expectedResponseBody != null) {
@@ -132,8 +136,7 @@ class RegistrationHandlerTest {
 		}
 
 		if (testcase.expectSave) {
-			verify(userService).save(any(User.class));
+			verify(userService, times(1)).save(any(User.class));
 		}
 	}
-
 }

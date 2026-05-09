@@ -1,11 +1,16 @@
 package io.github.lstramke.coincollector.handler;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.stream.Stream;
@@ -59,6 +64,8 @@ public class LogoutHandlerTest {
                 "/api/v1/logout",
                 "session-abc",
                 sessionManager -> {
+                    when(sessionManager.validateSession("session-abc")).thenReturn(true);
+                    when(sessionManager.getUserId("session-abc")).thenReturn("testuser");
                     doNothing().when(sessionManager).invalidateSession("testuser");
                 },
                 204,
@@ -78,6 +85,8 @@ public class LogoutHandlerTest {
                 "session-abc",
                 sessionManager -> {
                     doThrow(new RuntimeException("Session error")).when(sessionManager).invalidateSession("testuser");
+                    when(sessionManager.validateSession("session-abc")).thenReturn(true);
+                    when(sessionManager.getUserId("session-abc")).thenReturn("testuser");
                 },
                 500,
                 "Session invalidation fails: returns 500"
@@ -86,7 +95,10 @@ public class LogoutHandlerTest {
                 "GET",
                 "/api/v1/logout",
                 "session-abc",
-                sessionManager -> {},
+                sessionManager -> {
+                    when(sessionManager.validateSession("session-abc")).thenReturn(true);
+                    when(sessionManager.getUserId("session-abc")).thenReturn("testuser");
+                },
                 405,
                 "Unsupported method: GET returns 405"
             )
@@ -109,12 +121,18 @@ public class LogoutHandlerTest {
         };
 
         if (testcase.sessionId() != null) {
-            when(sessionManager.validateSession(testcase.sessionId())).thenReturn(true);
-            when(sessionManager.getUserId(testcase.sessionId())).thenReturn("testuser");
             requestBuilder.cookie(new Cookie("sessionId", testcase.sessionId()));
         }
 
-        mockMvc.perform(requestBuilder)
+        var result = mockMvc.perform(requestBuilder)
             .andExpect(status().is(testcase.expectedStatus()));
+
+        if (testcase.expectedStatus() == 204) {
+            result.andExpect(header().string("Set-Cookie", containsString("sessionId=")))
+                .andExpect(header().string("Set-Cookie", containsString("Max-Age=0")))
+                .andExpect(header().string("Set-Cookie", containsString("HttpOnly")))
+                .andExpect(header().string("Set-Cookie", containsString("SameSite=Strict")));
+            verify(sessionManager, times(1)).invalidateSession("testuser");
+        }
     }
 }

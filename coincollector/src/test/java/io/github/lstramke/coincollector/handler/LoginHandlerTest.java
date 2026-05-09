@@ -2,6 +2,8 @@ package io.github.lstramke.coincollector.handler;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -127,6 +129,10 @@ class LoginHandlerTest {
 
         if (testcase.expectedCookie != null) {
             resultActions.andExpect(header().string("Set-Cookie", testcase.expectedCookie));
+            verify(userService, times(1)).getByUsername("test.user");
+            verify(sessionManager, times(1)).createSession("user-1");
+        } else {
+            resultActions.andExpect(header().doesNotExist("Set-Cookie"));
         }
 
         if (testcase.expectedResponseBody != null) {
