@@ -3,6 +3,7 @@ package io.github.lstramke.coincollector.services;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Map.Entry;
 
 import org.springframework.stereotype.Service;
 
@@ -47,5 +48,22 @@ public class SessionManagerImpl implements SessionManager {
      */
     public String getUserId(String sessionId) {
         return sessions.get(sessionId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getSessionId(String userId) {
+        if (userId == null) {
+            return null;
+        }
+
+        for (Entry<String, String> entry : sessions.entrySet()) {
+            if (userId.equals(entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+
+        return null;
     }
 }

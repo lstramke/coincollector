@@ -47,10 +47,16 @@ public class LogoutHandler {
         }
 
         String userId = authentication.getPrincipal().toString();
+        String sessionId = sessionManager.getSessionId(userId);
+
+        if (sessionId == null) {
+            logger.debug("Logout aborted: no session found for userId={}", userId);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
         
         try {
-            sessionManager.invalidateSession(userId);
-            logger.info("User logged out: id={}", userId);
+            sessionManager.invalidateSession(sessionId);
+            logger.info("User logged out: userId={}, sessionId={}", userId, sessionId);
             String cookie = ResponseCookie.from("sessionId", "")
             .path("/")
             .httpOnly(true)
@@ -60,7 +66,7 @@ public class LogoutHandler {
             .toString();
             return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cookie).build();
         } catch (Exception e) {
-            logger.warn("Session invalidation failed: userId={}", userId);
+            logger.warn("Session invalidation failed: userId={}, sessionId={}", userId, sessionId);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
     }

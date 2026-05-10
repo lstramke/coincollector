@@ -64,7 +64,8 @@ public class LogoutHandlerTest {
                 sessionManager -> {
                     when(sessionManager.validateSession("session-abc")).thenReturn(true);
                     when(sessionManager.getUserId("session-abc")).thenReturn("testuser");
-                    doNothing().when(sessionManager).invalidateSession("testuser");
+                    when(sessionManager.getSessionId("testuser")).thenReturn("session-abc");
+                    doNothing().when(sessionManager).invalidateSession("session-abc");
                 },
                 204,
                 "Happy path: authenticated user logout returns 204"
@@ -82,7 +83,8 @@ public class LogoutHandlerTest {
                 "/api/v1/logout",
                 "session-abc",
                 sessionManager -> {
-                    doThrow(new RuntimeException("Session error")).when(sessionManager).invalidateSession("testuser");
+                    when(sessionManager.getSessionId("testuser")).thenReturn("session-abc");
+                    doThrow(new RuntimeException("Session error")).when(sessionManager).invalidateSession("session-abc");
                     when(sessionManager.validateSession("session-abc")).thenReturn(true);
                     when(sessionManager.getUserId("session-abc")).thenReturn("testuser");
                 },
@@ -130,7 +132,7 @@ public class LogoutHandlerTest {
                 .andExpect(header().string("Set-Cookie", containsString("Max-Age=0")))
                 .andExpect(header().string("Set-Cookie", containsString("HttpOnly")))
                 .andExpect(header().string("Set-Cookie", containsString("SameSite=Strict")));
-            verify(sessionManager, times(1)).invalidateSession("testuser");
+            verify(sessionManager, times(1)).invalidateSession("session-abc");
         }
     }
 }
