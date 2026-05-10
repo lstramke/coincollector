@@ -68,7 +68,7 @@ public class CollectionHandler {
 
         try {
             var collection = collectionStorageService.getById(collectionId);
-            assertOwnerViaGroup(collectionId, userId);
+            assertOwnerViaGroup(collection.getGroupId(), userId);
             return ResponseEntity.ok(CollectionResponse.fromDomain(collection));
         } catch (EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
