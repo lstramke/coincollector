@@ -1,28 +1,32 @@
 package io.github.lstramke.coincollector.handler;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionCoinsLoadException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetByIdException;
@@ -44,21 +48,46 @@ import io.github.lstramke.coincollector.model.DTOs.Requests.CoinActionRequest;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageService;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionStorageService;
 import io.github.lstramke.coincollector.services.EuroCoinStorageService;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import io.github.lstramke.coincollector.services.SessionManager;
+import io.github.lstramke.security.SecurityConfig;
+import jakarta.servlet.http.Cookie;
 
+@WebMvcTest(value = CoinHandler.class)
+@Import(SecurityConfig.class)
 public class CoinHandlerTest {
-    
+
+    @MockitoBean
+    EuroCoinStorageService coinService;
+
+    @MockitoBean
+    EuroCoinCollectionStorageService collectionService;
+
+
+    @MockitoBean
+    EuroCoinCollectionGroupStorageService groupService;
+
+    @MockitoBean
+    SessionManager sessionManager;
+
+    @Autowired
+    MockMvc mockMvc;
+
     @FunctionalInterface
     interface MockSetup {
-        void setup(EuroCoinStorageService coinService, EuroCoinCollectionStorageService collectionService, EuroCoinCollectionGroupStorageService groupService, ObjectMapper mapper) throws Exception;
+        void setup(
+            EuroCoinStorageService coinService, 
+            EuroCoinCollectionStorageService collectionService, 
+            EuroCoinCollectionGroupStorageService groupService,
+            SessionManager sessionManager
+        ) throws Exception;
     }
 
-    private static final String PREFIX = "/api/coins";
+    private static final String PREFIX = "/api/v1/coins";
     private static final String USER_ID = "user-1";
-    private static final String VALID_UUID = "123e4567-e89b-12d3-a456-426614174000";
+    private static final String VALID_ID = "mock-id";
+    private static final String SESSION_ID = "session-abc";
 
-    private record CoinHandleTestcase(
+    private record CoinHandlerTestcase(
         String method,
         String path,
         String requestBody,
@@ -94,17 +123,41 @@ public class CoinHandlerTest {
         return mockCoin;
     }
 
+    private record CoinHandlerGetDeleteTestcase(
+        String method,
+        String path,
+        String userId,
+        MockSetup mockSetup,
+        int expectedStatus,
+        String expectedResponseBody,
+        String description
+    ) {
+        @Override
+        public String toString() {
+            return description;
+        }
+    }
     
-    private static Stream<CoinHandleTestcase> coinGetTestcases() {
+    private static Stream<CoinHandlerGetDeleteTestcase> coinGetTestcases() {
         return Stream.of(
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "GET",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(false);
+                },
+                401,
+                "{\"error\":\"Unauthorized\"}",
+                "GET: unauthorized session"
+            ),
+            new CoinHandlerGetDeleteTestcase(
+                "GET",
+                PREFIX + "/" + VALID_ID,
+                USER_ID,
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID, 
+                        VALID_ID, 
                         2002, 
                         CoinValue.ONE_EURO, 
                         CoinCountry.GERMANY, 
@@ -112,35 +165,27 @@ public class CoinHandlerTest {
                         "collection-1", 
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    var expectedResponse = "{" +
-                    "\"id\":\"" + VALID_UUID + "\"," +
-                    "\"year\":2002," +
-                    "\"value\":100," +
-                    "\"country\":\"DE\"," +
-                    "\"collectionId\":\"collection-1\"," +
-                    "\"mint\":\"A\"," +
-                    "\"description\":\"description\"}";
-                    when(mapper.writeValueAsString(any())).thenReturn(expectedResponse);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 200,
-                "{\"id\":\"" + VALID_UUID + "\",\"year\":2002,\"value\":100,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"description\"}",
+                "{\"id\":\"" + VALID_ID + "\",\"year\":2002,\"value\":100,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"description\"}",
                 "GET: happy path"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "GET",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID, 
+                        VALID_ID, 
                         2002, 
                         CoinValue.ONE_EURO, 
                         CoinCountry.GERMANY, 
@@ -148,38 +193,40 @@ public class CoinHandlerTest {
                         "collection-1", 
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn("other user");
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "GET: owner check fails"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "GET",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
-                    when(coinService.getById(VALID_UUID)).thenThrow(new EuroCoinNotFoundException("not found"));
+                (coinService, collectionService, groupService, sessionManager) -> {
+                    when(coinService.getById(VALID_ID)).thenThrow(new EuroCoinNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "GET: coin not found (EuroCoinNotFoundException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "GET",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID, 
+                        VALID_ID, 
                         2002, 
                         CoinValue.ONE_EURO, 
                         CoinCountry.GERMANY, 
@@ -187,21 +234,22 @@ public class CoinHandlerTest {
                         "collection-1", 
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "GET: collection not found (EuroCoinCollectionNotFoundException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "GET",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID, 
+                        VALID_ID, 
                         2002, 
                         CoinValue.ONE_EURO, 
                         CoinCountry.GERMANY, 
@@ -209,24 +257,25 @@ public class CoinHandlerTest {
                         "collection-1", 
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     when(groupService.getById("group-1")).thenThrow(new EuroCoinCollectionGroupNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "GET: group not found (EuroCoinCollectionGroupNotFoundException )"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "GET",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -234,49 +283,22 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
-                    var mockCollection = mock(EuroCoinCollection.class);
-                    when(mockCollection.getGroupId()).thenReturn("group-1");
-                    when(collectionService.getById("collection-1")).thenReturn(mockCollection);
-                    var mockGroup = mock(EuroCoinCollectionGroup.class);
-                    when(mockGroup.getOwnerId()).thenReturn(USER_ID);
-                    when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    when(mapper.writeValueAsString(any())).thenThrow(new JacksonException("fail") {});
-                },
-                500,
-                "{\"error\":\"Internal server error\"}",
-                "GET: JacksonException"
-            ),
-            new CoinHandleTestcase(
-                "GET",
-                PREFIX + "/" + VALID_UUID,
-                null,
-                USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
-                    var mockCoin = createMockCoin(
-                        VALID_UUID,
-                        2002,
-                        CoinValue.ONE_EURO,
-                        CoinCountry.GERMANY,
-                        Mint.BERLIN,
-                        "collection-1",
-                        "description"
-                    );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionGetByIdException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "GET: EuroCoinCollectionGetByIdException"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "GET",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -284,24 +306,25 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     when(groupService.getById("group-1")).thenThrow(new EuroCoinCollectionGroupGetByIdException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "GET: EuroCoinCollectionGroupGetByIdException"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "GET",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -309,8 +332,10 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionCoinsLoadException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
@@ -319,9 +344,33 @@ public class CoinHandlerTest {
         );
     }
 
-    private static Stream<CoinHandleTestcase> coinCreateTestcases() {
+    @ParameterizedTest(name = "{index} - {0}")
+    @MethodSource("coinGetTestcases")
+    void testCoinHandlerGet(CoinHandlerGetDeleteTestcase testcase) throws Exception {
+        try {
+            testcase.mockSetup.setup(coinService, collectionService, groupService, sessionManager);
+        } catch (Exception e) {
+            fail(" due to unexcpected exception in setup");
+        }
+
+        var actionResult = mockMvc.perform(
+            get(testcase.path)
+            .cookie(new Cookie("sessionId", SESSION_ID))
+        ).andExpect(status().is(testcase.expectedStatus));
+
+        if(testcase.expectedResponseBody != null) {
+            actionResult.andExpect(content().json(testcase.expectedResponseBody));
+            if (testcase.expectedStatus == 401) {
+                verify(coinService, times(0)).getById(anyString());
+            } else {
+                verify(coinService, times(1)).getById(anyString());
+            }
+        }
+    }
+
+    private static Stream<CoinHandlerTestcase> coinCreateTestcases() {
         return Stream.of(
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -330,31 +379,40 @@ public class CoinHandlerTest {
                     "value": 100,
                     "country": "DE",
                     "mint": "A",
-                    "description": "Testmünze",
+                    "description": "test coin",
                     "collectionId": "collection-1"
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(false);
+                },
+                401,
+                "{\"error\":\"Unauthorized\"}",
+                "POST: unauthorized session"
+            ),
+            new CoinHandlerTestcase(
+                "POST", 
+                PREFIX, 
+                """
+                {
+                    "year": 2022,
+                    "value": 100,
+                    "country": "DE",
+                    "mint": "A",
+                    "description": "test coin",
+                    "collectionId": "collection-1"
+                }
+                """,
+                USER_ID, 
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
-                    when(request.year()).thenReturn(2002);
+                    when(request.year()).thenReturn(2022);
                     when(request.value()).thenReturn(100);
                     when(request.country()).thenReturn("DE");
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
@@ -362,21 +420,14 @@ public class CoinHandlerTest {
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
                     doNothing().when(coinService).save(any(EuroCoin.class));
-                    var expectedResponse = "{" +
-                        "\"id\":\"generated-id\"," +
-                        "\"year\":2002," +
-                        "\"value\":100," +
-                        "\"country\":\"DE\"," +
-                        "\"collectionId\":\"collection-1\"," +
-                        "\"mint\":\"A\"," +
-                        "\"description\":\"test coin\"}";
-                    when(mapper.writeValueAsString(any())).thenReturn(expectedResponse);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 201, 
-                "{\"id\":\"generated-id\",\"year\":2002,\"value\":100,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"test coin\"}", 
+                "{\"id\":\"GERMANY_ONE_EURO_2022_BERLIN\",\"year\":2022,\"value\":100,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"test coin\"}", 
                 "POST: happy path"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -388,7 +439,7 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2022);
                     when(request.value()).thenReturn(50);
@@ -396,15 +447,6 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn(null);
                     when(request.mint()).thenReturn(null);
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 50,
-                            "country": "FR",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
                 
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
@@ -413,51 +455,14 @@ public class CoinHandlerTest {
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
                     doNothing().when(coinService).save(any(EuroCoin.class));
-                    var expectedResponse = "{" +
-                        "\"id\":\"generated-id\"," +
-                        "\"year\":2022," +
-                        "\"value\":50," +
-                        "\"country\":\"FR\"," +
-                        "\"collectionId\":\"collection-1\"," +
-                        "\"mint\":null," +
-                        "\"description\":null}";
-                    when(mapper.writeValueAsString(any())).thenReturn(expectedResponse);
-                }, 
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
+                },
                 201, 
-                "{\"id\":\"generated-id\",\"year\":2022,\"value\":50,\"country\":\"FR\",\"collectionId\":\"collection-1\",\"mint\":null,\"description\":null}", 
+                "{\"id\":\"FRANCE_FIFTY_CENTS_2022_UNKOWN\",\"year\":2022,\"value\":50,\"country\":\"FR\",\"collectionId\":\"collection-1\",\"mint\":null,\"description\":\"50 Cent Münze aus Frankreich aus dem Jahr 2022\"}", 
                 "POST: happy path with non-german coin, no description, no mint"
             ),
-            new CoinHandleTestcase(
-                "POST", 
-                PREFIX, 
-                """
-                {
-                    "year": 2022,
-                    "value": 50,
-                    "country": "FR",
-                    "collectionId": "collection-1",
-                    "wrong": "wrong"
-                }
-                """,
-                USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 50,
-                            "country": "FR",
-                            "collectionId": "collection-1",
-                            "wrong": "wrong"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenThrow(new JacksonException("fail"){});
-
-                }, 
-                400, 
-                "{\"error\":\"Invalid request body\"}", 
-                "POST: JacksonException during binding of request"
-            ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -471,20 +476,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
 
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
@@ -492,12 +486,14 @@ public class CoinHandlerTest {
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn("other user");
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 404, 
                 "{\"error\":\"Resource not found\"}",
                 "POST: owner check fails"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -511,28 +507,19 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
 
                 }, 
                 404, 
                 "{\"error\":\"Parent resource not found\"}",
                 "POST: collection for coin doesnt exists (EuroCoinCollectionNotFoundException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -546,31 +533,21 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     when(groupService.getById("group-1")).thenThrow(new EuroCoinCollectionGroupNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 404, 
                 "{\"error\":\"Parent resource not found\"}",
                 "POST: group for collection doesnt exists (EuroCoinCollectionGroupNotFoundException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -584,7 +561,7 @@ public class CoinHandlerTest {
                 }
                 """, 
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2002);
                     when(request.value()).thenReturn(100);
@@ -592,18 +569,6 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
@@ -611,12 +576,14 @@ public class CoinHandlerTest {
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
                     doThrow(new EuroCoinAlreadyExistsException("already exists")).when(coinService).save(any(EuroCoin.class));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 409, 
                 "{\"error\":\"Coin already exists\"}", 
                 "POST: coin already exists (EuroCoinAlreadyExistsException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                  "POST", 
                 PREFIX, 
                 """
@@ -630,28 +597,19 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionGetByIdException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
 
                 }, 
                 500, 
                 "{\"error\":\"Internal server error\"}",
                 "POST: exception retriving collection for coin (EuroCoinCollectionGetByIdException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -665,31 +623,21 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     when(groupService.getById("group-1")).thenThrow(new EuroCoinCollectionGroupGetByIdException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 500, 
                 "{\"error\":\"Internal server error\"}",
                 "POST: exception retriving group for collection for coin (EuroCoinCollectionGroupGetByIdException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -703,7 +651,7 @@ public class CoinHandlerTest {
                 }
                 """, 
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2002);
                     when(request.value()).thenReturn(100);
@@ -711,18 +659,6 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
@@ -730,59 +666,14 @@ public class CoinHandlerTest {
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
                     doThrow(new EuroCoinSaveException("fail")).when(coinService).save(any(EuroCoin.class));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 500, 
                 "{\"error\":\"Internal server error\"}", 
                 "POST: error saving coin (EuroCoinSaveException)"
             ),
-            new CoinHandleTestcase(
-                "POST", 
-                PREFIX, 
-                """
-                {
-                    "year": 2022,
-                    "value": 100,
-                    "country": "DE",
-                    "mint": "A",
-                    "description": "Testmünze",
-                    "collectionId": "collection-1"
-                }
-                """,
-                USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
-                    var request = mock(CoinActionRequest.class);
-                    when(request.year()).thenReturn(2002);
-                    when(request.value()).thenReturn(100);
-                    when(request.country()).thenReturn("DE");
-                    when(request.collectionId()).thenReturn("collection-1");
-                    when(request.description()).thenReturn("description");
-                    when(request.mint()).thenReturn("A");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
-                    var mockCollection = mock(EuroCoinCollection.class);
-                    when(mockCollection.getGroupId()).thenReturn("group-1");
-                    when(collectionService.getById("collection-1")).thenReturn(mockCollection);
-                    var mockGroup = mock(EuroCoinCollectionGroup.class);
-                    when(mockGroup.getOwnerId()).thenReturn(USER_ID);
-                    when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doNothing().when(coinService).save(any(EuroCoin.class));
-                    when(mapper.writeValueAsString(any())).thenThrow(new JacksonException("fail"){});
-                }, 
-                500, 
-                "{\"error\":\"Internal server error\"}",
-                "POST: error mapping response"
-            ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -796,7 +687,7 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2002);
                     when(request.value()).thenReturn(100);
@@ -804,30 +695,20 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("description");
                     when(request.mint()).thenReturn("not existing mint");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "not existing mint",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 500, 
                 "{\"error\":\"Internal server error\"}",
                 "POST: error in mint translation because mint is not existing (IllegalArgumentException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
                 PREFIX, 
                 """
@@ -841,7 +722,7 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(0);
                     when(request.value()).thenReturn(100);
@@ -849,30 +730,20 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue("""
-                        {
-                            "year": 0,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 500, 
                 "{\"error\":\"Internal server error\"}",
                 "POST: error in coin builder because year is to small (IllegalStateException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                  "POST", 
                 PREFIX, 
                 """
@@ -886,21 +757,12 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionCoinsLoadException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
 
                 }, 
                 500, 
@@ -910,11 +772,36 @@ public class CoinHandlerTest {
         );
     }
 
-    private static Stream<CoinHandleTestcase> coinUpdateTestcases(){
+    @ParameterizedTest(name = "{index} - {0}")
+    @MethodSource("coinCreateTestcases")
+    void testCoinHandlerPost(CoinHandlerTestcase testcase) throws Exception {
+        try {
+            testcase.mockSetup.setup(coinService, collectionService, groupService, sessionManager);
+        } catch (Exception e) {
+            fail(" due to unexcpected exception in setup");
+        }
+
+        var actionResult = mockMvc.perform(
+            post(testcase.path)
+            .contentType(MediaType.APPLICATION_JSON)
+            .cookie(new Cookie("sessionId", SESSION_ID))
+            .content(testcase.requestBody)
+        ).andExpect(status().is(testcase.expectedStatus));
+
+        if(testcase.expectedResponseBody != null) {
+            actionResult.andExpect(content().json(testcase.expectedResponseBody));
+        }
+
+        if(testcase.expectedStatus == 201) {
+            verify(coinService, times(1)).save(any(EuroCoin.class));
+        }
+    }
+
+    private static Stream<CoinHandlerTestcase> coinUpdateTestcases(){
         return Stream.of(
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -926,9 +813,30 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(false);
+                },
+                401,
+                "{\"error\":\"Unauthorized\"}",
+                "PATCH: unauthorized session"
+            ),
+            new CoinHandlerTestcase(
+                "PATCH",
+                PREFIX + "/" + VALID_ID,
+                """
+                {
+                    "year": 2023,
+                    "value": 200,
+                    "country": "DE",
+                    "mint": "A",
+                    "description": "Updated description",
+                    "collectionId": "collection-1"
+                }
+                """,
+                USER_ID,
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -936,7 +844,7 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2023);
                     when(request.value()).thenReturn(200);
@@ -944,43 +852,24 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("Updated description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doNothing().when(coinService).delete(VALID_UUID);
+                    doNothing().when(coinService).delete(VALID_ID);
                     doNothing().when(coinService).save(any());
-                    var expectedResponse = "{" +
-                        "\"id\":\"" + VALID_UUID + "\"," +
-                        "\"year\":2023," +
-                        "\"value\":200," +
-                        "\"country\":\"DE\"," +
-                        "\"collectionId\":\"collection-1\"," +
-                        "\"mint\":\"A\"," +
-                        "\"description\":\"Updated description\"}";
-                    when(mapper.writeValueAsString(any())).thenReturn(expectedResponse);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 200,
-                "{\"id\":\"" + VALID_UUID + "\",\"year\":2023,\"value\":200,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"Updated description\"}",
+                "{\"id\":\"GERMANY_TWO_EUROS_2023_BERLIN\",\"year\":2023,\"value\":200,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"Updated description\"}",
                 "PATCH: happy path"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -990,9 +879,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1000,47 +889,30 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2023);
                     when(request.value()).thenReturn(200);
                     when(request.country()).thenReturn("FR");
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "FR",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doNothing().when(coinService).delete(VALID_UUID);
+                    doNothing().when(coinService).delete(VALID_ID);
                     doNothing().when(coinService).save(any());
-                    var expectedResponse = "{" +
-                        "\"id\":\"" + VALID_UUID + "\"," +
-                        "\"year\":2023," +
-                        "\"value\":200," +
-                        "\"country\":\"FR\"," +
-                        "\"collectionId\":\"collection-1\"," +
-                        "\"mint\":\"\"," +
-                        "\"description\":\"New description\"}";
-                    when(mapper.writeValueAsString(any())).thenReturn(expectedResponse);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 200,
-                "{\"id\":\"" + VALID_UUID + "\",\"year\":2023,\"value\":200,\"country\":\"FR\",\"collectionId\":\"collection-1\",\"mint\":\"\",\"description\":\"New description\"}",
+                "{\"id\":\"FRANCE_TWO_EUROS_2023_UNKOWN\",\"year\":2023,\"value\":200,\"country\":\"FR\",\"collectionId\":\"collection-1\",\"mint\":null,\"description\":\"2 Euro Münze aus Frankreich aus dem Jahr 2023\"}",
                 "PATCH: happy path, non german coin without description"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1052,41 +924,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
-                    when(mapper.readValue(eq(
-                        """
-                    {
-                        "year": 2023,
-                        "value": 200,
-                        "country": "DE",
-                        "mint": "A",
-                        "description": "Updated description",
-                        "collectionId": "collection-1"
-                    }
-                    """), eq(CoinActionRequest.class))
-                    ).thenThrow(new JacksonException("fail"){});
-                },
-                400,
-                "{\"error\":\"Invalid request body\"}",
-                "PATCH: bining request failes"
-            ),
-            new CoinHandleTestcase(
-                "PATCH",
-                PREFIX + "/" + VALID_UUID,
-                """
-                {
-                    "year": 2023,
-                    "value": 200,
-                    "country": "DE",
-                    "mint": "A",
-                    "description": "Updated description",
-                    "collectionId": "collection-1"
-                }
-                """,
-                USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1094,7 +934,7 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2023);
                     when(request.value()).thenReturn(200);
@@ -1102,32 +942,22 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("Updated description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn("other user");
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "PATCH: direct owner check fails"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1135,13 +965,13 @@ public class CoinHandlerTest {
                     "country": "DE",
                     "mint": "A",
                     "description": "Updated description",
-                    "collectionId": "collection-1"
+                    "collectionId": "new-collection"
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1149,7 +979,7 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2023);
                     when(request.value()).thenReturn(200);
@@ -1157,18 +987,6 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("new-collection");
                     when(request.description()).thenReturn("Updated description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     var mockCollection2 = mock(EuroCoinCollection.class);
@@ -1181,14 +999,16 @@ public class CoinHandlerTest {
                     when(mockGroup2.getOwnerId()).thenReturn("other user");
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
                     when(groupService.getById("group-2")).thenReturn(mockGroup2);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "PATCH: owner check fails for new collection"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1200,9 +1020,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1210,7 +1030,7 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2023);
                     when(request.value()).thenReturn(200);
@@ -1218,18 +1038,6 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("new-collection");
                     when(request.description()).thenReturn("Updated description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     var mockCollection2 = mock(EuroCoinCollection.class);
@@ -1242,25 +1050,18 @@ public class CoinHandlerTest {
                     when(mockGroup2.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
                     when(groupService.getById("group-2")).thenReturn(mockGroup2);
-                    doNothing().when(coinService).delete(VALID_UUID);
+                    doNothing().when(coinService).delete(VALID_ID);
                     doNothing().when(coinService).save(any());
-                    var expectedResponse = "{" +
-                        "\"id\":\"" + VALID_UUID + "\"," +
-                        "\"year\":2023," +
-                        "\"value\":200," +
-                        "\"country\":\"DE\"," +
-                        "\"collectionId\":\"collection-1\"," +
-                        "\"mint\":\"A\"," +
-                        "\"description\":\"Updated description\"}";
-                    when(mapper.writeValueAsString(any())).thenReturn(expectedResponse);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 200,
-                "{\"id\":\"" + VALID_UUID + "\",\"year\":2023,\"value\":200,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"Updated description\"}",
+                "{\"id\":\"GERMANY_TWO_EUROS_2023_BERLIN\",\"year\":2023,\"value\":200,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"Updated description\"}",
                 "PATCH: happy path with two successful owner checks"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1272,8 +1073,8 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
-                    when(coinService.getById(VALID_UUID)).thenThrow(new EuroCoinNotFoundException("not found"));
+                (coinService, collectionService, groupService, sessionManager) -> {
+                    when(coinService.getById(VALID_ID)).thenThrow(new EuroCoinNotFoundException("not found"));
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2023);
                     when(request.value()).thenReturn(200);
@@ -1281,26 +1082,16 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("Updated description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "PATCH: coin to update doesnt exists"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1312,9 +1103,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1322,30 +1113,20 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "PATCH: collection for coin not found (EuroCoinCollectionNotFoundException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1357,9 +1138,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1367,33 +1148,23 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     when(groupService.getById("group-1")).thenThrow(new EuroCoinCollectionGroupNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "PATCH: group for collection for coin not found (EuroCoinCollectionGroupNotFoundException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1405,9 +1176,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1415,30 +1186,20 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionGetByIdException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "PATCH: exception retriving collection for coin (EuroCoinCollectionGetByIdException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1450,9 +1211,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1460,30 +1221,20 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionCoinsLoadException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "PATCH: exception retriving collection for coin (EuroCoinCollectionCoinsLoadException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1495,9 +1246,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1505,33 +1256,23 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.collectionId()).thenReturn("collection-1");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     when(groupService.getById("group-1")).thenThrow(new EuroCoinCollectionGroupGetByIdException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "PATCH: group for collection for coin not found (EuroCoinCollectionGroupGetByIdException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1543,9 +1284,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1553,7 +1294,7 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2023);
                     when(request.value()).thenReturn(200);
@@ -1561,33 +1302,23 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("Updated description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doThrow(new EuroCoinDeleteException("fail")).when(coinService).delete(VALID_UUID);
+                    doThrow(new EuroCoinDeleteException("fail")).when(coinService).delete(VALID_ID);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "PATCH: exception during delete of old coin"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "PATCH",
-                PREFIX + "/" + VALID_UUID,
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 2023,
@@ -1599,9 +1330,9 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1609,7 +1340,7 @@ public class CoinHandlerTest {
                         "collection-1",
                         "old description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2023);
                     when(request.value()).thenReturn(200);
@@ -1617,92 +1348,24 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("Updated description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doNothing().when(coinService).delete(VALID_UUID);
+                    doNothing().when(coinService).delete(VALID_ID);
                     doThrow(new EuroCoinSaveException("fail")).when(coinService).save(any());
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "PATCH: exception during save of updated coin"
             ),
-            new CoinHandleTestcase(
-                "PATCH",
-                PREFIX + "/" + VALID_UUID,
-                """
-                {
-                    "year": 2023,
-                    "value": 200,
-                    "country": "DE",
-                    "mint": "A",
-                    "description": "Updated description",
-                    "collectionId": "collection-1"
-                }
-                """,
-                USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
-                    var mockCoin = createMockCoin(
-                        VALID_UUID,
-                        2002,
-                        CoinValue.ONE_EURO,
-                        CoinCountry.GERMANY,
-                        Mint.BERLIN,
-                        "collection-1",
-                        "old description"
-                    );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
-                    var request = mock(CoinActionRequest.class);
-                    when(request.year()).thenReturn(2023);
-                    when(request.value()).thenReturn(200);
-                    when(request.country()).thenReturn("DE");
-                    when(request.collectionId()).thenReturn("collection-1");
-                    when(request.description()).thenReturn("Updated description");
-                    when(request.mint()).thenReturn("A");
-                    when(mapper.readValue(
-                        eq("""
-                        {
-                            "year": 2023,
-                            "value": 200,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Updated description",
-                            "collectionId": "collection-1"
-                        }
-                        """), eq(CoinActionRequest.class))
-                    ).thenReturn(request);
-                    var mockCollection = mock(EuroCoinCollection.class);
-                    when(mockCollection.getGroupId()).thenReturn("group-1");
-                    when(collectionService.getById("collection-1")).thenReturn(mockCollection);
-                    var mockGroup = mock(EuroCoinCollectionGroup.class);
-                    when(mockGroup.getOwnerId()).thenReturn(USER_ID);
-                    when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doNothing().when(coinService).delete(VALID_UUID);
-                    doNothing().when(coinService).save(any());
-                    when(mapper.writeValueAsString(any())).thenThrow(new JacksonException("fail"){});
-                },
-                500,
-                "{\"error\":\"Internal server error\"}",
-                "PATCH: exception during mapping of response"
-            ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
-                PREFIX, 
+                PREFIX + "/" + VALID_ID, 
                 """
                 {
                     "year": 2022,
@@ -1714,7 +1377,7 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2002);
                     when(request.value()).thenReturn(100);
@@ -1722,32 +1385,22 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("description");
                     when(request.mint()).thenReturn("not existing mint");
-                    when(mapper.readValue("""
-                        {
-                            "year": 2022,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "not existing mint",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 500, 
                 "{\"error\":\"Internal server error\"}",
                 "PATCH: error in mint translation because mint is not existing "
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerTestcase(
                 "POST", 
-                PREFIX, 
+                PREFIX + "/" + VALID_ID,
                 """
                 {
                     "year": 0,
@@ -1759,7 +1412,7 @@ public class CoinHandlerTest {
                 }
                 """,
                 USER_ID, 
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(0);
                     when(request.value()).thenReturn(100);
@@ -1767,24 +1420,14 @@ public class CoinHandlerTest {
                     when(request.collectionId()).thenReturn("collection-1");
                     when(request.description()).thenReturn("description");
                     when(request.mint()).thenReturn("A");
-                    when(mapper.readValue("""
-                        {
-                            "year": 0,
-                            "value": 100,
-                            "country": "DE",
-                            "mint": "A",
-                            "description": "Testmünze",
-                            "collectionId": "collection-1"
-                        }
-                        """, CoinActionRequest.class)
-                    ).thenReturn(request);
-
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 500, 
                 "{\"error\":\"Internal server error\"}",
@@ -1793,16 +1436,58 @@ public class CoinHandlerTest {
         );
     }
 
-    private static Stream<CoinHandleTestcase> coinDeleteTestcases(){
+    @ParameterizedTest(name = "{index} - {0}")
+    @MethodSource("coinUpdateTestcases")
+    void testCoinHandlerPatch(CoinHandlerTestcase testcase) throws Exception {
+        try {
+            testcase.mockSetup.setup(coinService, collectionService, groupService, sessionManager);
+        } catch (Exception e) {
+            fail(" due to unexcpected exception in setup");
+        }
+
+        var actionResult = mockMvc.perform(
+            patch(testcase.path)
+            .contentType(MediaType.APPLICATION_JSON)
+            .cookie(new Cookie("sessionId", SESSION_ID))
+            .content(testcase.requestBody)
+        ).andExpect(status().is(testcase.expectedStatus));
+
+        if(testcase.expectedResponseBody != null) {
+            actionResult.andExpect(content().json(testcase.expectedResponseBody));
+        }
+
+        if (testcase.expectedStatus == 401) {
+            verify(coinService, times(0)).getById(anyString());
+        } else {
+            verify(coinService).getById(VALID_ID);
+
+            if (testcase.expectedStatus == 200) {
+                verify(coinService, times(1)).delete(VALID_ID);
+                verify(coinService, times(1)).save(any(EuroCoin.class));
+            }
+        }
+    }
+
+    private static Stream<CoinHandlerGetDeleteTestcase> coinDeleteTestcases(){
         return Stream.of(
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "DELETE",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(false);
+                },
+                401,
+                "{\"error\":\"Unauthorized\"}",
+                "DELETE: unauthorized session"
+            ),
+            new CoinHandlerGetDeleteTestcase(
+                "DELETE",
+                PREFIX + "/" + VALID_ID,
+                USER_ID,
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1810,39 +1495,41 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doNothing().when(coinService).delete(VALID_UUID);
+                    doNothing().when(coinService).delete(VALID_ID);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 204,
                 null,
                 "DELETE: happy path"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "DELETE",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
-                    when(coinService.getById(VALID_UUID)).thenThrow(new EuroCoinNotFoundException("not found"));
+                (coinService, collectionService, groupService, sessionManager) -> {
+                    when(coinService.getById(VALID_ID)).thenThrow(new EuroCoinNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "DELETE: coin to delete not found"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "DELETE",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1850,21 +1537,22 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "DELETE: collection for coin not found"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "DELETE",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1872,26 +1560,27 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn("other user");
                     when(groupService.getById("group-1")).thenThrow(new EuroCoinCollectionGroupNotFoundException("not found"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 404,
                 "{\"error\":\"Resource not found\"}",
                 "DELETE: group of collection of coin not found"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "DELETE",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1899,21 +1588,22 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionGetByIdException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "DELETE: exception retriving collection for coin (EuroCoinCollectionGetByIdException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "DELETE",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1921,21 +1611,22 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     when(collectionService.getById("collection-1")).thenThrow(new EuroCoinCollectionCoinsLoadException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "DELETE: exception retriving collection for coin (EuroCoinCollectionCoinsLoadException)"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "DELETE",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1943,26 +1634,27 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn("other user");
                     when(groupService.getById("group-1")).thenThrow(new EuroCoinCollectionGroupGetByIdException("fail"));
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
                 "DELETE: exception retriving group of collection of coin"
             ),
-            new CoinHandleTestcase(
+            new CoinHandlerGetDeleteTestcase(
                 "DELETE",
-                PREFIX + "/" + VALID_UUID,
-                null,
+                PREFIX + "/" + VALID_ID,
                 USER_ID,
-                (coinService, collectionService, groupService, mapper) -> {
+                (coinService, collectionService, groupService, sessionManager) -> {
                     var mockCoin = createMockCoin(
-                        VALID_UUID,
+                        VALID_ID,
                         2002,
                         CoinValue.ONE_EURO,
                         CoinCountry.GERMANY,
@@ -1970,14 +1662,16 @@ public class CoinHandlerTest {
                         "collection-1",
                         "description"
                     );
-                    when(coinService.getById(VALID_UUID)).thenReturn(mockCoin);
+                    when(coinService.getById(VALID_ID)).thenReturn(mockCoin);
                     var mockCollection = mock(EuroCoinCollection.class);
                     when(mockCollection.getGroupId()).thenReturn("group-1");
                     when(collectionService.getById("collection-1")).thenReturn(mockCollection);
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doThrow(new EuroCoinDeleteException("fail")).when(coinService).delete(VALID_UUID);
+                    doThrow(new EuroCoinDeleteException("fail")).when(coinService).delete(VALID_ID);
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 500,
                 "{\"error\":\"Internal server error\"}",
@@ -1985,65 +1679,36 @@ public class CoinHandlerTest {
             )
         );
     }
-    
-    private static Stream<CoinHandleTestcase> coinHandleTestcases() {
-        return Stream.concat(
-            Stream.of(
-                new CoinHandleTestcase(
-                    "PUT",
-                    PREFIX,
-                    null,
-                    USER_ID,
-                    (coinService, collectionService, groupService, mapper) -> {},
-                    405,
-                    null,
-                    "Should trigger default case in handle-switch (method not allowed)"
-                )
-            ),
-            Stream.of(
-                coinGetTestcases(),
-                coinCreateTestcases(),
-                coinUpdateTestcases(),
-                coinDeleteTestcases()
-            ).flatMap(s -> s)
-        );
-    }
 
     @ParameterizedTest(name = "{index} - {0}")
-    @MethodSource("coinHandleTestcases")
-    void testHandle(CoinHandleTestcase testcase) throws IOException {
-        var collectionService = mock(EuroCoinCollectionStorageService.class);
-        var groupService = mock(EuroCoinCollectionGroupStorageService.class);
-        var coinService = mock(EuroCoinStorageService.class);
-        var mapper = mock(ObjectMapper.class);
-        CoinHandler handler = new CoinHandler(coinService, collectionService, groupService, mapper);
-        var responseStream = new ByteArrayOutputStream();
-
-        HttpExchange exchange = mock(HttpExchange.class);
-        Headers headers = new Headers();
-        lenient().when(exchange.getResponseHeaders()).thenReturn(headers);
-        lenient().when(exchange.getRequestMethod()).thenReturn(testcase.method());
-        lenient().when(exchange.getRequestURI()).thenReturn(URI.create(testcase.path()));
-        lenient().when(exchange.getAttribute("userId")).thenReturn(testcase.userId());
-        lenient().when(exchange.getResponseBody()).thenReturn(responseStream);
-
-        if(testcase.requestBody != null){
-            when(exchange.getRequestBody()).thenReturn(new ByteArrayInputStream(testcase.requestBody.getBytes()));
-        }
-
+    @MethodSource("coinDeleteTestcases")
+    void testCoinHandlerDelete(CoinHandlerGetDeleteTestcase testcase) throws Exception {
         try {
-            testcase.mockSetup().setup(coinService, collectionService, groupService, mapper);
+            testcase.mockSetup.setup(coinService, collectionService, groupService, sessionManager);
         } catch (Exception e) {
-            fail("fail due to unexcpected exception in setup", e);
+            fail(" due to unexcpected exception in setup");
         }
 
-        handler.handle(exchange);
+        var actionResult = mockMvc.perform(
+            delete(testcase.path)
+            .cookie(new Cookie("sessionId", SESSION_ID))
+        ).andExpect(status().is(testcase.expectedStatus));
 
-        verify(exchange).sendResponseHeaders(eq(testcase.expectedStatus), anyLong());
-
-        if (testcase.expectedResponseBody != null) {
-            String actual = responseStream.toString();
-            assertEquals(testcase.expectedResponseBody, actual);
+        if(testcase.expectedResponseBody != null) {
+            actionResult.andExpect(content().json(testcase.expectedResponseBody));
         }
+
+        if (testcase.expectedStatus == 401) {
+            verify(coinService, times(0)).getById(anyString());
+        } else {
+            verify(coinService).getById(VALID_ID);
+
+            if (testcase.expectedStatus == 204) {
+                verify(coinService, times(1)).delete(VALID_ID);
+            } else if(testcase.expectedStatus != 500) {
+                verify(coinService, times(0)).delete(VALID_ID);
+            }
+        }
+
     }
 }

@@ -65,6 +65,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleAll(Exception e) {
         logger.error("Unhandled exception", e);
         return ResponseEntity.internalServerError()
-            .body(Map.of("error", "An unexpected error occurred"));
+            .body(Map.of("error", "Internal server error"));
     }
 }
