@@ -1,8 +1,9 @@
-package io.github.lstramke.security;
+package io.github.lstramke.coincollector.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import io.github.lstramke.coincollector.services.SessionManager;
@@ -14,6 +15,7 @@ import io.github.lstramke.coincollector.services.SessionManager;
  * for unauthorized requests, and keeps the login and static routes open.
  */
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
     /**
      * Creates the REST authentication entry point.
@@ -38,6 +40,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SessionFilter sessionFilter, RestAuthenticationEntryPoint entryPoint) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable())
             .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(entryPoint))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/login", "/api/v1/registration", "/api/v1/shutdown", "/", "/index.html", "/static/**", "/assets/**").permitAll()

@@ -37,10 +37,10 @@ import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupExcept
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionGroupException.EuroCoinCollectionGroupNotFoundException;
 import io.github.lstramke.coincollector.model.EuroCoinCollection;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroup;
+import io.github.lstramke.coincollector.security.SecurityConfig;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageService;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
-import io.github.lstramke.security.SecurityConfig;
 import jakarta.servlet.http.Cookie;
 
 @WebMvcTest(value = CollectionHandler.class)

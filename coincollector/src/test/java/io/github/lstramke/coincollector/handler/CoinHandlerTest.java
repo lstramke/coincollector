@@ -45,11 +45,11 @@ import io.github.lstramke.coincollector.model.EuroCoinCollection;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroup;
 import io.github.lstramke.coincollector.model.Mint;
 import io.github.lstramke.coincollector.model.DTOs.Requests.CoinActionRequest;
+import io.github.lstramke.coincollector.security.SecurityConfig;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageService;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionStorageService;
 import io.github.lstramke.coincollector.services.EuroCoinStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
-import io.github.lstramke.security.SecurityConfig;
 import jakarta.servlet.http.Cookie;
 
 @WebMvcTest(value = CoinHandler.class)

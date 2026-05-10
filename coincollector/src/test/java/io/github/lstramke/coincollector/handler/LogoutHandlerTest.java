@@ -23,9 +23,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import jakarta.servlet.http.Cookie;
-
+import io.github.lstramke.coincollector.security.SecurityConfig;
 import io.github.lstramke.coincollector.services.SessionManager;
-import io.github.lstramke.security.SecurityConfig;
 
 @WebMvcTest(value = LogoutHandler.class)
 @Import(SecurityConfig.class)

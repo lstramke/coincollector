@@ -1,4 +1,4 @@
-package io.github.lstramke.security;
+package io.github.lstramke.coincollector.security;
 
 import java.io.IOException;
 import java.util.Collections;

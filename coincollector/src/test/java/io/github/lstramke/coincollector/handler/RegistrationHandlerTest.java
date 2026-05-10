@@ -24,9 +24,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import io.github.lstramke.coincollector.exceptions.userExceptions.UserSaveException;
 import io.github.lstramke.coincollector.model.User;
+import io.github.lstramke.coincollector.security.SecurityConfig;
 import io.github.lstramke.coincollector.services.SessionManager;
 import io.github.lstramke.coincollector.services.UserStorageService;
-import io.github.lstramke.security.SecurityConfig;
 
 @WebMvcTest(value = RegistrationHandler.class)
 @Import(SecurityConfig.class)
