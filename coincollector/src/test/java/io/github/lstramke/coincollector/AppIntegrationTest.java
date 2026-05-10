@@ -2,15 +2,10 @@ package io.github.lstramke.coincollector;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -20,18 +15,44 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
+import org.springframework.boot.test.context.SpringBootTest;
 
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
+
+import io.github.lstramke.coincollector.configuration.SqliteInitializer;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {
+    "coincollector.db-file=test.db"
+})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@AutoConfigureTestRestTemplate
 public class AppIntegrationTest {
 
-    
+    @LocalServerPort
+    private int port;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    SqliteInitializer sqliteInitializer;
 
     private record AppTestcase(
         String method,
         String route,
         String requestBody,
-        String requestCookieHeader,
-        Consumer<HttpResponse<String>> validator,
+        Boolean requestCookie,
+        Consumer<ResponseEntity<String>> validator,
         String description
     ) {
         @Override
@@ -40,35 +61,22 @@ public class AppIntegrationTest {
         }
     }
 
-    private static final int PORT = 8081;
-    private static final String DB_TESTFILE = "test-coincollector.db";
-    private static final String BASE_URL = "http://localhost:" + PORT;
+    private static final String DB_TESTFILE = "test.db";
 
-    private static String sessionId = "";
-    private static String groupId = "";
-    private static String groupToUpdateAndDeleteId = "";
-    private static String collcetionId = "";
-    private static String coinId = "";
-
-    private Thread serverThread;
+    private String sessionId = "";
+    private String groupId = "";
+    private String groupToUpdateAndDeleteId = "";
+    private String collectionId = "";
+    private String coinId = "";
+    private String storedCookie = null;
 
     @BeforeAll
-    void startServer() throws InterruptedException {
-        serverThread = new Thread(() -> {
-            try {
-                App.main(new String[]{DB_TESTFILE, String.valueOf(PORT)});
-            } catch (Exception e) {
-                fail("unexpected exception during server start up");
-            }
-        });
-        serverThread.setDaemon(true);
-        serverThread.start();
-        Thread.sleep(2000);
+    void initDb() throws Exception {
+        sqliteInitializer.init();
     }
 
     @AfterAll
-    void stopServer(){
-        App.stopServer();
+    void cleanup() {
         Path dbPath = Path.of(DB_TESTFILE);
         try {
             Files.deleteIfExists(dbPath);
@@ -77,88 +85,109 @@ public class AppIntegrationTest {
         }
     }
 
-    private static Stream<Supplier<AppTestcase>> appTestcases() {
+    private String getBaseUrl() {
+        return "http://localhost:" + port;
+    }
+
+    private ResponseEntity<String> sendRequest(String method, String route, String requestBody, Boolean requestCookie) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML));
+        if (requestCookie) {
+            headers.set(HttpHeaders.COOKIE, storedCookie);
+        }
+
+        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+        return restTemplate.exchange(
+            getBaseUrl() + route,
+            HttpMethod.valueOf(method),
+            entity,
+            String.class
+        );
+    }
+
+    private Stream<Supplier<AppTestcase>> appTestcases() {
         return Stream.of(
             () -> new AppTestcase(
                 "GET", 
                 "/", 
                 "", 
-                null,
+                false,
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    assertTrue(response.body().contains("<html"));
+                    assertEquals(200, response.getStatusCode().value());
+                    assertTrue(response.getBody().contains("<html"));
                 },
                 ""
             ),
             () -> new AppTestcase(
                 "POST", 
-                "/api/login", 
+                "/api/v1/login", 
                 "{\"username\":\"testuser\"}", 
-                null,
+                false,
                 response -> {
-                    assertEquals(400, response.statusCode());
-                    assertTrue(response.body().contains("error"), "Login with empty Db should return error");
+                    assertEquals(400, response.getStatusCode().value());
+                    assertTrue(response.getBody().contains("error"), "Login with empty Db should return error");
                 },
                 "Login fails when user does not exist"
             ),
             () -> new AppTestcase(
                 "POST", 
-                "/api/registration", 
+                "/api/v1/registration", 
                 "{\"username\":\"testuser\"}", 
-                null,
+                false,
                 response -> {
-                    assertEquals(201, response.statusCode());
-                    var setCookieOpt = response.headers().firstValue("Set-Cookie");
-                    assertTrue(setCookieOpt.isPresent(), "Set-Cookie header should be present");
-                    var setCookie = setCookieOpt.get();
+                    assertEquals(201, response.getStatusCode().value());
+                    var setCookie = response.getHeaders().getFirst("Set-Cookie");
+                    assertTrue(setCookie != null, "Set-Cookie header should be present");
                     assertTrue(setCookie.contains("sessionId="), "Set-Cookie should contain sessionId");
                     sessionId = setCookie.split("sessionId=")[1].split(";")[0];
+                    storedCookie = "sessionId=" + sessionId;
                 },
                 "Registration returns sessionId cookie"
             ),
             () -> new AppTestcase(
                 "POST",
-                "/api/groups",
+                "/api/v1/groups",
                 "{\"name\":\"TestGroup\"}",
-                null,
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Create group without session cookie"
             ),
             () -> new AppTestcase(
                 "POST",
-                "/api/groups",
+                "/api/v1/groups",
                 "{\"name\":\"TestGroup\"}",
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(201, response.statusCode());
-                    assertTrue(response.body().contains("\"id\""));
-                    int idStart = response.body().indexOf("\"id\":\"") + 6;
-                    int idEnd = response.body().indexOf("\"", idStart);
-                    groupId = response.body().substring(idStart, idEnd);
+                    assertEquals(201, response.getStatusCode().value());
+                    assertTrue(response.getBody().contains("\"id\""));
+                    int idStart = response.getBody().indexOf("\"id\":\"" ) + 6;
+                    int idEnd = response.getBody().indexOf("\"", idStart);
+                    groupId = response.getBody().substring(idStart, idEnd);
     
                 },
                 "Create group with sessionId cookie"
             ),
             () -> new AppTestcase(
                 "GET", 
-                "/api/groups", 
+                "/api/v1/groups", 
                 null, 
-                null, 
+                false, 
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 }, 
                 "Get groups without sessionId cookie"
             ),
             () -> new AppTestcase(
                 "GET", 
-                "/api/groups", 
+                "/api/v1/groups", 
                 null, 
-                "sessionId=" + sessionId, 
+                true, 
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    var body = response.body();
+                    assertEquals(200, response.getStatusCode().value());
+                    var body = response.getBody();
                     assertTrue(body.trim().startsWith("["));
                     assertTrue(body.trim().endsWith("]"));
                     int startObj = body.indexOf("{");
@@ -173,12 +202,12 @@ public class AppIntegrationTest {
             ),
             () -> new AppTestcase(
                 "GET", 
-                "/api/groups/"+groupId, 
+                "/api/v1/groups/"+groupId, 
                 null, 
-                "sessionId=" + sessionId, 
+                true, 
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    var body = response.body();
+                    assertEquals(200, response.getStatusCode().value());
+                    var body = response.getBody();
                     assertEquals(1, body.split("\\{").length - 1);
                     assertTrue(body.contains("\"id\":\"" + groupId + "\""));
                     assertTrue(body.contains("\"name\":\"TestGroup\""));
@@ -188,106 +217,106 @@ public class AppIntegrationTest {
             ),
             () -> new AppTestcase(
                 "GET", 
-                "/api/groups/"+groupId, 
+                "/api/v1/groups/"+groupId, 
                 null, 
-                null, 
+                false, 
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 }, 
                 "Get specific group without sessionId cookie"
             ),
             () -> new AppTestcase(
                 "POST",
-                "/api/groups",
+                "/api/v1/groups",
                 "{\"name\":\"TestGroupToUpdateAndDelete\"}",
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(201, response.statusCode());
-                    assertTrue(response.body().contains("\"id\""));
-                    int idStart = response.body().indexOf("\"id\":\"") + 6;
-                    int idEnd = response.body().indexOf("\"", idStart);
-                    groupToUpdateAndDeleteId = response.body().substring(idStart, idEnd);
+                    assertEquals(201, response.getStatusCode().value());
+                    assertTrue(response.getBody().contains("\"id\""));
+                    int idStart = response.getBody().indexOf("\"id\":\"" ) + 6;
+                    int idEnd = response.getBody().indexOf("\"", idStart);
+                    groupToUpdateAndDeleteId = response.getBody().substring(idStart, idEnd);
     
                 },
                 "Create a second group for other endpoints"
             ),
             () -> new AppTestcase(
                 "PATCH",
-                "/api/groups/" + groupToUpdateAndDeleteId,
+                "/api/v1/groups/" + groupToUpdateAndDeleteId,
                 "{\"name\":\"UpdateGroupName\"}",
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    assertTrue(response.body().contains("\"name\":\"UpdateGroupName\""));
+                    assertEquals(200, response.getStatusCode().value());
+                    assertTrue(response.getBody().contains("\"name\":\"UpdateGroupName\""));
                 },
                 "Update second group"
             ),
             () -> new AppTestcase(
                 "PATCH",
-                "/api/groups/" + groupToUpdateAndDeleteId,
+                "/api/v1/groups/" + groupToUpdateAndDeleteId,
                 "{\"name\":\"UpdatedGroupName\"}",
-                null,
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Update second group without session cookie"
             ),
             () -> new AppTestcase(
                 "DELETE",
-                "/api/groups/" + groupToUpdateAndDeleteId,
+                "/api/v1/groups/" + groupToUpdateAndDeleteId,
                 null,
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(204, response.statusCode());
+                    assertEquals(204, response.getStatusCode().value());
                 },
                 "Delete second group"
             ),
             () -> new AppTestcase(
                 "DELETE",
-                "/api/groups/" + groupToUpdateAndDeleteId,
+                "/api/v1/groups/" + groupToUpdateAndDeleteId,
                 null,
-                null,
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Delete second group without sesssion cookie"
             ),
             () -> new AppTestcase(
                 "POST",
-                "/api/collections",
+                "/api/v1/collections",
                 "{\"name\":\"TestCollection\",\"groupId\":\"" + groupId + "\"}",
-                null,
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Create collection without session cookie"
             ),
             () -> new AppTestcase(
                 "POST",
-                "/api/collections",
+                "/api/v1/collections",
                 "{\"name\":\"TestCollection\",\"groupId\":\"" + groupId + "\"}",
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(201, response.statusCode());
-                    var body = response.body();
+                    assertEquals(201, response.getStatusCode().value());
+                    var body = response.getBody();
                     assertTrue(body.contains("\"id\""));
                     assertTrue(body.contains("\"name\":\"TestCollection\""));
                     assertTrue(body.contains("\"groupId\":\"" + groupId + "\""));
-                    int idStart = response.body().indexOf("\"id\":\"") + 6;
-                    int idEnd = response.body().indexOf("\"", idStart);
-                    collcetionId = response.body().substring(idStart, idEnd);
+                    int idStart = response.getBody().indexOf("\"id\":\"" ) + 6;
+                    int idEnd = response.getBody().indexOf("\"", idStart);
+                    collectionId = response.getBody().substring(idStart, idEnd);
                 },
                 "Create collection with sessionId cookie"
             ),
             () -> new AppTestcase(
                 "GET",
-                "/api/collections/" + collcetionId,
+                "/api/v1/collections/" + collectionId,
                 null,
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    var body = response.body();
-                    assertTrue(body.contains("\"id\":\"" + collcetionId + "\""));
+                    assertEquals(200, response.getStatusCode().value());
+                    var body = response.getBody();
+                    assertTrue(body.contains("\"id\":\"" + collectionId + "\""));
                     assertTrue(body.contains("\"name\":\"TestCollection\""));
                     assertTrue(body.contains("\"groupId\":\"" + groupId + "\""));
                     assertTrue(body.contains("\"coins\":[]"));
@@ -296,23 +325,23 @@ public class AppIntegrationTest {
             ),
             () -> new AppTestcase(
                 "GET",
-                "/api/collections/" + collcetionId,
+                "/api/v1/collections/" + collectionId,
                 null,
-                null,
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Get collection without sessionId cookie"
             ),
             () -> new AppTestcase(
                 "PATCH",
-                "/api/collections/" + collcetionId,
+                "/api/v1/collections/" + collectionId,
                 "{\"name\":\"TestCollectionNewName\",\"groupId\":\"" + groupId + "\"}",
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    var body = response.body();
-                    assertTrue(body.contains("\"id\":\"" + collcetionId + "\""));
+                    assertEquals(200, response.getStatusCode().value());
+                    var body = response.getBody();
+                    assertTrue(body.contains("\"id\":\"" + collectionId + "\""));
                     assertTrue(body.contains("\"name\":\"TestCollectionNewName\""));
                     assertTrue(body.contains("\"groupId\":\"" + groupId + "\""));
                 },
@@ -320,37 +349,37 @@ public class AppIntegrationTest {
             ),
             () -> new AppTestcase(
                 "PATCH",
-                "/api/collections/" + collcetionId,
+                "/api/v1/collections/" + collectionId,
                 "{\"name\":\"TestCollectionNewName\",\"groupId\":\"" + groupId + "\"}",
-                null,
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Update collection without sessionId cookie"
             ),
             () -> new AppTestcase(
                 "POST",
-                "/api/coins",
-                "{\"year\":2024,\"value\":200,\"country\":\"DE\",\"collectionId\":\"" + collcetionId + "\",\"mint\":\"A\"}",
-                null,
+                "/api/v1/coins",
+                "{\"year\":2024,\"value\":200,\"country\":\"DE\",\"collectionId\":\"" + collectionId + "\",\"mint\":\"A\"}",
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Add coin to collection without sessionId cookie"
             ),
             () -> new AppTestcase(
                 "POST",
-                "/api/coins",
-                "{\"year\":2024,\"value\":200,\"country\":\"DE\",\"collectionId\":\"" + collcetionId + "\",\"mint\":\"A\"}",
-                "sessionId=" + sessionId,
+                "/api/v1/coins",
+                "{\"year\":2024,\"value\":200,\"country\":\"DE\",\"collectionId\":\"" + collectionId + "\",\"mint\":\"A\"}",
+                true,
                 response -> {
-                    assertEquals(201, response.statusCode());
-                    var body = response.body();
+                    assertEquals(201, response.getStatusCode().value());
+                    var body = response.getBody();
                     assertTrue(body.contains("\"id\""));
                     assertTrue(body.contains("\"year\":2024"));
                     assertTrue(body.contains("\"value\":200"));
                     assertTrue(body.contains("\"country\":\"DE\""), body);
-                    assertTrue(body.contains("\"collectionId\":\"" + collcetionId + "\""));
+                    assertTrue(body.contains("\"collectionId\":\"" + collectionId + "\""));
                     assertTrue(body.contains("\"mint\":\"A\""));
                     assertTrue(body.contains("\"description\":"));
                     int idStart = body.indexOf("\"id\":\"") + 6;
@@ -361,17 +390,17 @@ public class AppIntegrationTest {
             ),
             () -> new AppTestcase(
                 "GET",
-                "/api/coins/" + coinId,
+                "/api/v1/coins/" + coinId,
                 null,
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    var body = response.body();
+                    assertEquals(200, response.getStatusCode().value());
+                    var body = response.getBody();
                     assertTrue(body.contains("\"id\":\"" + coinId + "\""));
                     assertTrue(body.contains("\"year\":2024"));
                     assertTrue(body.contains("\"value\":200"));
                     assertTrue(body.contains("\"country\":\"DE\""));
-                    assertTrue(body.contains("\"collectionId\":\"" + collcetionId + "\""));
+                    assertTrue(body.contains("\"collectionId\":\"" + collectionId + "\""));
                     assertTrue(body.contains("\"mint\":\"A\""));
                     assertTrue(body.contains("\"description\":"));
                 },
@@ -379,27 +408,27 @@ public class AppIntegrationTest {
             ),
             () -> new AppTestcase(
                 "GET",
-                "/api/coins/" + coinId,
+                "/api/v1/coins/" + coinId,
                 null,
-                null,
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Get coin without sessionId cookie"
             ),
             () -> new AppTestcase(
                 "PATCH",
-                "/api/coins/" + coinId,
-                "{\"year\":2024,\"value\":5,\"country\":\"DE\",\"collectionId\":\"" + collcetionId + "\",\"mint\":\"A\"}",
-                "sessionId=" + sessionId,
+                "/api/v1/coins/" + coinId,
+                "{\"year\":2024,\"value\":5,\"country\":\"DE\",\"collectionId\":\"" + collectionId + "\",\"mint\":\"A\"}",
+                true,
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    var body = response.body();
+                    assertEquals(200, response.getStatusCode().value());
+                    var body = response.getBody();
                     assertTrue(body.contains("\"id\""));
                     assertTrue(body.contains("\"year\":2024"));
                     assertTrue(body.contains("\"value\":5"));
                     assertTrue(body.contains("\"country\":\"DE\""), body);
-                    assertTrue(body.contains("\"collectionId\":\"" + collcetionId + "\""));
+                    assertTrue(body.contains("\"collectionId\":\"" + collectionId + "\""));
                     assertTrue(body.contains("\"mint\":\"A\""));
                     assertTrue(body.contains("\"description\":"));
                     int idStart = body.indexOf("\"id\":\"") + 6;
@@ -410,101 +439,100 @@ public class AppIntegrationTest {
             ),
             () -> new AppTestcase(
                 "PATCH",
-                "/api/coins/" + coinId,
-                "{\"year\":2024,\"value\":5,\"country\":\"DE\",\"collectionId\":\"" + collcetionId + "\",\"mint\":\"A\"}",
-                null,
+                "/api/v1/coins/" + coinId,
+                "{\"year\":2024,\"value\":5,\"country\":\"DE\",\"collectionId\":\"" + collectionId + "\",\"mint\":\"A\"}",
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Update coin without sessionId cookie"
             ),
             () -> new AppTestcase(
                 "DELETE",
-                "/api/coins/" + coinId,
+                "/api/v1/coins/" + coinId,
                 null,
-                null,
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Delete coin without sessionId cookie"
             ),
             () -> new AppTestcase(
                 "DELETE",
-                "/api/coins/" + coinId,
+                "/api/v1/coins/" + coinId,
                 null,
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(204, response.statusCode());
+                    assertEquals(204, response.getStatusCode().value());
                 },
                 "Delete coin"
             ),
             () -> new AppTestcase(
                 "DELETE",
-                "/api/collections/" + collcetionId,
+                "/api/v1/collections/" + collectionId,
                 null,
-                null,
+                false,
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 },
                 "Delete collection without sessionid cookie"
             ),
             () -> new AppTestcase(
                 "DELETE",
-                "/api/collections/" + collcetionId,
+                "/api/v1/collections/" + collectionId,
                 null,
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(204, response.statusCode());
+                    assertEquals(204, response.getStatusCode().value());
                 },
                 "Delete collection"
             ),
             () -> new AppTestcase(
                 "POST",
-                "/api/logout",
+                "/api/v1/logout",
                 "",
-                "sessionId=" + sessionId,
+                true,
                 response -> {
-                    assertEquals(204, response.statusCode());
-                    var setCookieOpt = response.headers().firstValue("Set-Cookie");
-                    assertTrue(setCookieOpt.isPresent(), "Set-Cookie header should be present after logout");
-                    var setCookie = setCookieOpt.get();
+                    assertEquals(204, response.getStatusCode().value());
+                    var setCookie = response.getHeaders().getFirst("Set-Cookie");
+                    assertTrue(setCookie != null, "Set-Cookie header should be present after logout");
                     assertTrue(setCookie.contains("sessionId=;"), "SessionId should be cleared after logout");
                 },
                 "Logout and check session cookie is cleared"
             ),
             () -> new AppTestcase(
                 "GET", 
-                "/api/groups", 
+                "/api/v1/groups", 
                 null, 
-                "sessionId=" + sessionId, 
+                true, 
                 response -> {
-                    assertEquals(401, response.statusCode());
+                    assertEquals(401, response.getStatusCode().value());
                 }, 
                 "Get groups with sessionId cookie after session logout"
             ),
             () -> new AppTestcase(
                 "POST", 
-                "/api/login", 
+                "/api/v1/login", 
                 "{\"username\":\"testuser\"}", 
-                null,
+                false,
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    var setCookieOpt = response.headers().firstValue("Set-Cookie");
-                    assertTrue(setCookieOpt.isPresent(), "Set-Cookie header should be present");
-                    var setCookie = setCookieOpt.get();
+                    assertEquals(200, response.getStatusCode().value());
+                    var setCookie = response.getHeaders().getFirst("Set-Cookie");
+                    assertTrue(setCookie != null, "Set-Cookie header should be present");
                     assertTrue(setCookie.contains("sessionId="), "Set-Cookie should contain sessionId");
                     sessionId = setCookie.split("sessionId=")[1].split(";")[0];
+                    storedCookie = "sessionId=" + sessionId;
                 },
                 "Login when user exists"
             ),
             () -> new AppTestcase(
                 "GET", 
-                "/api/groups", 
+                "/api/v1/groups", 
                 null, 
-                "sessionId=" + sessionId, 
+                true, 
                 response -> {
-                    assertEquals(200, response.statusCode());
-                    var body = response.body();
+                    assertEquals(200, response.getStatusCode().value());
+                    var body = response.getBody();
                     assertTrue(body.trim().startsWith("["));
                     assertTrue(body.trim().endsWith("]"));
                     int startObj = body.indexOf("{");
@@ -522,40 +550,9 @@ public class AppIntegrationTest {
 
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("appTestcases")
-    void testApp(Supplier<AppTestcase> testcaseSupplier) throws IOException, InterruptedException {
+    void testApp(Supplier<AppTestcase> testcaseSupplier) {
         var testcase = testcaseSupplier.get();
-        var client = HttpClient.newHttpClient();
-
-        var builder = HttpRequest.newBuilder().uri(URI.create(BASE_URL + testcase.route));
-
-        switch (testcase.method) {
-            case "POST" -> {
-                builder.POST(HttpRequest.BodyPublishers.ofString(testcase.requestBody))
-                    .header("Content-Type", "application/json");
-            }
-            case "GET" -> {
-                builder.GET();
-            }
-            case "PATCH" -> {
-                builder.method("PATCH", HttpRequest.BodyPublishers.ofString(testcase.requestBody))
-                .header("Content-Type", "application/json");
-            }
-            case "DELETE" -> {
-                builder.DELETE();
-            }   
-            default -> {
-                fail();
-            }
-        }
-
-        if (testcase.requestCookieHeader != null) {
-            builder.header("Cookie", testcase.requestCookieHeader);
-        }
-
-        var request = builder.build();
-
-        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
+        var response = sendRequest(testcase.method, testcase.route, testcase.requestBody, testcase.requestCookie);
         testcase.validator().accept(response);
     }
 
