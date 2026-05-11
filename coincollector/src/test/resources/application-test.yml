@@ -1,0 +1,7 @@
+coincollector:
+  db-file: test.db
+  table:
+    user: users
+    euroCoin: euroCoins
+    euroCoinCollection: euroCoinCollections
+    euroCoinCollectionGroup: euroCoinCollectionGroups
