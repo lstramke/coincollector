@@ -18,12 +18,12 @@ import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinUp
 import io.github.lstramke.coincollector.model.EuroCoin;
 import io.github.lstramke.coincollector.repositories.EuroCoinStorageRepository;
 
-@Service
 /**
  * Thin service implementation of {@link EuroCoinStorageService} that delegates to
  * {@link EuroCoinStorageRepository} and handles connection/transaction boundaries
  * when no {@link Connection} is supplied by the caller. 
- */
+*/
+@Service
 public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
 
     private final EuroCoinStorageRepository euroCoinStorageRepository;

@@ -18,7 +18,6 @@ import io.github.lstramke.coincollector.model.EuroCoinCollectionGroup;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroupFactory;
 import io.github.lstramke.coincollector.repositories.EuroCoinCollectionGroupStorageRepository;
 
-@Repository
 /**
  * SQLite-backed implementation of {@link EuroCoinCollectionGroupStorageRepository} providing CRUD
  * access to {@link EuroCoinCollectionGroup} rows in a configurable table. Responsibilities:
@@ -33,7 +32,8 @@ import io.github.lstramke.coincollector.repositories.EuroCoinCollectionGroupStor
  * {@link SQLException}. Returning partial results on read list operations is preferred;
  * corrupt rows (mapping failures) are skipped with a warning so that remaining valid
  * rows are still returned.
- */
+*/
+@Repository
 public class EuroCoinCollectionGroupSqliteRepository implements EuroCoinCollectionGroupStorageRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionGroupSqliteRepository.class);

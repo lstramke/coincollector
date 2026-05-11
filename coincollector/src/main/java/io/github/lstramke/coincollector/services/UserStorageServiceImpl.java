@@ -15,12 +15,12 @@ import io.github.lstramke.coincollector.exceptions.userExceptions.UserUpdateExce
 import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.repositories.UserStorageRepository;
 
-@Service
 /**
  * Thin service implementation of {@link UserStorageService} that delegates to
  * {@link UserStorageRepository} and handles connection/transaction boundaries
  * when no {@link Connection} is supplied by the caller. 
- */
+*/
+@Service
 public class UserStorageServiceImpl implements UserStorageService {
 
     private final UserStorageRepository userStorageRepository;

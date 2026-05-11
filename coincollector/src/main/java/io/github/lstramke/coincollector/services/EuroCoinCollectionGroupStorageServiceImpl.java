@@ -28,13 +28,13 @@ import io.github.lstramke.coincollector.model.EuroCoinCollection;
 import io.github.lstramke.coincollector.model.EuroCoinCollectionGroup;
 import io.github.lstramke.coincollector.repositories.EuroCoinCollectionGroupStorageRepository;
 
-@Service
 /**
  * Thin service implementation of {@link EuroCoinCollectionGroupStorageService} that delegates to
  * {@link EuroCoinCollectionGroupStorageRepository} for group metadata and leverages
  * {@link EuroCoinCollectionStorageService} to populate groups with their collections. This class
  * manages connection/transaction boundaries itself for all public operations.
- */
+*/
+@Service
 public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollectionGroupStorageService {
 
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionGroupStorageServiceImpl.class);

@@ -30,22 +30,22 @@ import io.github.lstramke.coincollector.model.EuroCoin;
 import io.github.lstramke.coincollector.model.EuroCoinCollection;
 import io.github.lstramke.coincollector.repositories.EuroCoinCollectionStorageRepository;
 
-@Service
 /**
  * Thin service implementation of {@link EuroCoinCollectionStorageService} that
  * orchestrates persistence of {@link EuroCoinCollection} metadata via
  * {@link EuroCoinCollectionStorageRepository} and delegates coin persistence to
  * {@link EuroCoinStorageService}.
- *
- * Connection/transaction semantics:
- * - Methods without a {@link Connection} open a connection and manage
- *   transaction boundaries (commit/rollback) themselves.
- * - Methods with a {@link Connection} use a caller-managed connection and MUST
- *   NOT alter its lifecycle (no commit/rollback/close).
- *
- * Technical errors are translated to domain-specific exceptions where
- * applicable.
- */
+*
+* Connection/transaction semantics:
+* - Methods without a {@link Connection} open a connection and manage
+*   transaction boundaries (commit/rollback) themselves.
+* - Methods with a {@link Connection} use a caller-managed connection and MUST
+*   NOT alter its lifecycle (no commit/rollback/close).
+*
+* Technical errors are translated to domain-specific exceptions where
+* applicable.
+*/
+@Service
 public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionStorageService {
     
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionStorageServiceImpl.class);

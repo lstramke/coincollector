@@ -16,7 +16,6 @@ import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.model.UserFactory;
 import io.github.lstramke.coincollector.repositories.UserStorageRepository;
 
-@Repository
 /**
  * SQLite-backed implementation of {@link UserStorageRepository} providing simple CRUD
  * operations on a user table. Responsibilities:
@@ -29,7 +28,8 @@ import io.github.lstramke.coincollector.repositories.UserStorageRepository;
  * supply an open {@link java.sql.Connection}. All JDBC resources (statements, result
  * sets) are closed via try-with-resources. Unexpected row counts during write
  * operations raise a {@link java.sql.SQLException}. 
- */
+*/
+@Repository
 public class UserSqliteRepository implements UserStorageRepository{
     private static final Logger logger = LoggerFactory.getLogger(UserSqliteRepository.class);
     private final String tableName;

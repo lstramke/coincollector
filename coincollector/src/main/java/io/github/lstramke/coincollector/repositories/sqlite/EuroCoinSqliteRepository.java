@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-@Repository
 /**
  * SQLite-backed implementation of {@link EuroCoinStorageRepository} providing CRUD
  * access to {@link EuroCoin} rows in a configurable table. Responsibilities:
@@ -31,7 +30,8 @@ import org.springframework.stereotype.Repository;
  * must pass an open {@link Connection}. JDBC resources are closed using
  * try-with-resources. Unexpected row counts in write operations raise a
  * {@link SQLException}.
- */
+*/
+@Repository
 public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinSqliteRepository.class);
