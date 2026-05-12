@@ -11,6 +11,8 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionAlreadyExistsException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetAllException;
@@ -31,7 +33,8 @@ import io.github.lstramke.coincollector.repositories.EuroCoinCollectionGroupStor
  * {@link EuroCoinCollectionGroupStorageRepository} for group metadata and leverages
  * {@link EuroCoinCollectionStorageService} to populate groups with their collections. This class
  * manages connection/transaction boundaries itself for all public operations.
- */
+*/
+@Service
 public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollectionGroupStorageService {
 
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionGroupStorageServiceImpl.class);
@@ -40,6 +43,7 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
     private final EuroCoinCollectionGroupStorageRepository groupStorageRepository;
     private final EuroCoinCollectionStorageService euroCoinCollectionStorageService;
 
+    @Autowired
     public EuroCoinCollectionGroupStorageServiceImpl(DataSource dataSource, 
         EuroCoinCollectionGroupStorageRepository groupStorageRepository, 
         EuroCoinCollectionStorageService euroCoinCollectionStorageService) 

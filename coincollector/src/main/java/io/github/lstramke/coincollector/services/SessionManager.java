@@ -36,4 +36,12 @@ public interface SessionManager {
      * @return The user ID associated with the session
      */
     String getUserId(String sessionId);
+
+    /**
+     * Returns the session ID associated with a user.
+     *
+     * @param userId The user ID
+     * @return The session ID associated with the user, or null if none exists
+     */
+    String getSessionId(String userId);
 }

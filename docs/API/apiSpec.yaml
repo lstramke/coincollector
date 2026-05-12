@@ -2,10 +2,13 @@ openapi: 3.0.0
 info:
   title: "CoinCollector API"
   version: "1.0"
+  description: "API Spec für CoinCollector"
+
+# TODO: adjust apis after spring web refactor if neccessary
 
 paths:
   # Authentication
-  /api/login:
+  /api/v1/login:
     post:
       tags:
         - Login
@@ -31,7 +34,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/logout:
+  /api/v1/logout:
     post:
       tags:
         - Login
@@ -44,7 +47,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/registration:
+  /api/v1/registration:
     post:
       tags:
         - Registration
@@ -69,7 +72,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
 
 # Internal
-  /api/shutdown:
+  /api/v1/shutdown:
     post:
       tags:
         - Internal
@@ -79,7 +82,7 @@ paths:
           description: Server is shutting down
 
   # GROUP
-  /api/groups:
+  /api/v1/groups:
     get:
       tags:
         - Groups
@@ -126,13 +129,13 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/groups/{id}:
+  /api/v1/groups/{groupId}:
     get:
       tags:
         - Groups
       summary: Gets a specific group by ID
       parameters:
-        - name: id
+        - name: groupId
           in: path
           required: true
           schema:
@@ -159,7 +162,7 @@ paths:
         - Groups
       summary: Updates group metadata
       parameters:
-        - name: id
+        - name: groupId
           in: path
           required: true
           schema:
@@ -192,7 +195,7 @@ paths:
         - Groups
       summary: Deletes a group
       parameters:
-        - name: id
+        - name: groupId
           in: path
           required: true
           schema:
@@ -211,7 +214,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
 
   # COLLECTION
-  /api/collections:
+  /api/v1/collections:
     post:
       tags:
         - Collections
@@ -234,16 +237,18 @@ paths:
 
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/ParentNotFound"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/collections/{id}:
+  /api/v1/collections/{collectionId}:
     get:
       tags:
         - Collections
       summary: Gets a specific collection by ID
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
           schema:
@@ -270,7 +275,7 @@ paths:
         - Collections
       summary: Updates collection metadata
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
           schema:
@@ -303,7 +308,7 @@ paths:
         - Collections
       summary: Deletes a collection
       parameters:
-        - name: id
+        - name: collectionId
           in: path
           required: true
           schema:
@@ -322,7 +327,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
 
   # COINS
-  /api/coins:
+  /api/v1/coins:
     post:
       tags:
         - Coins
@@ -333,7 +338,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateCoinRequest"
+              $ref: "#/components/schemas/CoinActionRequest"
 
       responses:
         "201":
@@ -350,19 +355,19 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/coins/{id}:
+  /api/v1/coins/{coinId}:
     get:
       tags:
         - Coins
       summary: Gets a specific coin by ID
       parameters:
-        - name: id
+        - name: coinId
           in: path
           required: true
           schema:
             type: string
           description: The unique identifier of the coin
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: GERMANY_TWO_EURO_2024_A
         - $ref: "#/components/parameters/SessionId"
       responses:
         "200":
@@ -384,19 +389,19 @@ paths:
         - Coins
       summary: Updates a coin
       parameters:
-        - name: id
+        - name: coinId
           in: path
           required: true
           schema:
             type: string
           description: The unique identifier of the coin
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: GERMANY_TWO_EURO_2024_A
         - $ref: "#/components/parameters/SessionId"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateCoinRequest"
+              $ref: "#/components/schemas/CoinActionRequest"
 
       responses:
         "200":
@@ -417,13 +422,13 @@ paths:
         - Coins
       summary: Deletes a coin
       parameters:
-        - name: id
+        - name: coinId
           in: path
           required: true
           schema:
             type: string
           description: The unique identifier of the coin
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          example: GERMANY_TWO_EURO_2024_A
         - $ref: "#/components/parameters/SessionId"
       responses:
         "204":
@@ -463,6 +468,13 @@ components:
         application/json:
           example:
             error: "Resource not found"
+
+    ParentNotFound:
+      description: Resource not found
+      content:
+        application/json:
+          example:
+            error: "Parent resource not found"
 
     InternalServerError:
       description: Internal server error
@@ -624,7 +636,7 @@ components:
             mint: "A"
             description: "Special commemorative coin"
 
-    CreateCoinRequest:
+    CoinActionRequest:
       type: object
       required:
         - year
@@ -642,7 +654,7 @@ components:
           example: 200
         country:
           type: string
-          description: The ISO 3166-1 alpha-2 code of country of origin
+          description: The ISO 3166-1 alpha-2 code of country of origin (e.g. DE)
           example: "DE"
         collectionId:
           type: string
@@ -664,54 +676,14 @@ components:
         mint: "A"
         description: "Special commemorative coin"
 
-    UpdateCoinRequest:
-      type: object
-      properties:
-        year:
-          type: integer
-          description: The year the coin was minted
-          example: 2024
-        value:
-          type: integer
-          description: The value of the coin in cent
-          example: 200
-        country:
-          type: string
-          description: The country of origin
-          example: "Germany"
-        collectionId:
-          type: string
-          description: The unique identifier of the collection this coin belongs to
-          example: "456e7890-a12b-34c5-d678-901234567def"
-        mint:
-          type: string
-          description: The mint mark
-          example: "A"
-        description:
-          type: string
-          description: Additional description or notes
-          example: "Special commemorative coin"
-      example:
-        year: 2024
-        value: 200
-        country: "Germany"
-        collectionId: "456e7890-a12b-34c5-d678-901234567def"
-        mint: "A"
-        description: "Special commemorative coin"
-
     Coin:
       type: object
       required:
-        - id
         - year
         - value
         - country
         - collectionId
       properties:
-        id:
-          type: string
-          description: The unique identifier of the coin
-          example: "GERMANY_TWO_EURO_2024_A"
         year:
           type: integer
           description: The year the coin was minted
@@ -730,14 +702,13 @@ components:
           example: "456e7890-a12b-34c5-d678-901234567def"
         mint:
           type: string
-          description: The mint mark (optional)
+          description: The mint mark (optional, null if unknown)
           example: "A"
         description:
           type: string
-          description: Additional description or notes (optional)
+          description: Additional description or notes (optional, may be null)
           example: "Special commemorative coin"
       example:
-        id: "GERMANY_TWO_EURO_2024_A"
         year: 2024
         value: 200
         country: "DE"

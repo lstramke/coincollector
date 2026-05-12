@@ -11,6 +11,8 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionAlreadyExistsException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionCoinsLoadException;
@@ -33,16 +35,17 @@ import io.github.lstramke.coincollector.repositories.EuroCoinCollectionStorageRe
  * orchestrates persistence of {@link EuroCoinCollection} metadata via
  * {@link EuroCoinCollectionStorageRepository} and delegates coin persistence to
  * {@link EuroCoinStorageService}.
- *
- * Connection/transaction semantics:
- * - Methods without a {@link Connection} open a connection and manage
- *   transaction boundaries (commit/rollback) themselves.
- * - Methods with a {@link Connection} use a caller-managed connection and MUST
- *   NOT alter its lifecycle (no commit/rollback/close).
- *
- * Technical errors are translated to domain-specific exceptions where
- * applicable.
- */
+*
+* Connection/transaction semantics:
+* - Methods without a {@link Connection} open a connection and manage
+*   transaction boundaries (commit/rollback) themselves.
+* - Methods with a {@link Connection} use a caller-managed connection and MUST
+*   NOT alter its lifecycle (no commit/rollback/close).
+*
+* Technical errors are translated to domain-specific exceptions where
+* applicable.
+*/
+@Service
 public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionStorageService {
     
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinCollectionStorageServiceImpl.class);
@@ -51,6 +54,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     private final DataSource dataSource;
     private final EuroCoinStorageService euroCoinStorageService;
 
+    @Autowired
     public EuroCoinCollectionStorageServiceImpl(
         DataSource dataSource, 
         EuroCoinCollectionStorageRepository euroCoinCollectionStorageRepository,

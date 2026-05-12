@@ -1,15 +1,20 @@
 package io.github.lstramke.coincollector.handler;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionCoinsLoadException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionGetByIdException;
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionNotFoundException;
@@ -22,127 +27,76 @@ import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinSa
 import io.github.lstramke.coincollector.model.CoinCountry;
 import io.github.lstramke.coincollector.model.CoinDescription;
 import io.github.lstramke.coincollector.model.CoinValue;
-import io.github.lstramke.coincollector.model.EuroCoinBuilder;
-import io.github.lstramke.coincollector.model.Mint;
 import io.github.lstramke.coincollector.model.DTOs.Requests.CoinActionRequest;
 import io.github.lstramke.coincollector.model.DTOs.Responses.CoinResponse;
+import io.github.lstramke.coincollector.model.EuroCoinBuilder;
+import io.github.lstramke.coincollector.model.Mint;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageService;
 import io.github.lstramke.coincollector.services.EuroCoinCollectionStorageService;
 import io.github.lstramke.coincollector.services.EuroCoinStorageService;
 
 /**
- * Handler for coin-related HTTP requests.
- * Manages CRUD operations for Euro coins within collections.
- * Validates ownership and authorization for all coin operations.
+ * Handles coin-related REST endpoints.
  */
-public class CoinHandler implements HttpHandler {
-    
+@RestController
+@RequestMapping("/api/v1/coins")
+public class CoinHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(CoinHandler.class);
+
     private final EuroCoinStorageService coinStorageService;
     private final EuroCoinCollectionStorageService collectionStorageService;
     private final EuroCoinCollectionGroupStorageService groupStorageService;
-    private final ObjectMapper mapper;
-    private final static Logger logger = LoggerFactory.getLogger(CoinHandler.class);
-    private final static String PREFIX = "/api/coins";
 
-    /**
-     * Constructs a new CoinHandler with required dependencies.
-     *
-     * @param coinStorageService the service for coin storage operations
-     * @param collectionStorageService the service for collection storage operations
-     * @param groupStorageService the service for collection group storage operations
-     * @param mapper the ObjectMapper for JSON serialization/deserialization
-     */
     public CoinHandler(
-        EuroCoinStorageService coinStorageService, 
-        EuroCoinCollectionStorageService collectionStorageService, 
-        EuroCoinCollectionGroupStorageService groupStorageService,
-        ObjectMapper mapper
+        EuroCoinStorageService coinStorageService,
+        EuroCoinCollectionStorageService collectionStorageService,
+        EuroCoinCollectionGroupStorageService groupStorageService
     ) {
         this.coinStorageService = coinStorageService;
         this.collectionStorageService = collectionStorageService;
         this.groupStorageService = groupStorageService;
-        this.mapper = mapper;
-    }
-
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
-
-        logger.info("Route called: {} {}", method, path);
-
-        switch (method) {
-            case "GET" -> handleGet(exchange);
-            case "POST" -> handleCreate(exchange);
-            case "PATCH" -> handleUpdate(exchange);
-            case "DELETE" -> handleDelete(exchange);
-            default -> {
-               exchange.sendResponseHeaders(405, -1);
-            }
-        }
     }
 
     /**
-     * Handles GET requests to retrieve a specific coin by ID.
-     * Validates that the requesting user owns the coin through the collection hierarchy.
+     * Retrieves a coin by ID.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param coinId the coin ID
+     * @param authentication the authenticated user
+     * @return the coin response
+     * @throws ResponseStatusException if not found or unauthorized
      */
-    private void handleGet(HttpExchange exchange) throws IOException {
-        logger.info("handleGet called");
-        String userId = (String) exchange.getAttribute("userId");
-        String coinId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
+    @GetMapping("/{coinId}")
+    public ResponseEntity<CoinResponse> getCoin(@PathVariable String coinId, Authentication authentication) {
+        logger.info("Coin read requested: id={}", coinId);
+        String userId = requireUserId(authentication);
 
         try {
-            var coin = this.coinStorageService.getById(coinId);
-
-            if(handleIfNotOwnerViaCollection(exchange, coin.getCollectionId(), userId)) return;
-
-            var response = CoinResponse.fromDomain(coin);
-            String responseJson = mapper.writeValueAsString(response);
-            
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, responseJson.getBytes().length);
-            exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.close();
-      
+            var coin = coinStorageService.getById(coinId);
+            assertOwnerViaCollection(coin.getCollectionId(), userId);
+            return ResponseEntity.ok(CoinResponse.fromDomain(coin));
         } catch (EuroCoinNotFoundException | EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
-            exchange.sendResponseHeaders(404, 0);
-            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.close();
-        } catch (JacksonException | EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionCoinsLoadException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
+        } catch (EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionCoinsLoadException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
-
     }
 
     /**
-     * Handles POST requests to create a new coin.
-     * Validates ownership of the target collection before creation.
+     * Creates a new coin in a collection.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param request the coin creation request
+     * @param authentication the authenticated user
+     * @return the created coin response
+     * @throws ResponseStatusException if collection not found or coin already exists
      */
-    private void handleCreate(HttpExchange exchange) throws IOException {
-        logger.info("handleCreate called");
-        String userId = (String) exchange.getAttribute("userId");
-        String body = new String(exchange.getRequestBody().readAllBytes());
-
-        CoinActionRequest request;
-        try {
-            request = mapper.readValue(body, CoinActionRequest.class);
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Invalid request body\"}".getBytes());
-            exchange.close();
-            return;
-        }
+    @PostMapping
+    public ResponseEntity<CoinResponse> createCoin(@RequestBody CoinActionRequest request, Authentication authentication) {
+        logger.info("Coin create requested: collectionId={}", request.collectionId());
+        String userId = requireUserId(authentication);
 
         try {
-            if(handleIfNotOwnerViaCollection(exchange, request.collectionId(), userId)) return;
+            assertOwnerViaCollection(request.collectionId(), userId);
 
             var builder = new EuroCoinBuilder()
                 .setYear(request.year())
@@ -151,68 +105,49 @@ public class CoinHandler implements HttpHandler {
                 .setDescription(request.description() != null ? new CoinDescription(request.description()) : null)
                 .setCollectionId(request.collectionId());
 
-            if (request.country().equals("DE")) {
+            if ("DE".equals(request.country())) {
                 builder.setMint(Mint.fromMintMark(request.mint()));
             }
 
             var coin = builder.build();
+            coinStorageService.save(coin);
 
-            this.coinStorageService.save(coin);
+            logger.info("Coin created: collectionId={}", request.collectionId());
 
-            var response = CoinResponse.fromDomain(coin);
-            String responseJson = mapper.writeValueAsString(response);
-
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(201, responseJson.getBytes().length);
-            exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.close();
-            
+            return ResponseEntity.status(HttpStatus.CREATED).body(CoinResponse.fromDomain(coin));
         } catch (EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
-            exchange.sendResponseHeaders(404, 0);
-            exchange.getResponseBody().write("{\"error\":\"Parent resource not found\"}".getBytes());
-            exchange.close();
-        } catch(EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException | EuroCoinSaveException | JacksonException | IllegalArgumentException | IllegalStateException | EuroCoinCollectionCoinsLoadException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parent resource not found", e);
         } catch (EuroCoinAlreadyExistsException e) {
-            exchange.sendResponseHeaders(409, 0);
-            exchange.getResponseBody().write("{\"error\":\"Coin already exists\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Coin already exists", e);
+        } catch (EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException | EuroCoinSaveException | IllegalArgumentException | IllegalStateException | EuroCoinCollectionCoinsLoadException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
     }
 
     /**
-     * Handles PATCH requests to update an existing coin.
-     * Validates ownership of both the source and target collections if the coin is moved.
+     * Updates an existing coin.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param coinId the coin ID
+     * @param request the update request
+     * @param authentication the authenticated user
+     * @return the updated coin response
+     * @throws ResponseStatusException if coin not found or unauthorized
      */
-    private void handleUpdate(HttpExchange exchange) throws IOException {
-        logger.info("handleUpdate called");
-        String userId = (String) exchange.getAttribute("userId");
-        String coinId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
-        String body = new String(exchange.getRequestBody().readAllBytes());
-
-        CoinActionRequest request;
-        try {
-            request = mapper.readValue(body, CoinActionRequest.class);
-        } catch (JacksonException e) {
-            exchange.sendResponseHeaders(400, 0);
-            exchange.getResponseBody().write("{\"error\":\"Invalid request body\"}".getBytes());
-            exchange.close();
-            return;
-        }
+    @PatchMapping("/{coinId}")
+    public ResponseEntity<CoinResponse> updateCoin(
+        @PathVariable String coinId,
+        @RequestBody CoinActionRequest request,
+        Authentication authentication
+    ) {
+        logger.info("Coin update requested: id={}", coinId);
+        String userId = requireUserId(authentication);
 
         try {
+            var coin = coinStorageService.getById(coinId);
+            assertOwnerViaCollection(coin.getCollectionId(), userId);
 
-            var coin = this.coinStorageService.getById(coinId);
-
-            if(handleIfNotOwnerViaCollection(exchange, coin.getCollectionId(), userId)) return;
-
-            if(!coin.getCollectionId().equals(request.collectionId())) {
-                if(handleIfNotOwnerViaCollection(exchange, request.collectionId(), userId)) return;
+            if (!coin.getCollectionId().equals(request.collectionId())) {
+                assertOwnerViaCollection(request.collectionId(), userId);
             }
 
             var builder = new EuroCoinBuilder()
@@ -222,103 +157,81 @@ public class CoinHandler implements HttpHandler {
                 .setDescription(request.description() != null ? new CoinDescription(request.description()) : null)
                 .setCollectionId(request.collectionId());
 
-            if (request.country().equals("DE")) {
+            if ("DE".equals(request.country())) {
                 builder.setMint(Mint.fromMintMark(request.mint()));
             }
 
             var updatedCoin = builder.build();
+            coinStorageService.delete(coinId);
+            coinStorageService.save(updatedCoin);
 
-            this.coinStorageService.delete(coinId);
-            this.coinStorageService.save(updatedCoin);
+            logger.info("Coin updated: id={}", coinId);
 
-            var response = CoinResponse.fromDomain(updatedCoin);
-            String responseJson = mapper.writeValueAsString(response);
-
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, responseJson.getBytes().length);
-            exchange.getResponseBody().write(responseJson.getBytes());
-            exchange.close();
-
+            return ResponseEntity.ok(CoinResponse.fromDomain(updatedCoin));
         } catch (EuroCoinNotFoundException | EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
-            exchange.sendResponseHeaders(404, 0);
-            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.close();
-        } catch (EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException | EuroCoinSaveException | EuroCoinDeleteException | JacksonException | IllegalArgumentException | IllegalStateException | EuroCoinCollectionCoinsLoadException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
+        } catch (EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException | EuroCoinSaveException | EuroCoinDeleteException | IllegalArgumentException | IllegalStateException | EuroCoinCollectionCoinsLoadException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
-
     }
 
     /**
-     * Handles DELETE requests to remove a coin.
-     * Validates ownership of the coin through the collection hierarchy.
+     * Deletes a coin by ID.
      *
-     * @param exchange the HTTP exchange containing request and response information
-     * @throws IOException if an I/O error occurs during request handling
+     * @param coinId the coin ID
+     * @param authentication the authenticated user
+     * @return no content response
+     * @throws ResponseStatusException if coin not found or unauthorized
      */
-    private void handleDelete(HttpExchange exchange) throws IOException {
-        logger.info("handleDelete called");
-        String userId = (String) exchange.getAttribute("userId");
-        String coinId = exchange.getRequestURI().getPath().substring(PREFIX.length() + 1);
+    @DeleteMapping("/{coinId}")
+    public ResponseEntity<Void> deleteCoin(@PathVariable String coinId, Authentication authentication) {
+        logger.info("Coin delete requested: id={}", coinId);
+        String userId = requireUserId(authentication);
 
         try {
-            var coinToDelete = this.coinStorageService.getById(coinId);
+            var coinToDelete = coinStorageService.getById(coinId);
+            assertOwnerViaCollection(coinToDelete.getCollectionId(), userId);
 
-            if(handleIfNotOwnerViaCollection(exchange, coinToDelete.getCollectionId(), userId)) return;
+            coinStorageService.delete(coinId);
 
-            this.coinStorageService.delete(coinId);
-            exchange.sendResponseHeaders(204, -1);
-            exchange.close();
-
+            logger.info("Coin deleted: id={}", coinId);
+            return ResponseEntity.noContent().build();
         } catch (EuroCoinNotFoundException | EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
-            exchange.sendResponseHeaders(404, 0);
-            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
         } catch (EuroCoinCollectionGetByIdException | EuroCoinCollectionGroupGetByIdException | EuroCoinDeleteException | EuroCoinCollectionCoinsLoadException e) {
-            exchange.sendResponseHeaders(500, 0);
-            exchange.getResponseBody().write("{\"error\":\"Internal server error\"}".getBytes());
-            exchange.close();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
     }
 
     /**
-     * Validates that the specified user owns the collection through the group hierarchy.
-     * Sends a 404 response and closes the exchange if the user is not the owner.
+     * Asserts that the user owns the collection.
      *
-     * @param exchange the HTTP exchange for sending error responses
-     * @param collectionId the ID of the collection to check ownership for
-     * @param userId the ID of the user to validate
-     * @return true if the user is not the owner (response sent and exchange closed), false if the user is the owner
-     * @throws IOException if an I/O error occurs
-     * @throws EuroCoinCollectionGetByIdException if retrieving the collection fails
-     * @throws EuroCoinCollectionNotFoundException if the collection is not found
-     * @throws EuroCoinCollectionCoinsLoadException if loading collection coins fails
-     * @throws EuroCoinCollectionGroupGetByIdException if retrieving the group fails
-     * @throws EuroCoinCollectionGroupNotFoundException if the group is not found
+     * @param collectionId the collection ID
+     * @param userId the user ID
+     * @throws ResponseStatusException if user does not own the collection
      */
-    private boolean handleIfNotOwnerViaCollection(
-        HttpExchange exchange, 
-        String collectionId, 
-        String userId
-    ) throws 
-        IOException, 
-        EuroCoinCollectionGetByIdException,
-        EuroCoinCollectionNotFoundException,
-        EuroCoinCollectionCoinsLoadException,
-        EuroCoinCollectionGroupGetByIdException, 
-        EuroCoinCollectionGroupNotFoundException 
-    {
-        var collection = this.collectionStorageService.getById(collectionId);
-        var group = this.groupStorageService.getById(collection.getGroupId());
+    private void assertOwnerViaCollection(String collectionId, String userId) {
+        var collection = collectionStorageService.getById(collectionId);
+        var group = groupStorageService.getById(collection.getGroupId());
+
         if (!group.getOwnerId().equals(userId)) {
-            exchange.sendResponseHeaders(404, 0);
-            exchange.getResponseBody().write("{\"error\":\"Resource not found\"}".getBytes());
-            exchange.close();
-            return true;
+            logger.warn("Coin access denied: collectionId={}, userId={}", collectionId, userId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found");
         }
-        return false;
     }
-    
+
+    /**
+     * Extracts the user ID from authentication.
+     *
+     * @param authentication the Spring Security authentication
+     * @return the user ID
+     * @throws ResponseStatusException if authentication is missing
+     */
+    private String requireUserId(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            logger.debug("UserUd required but not existent");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        return authentication.getPrincipal().toString();
+    }
 }

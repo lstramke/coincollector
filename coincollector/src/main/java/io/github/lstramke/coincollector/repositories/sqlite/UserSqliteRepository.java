@@ -8,7 +8,10 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
+import io.github.lstramke.coincollector.configuration.DatabaseTableProperties;
 import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.model.UserFactory;
 import io.github.lstramke.coincollector.repositories.UserStorageRepository;
@@ -25,15 +28,16 @@ import io.github.lstramke.coincollector.repositories.UserStorageRepository;
  * supply an open {@link java.sql.Connection}. All JDBC resources (statements, result
  * sets) are closed via try-with-resources. Unexpected row counts during write
  * operations raise a {@link java.sql.SQLException}. 
- */
-
+*/
+@Repository
 public class UserSqliteRepository implements UserStorageRepository{
     private static final Logger logger = LoggerFactory.getLogger(UserSqliteRepository.class);
     private final String tableName;
     private final UserFactory userFactory;
 
-    public UserSqliteRepository(String tableName, UserFactory userFactory) {
-        this.tableName = tableName;
+    @Autowired
+    public UserSqliteRepository(DatabaseTableProperties tableProperties, UserFactory userFactory) {
+        this.tableName = tableProperties.user();
         this.userFactory = userFactory;
     }
 

@@ -6,6 +6,9 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinAlreadyExistsException;
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinDeleteException;
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinGetAllException;
@@ -19,12 +22,14 @@ import io.github.lstramke.coincollector.repositories.EuroCoinStorageRepository;
  * Thin service implementation of {@link EuroCoinStorageService} that delegates to
  * {@link EuroCoinStorageRepository} and handles connection/transaction boundaries
  * when no {@link Connection} is supplied by the caller. 
- */
+*/
+@Service
 public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
 
     private final EuroCoinStorageRepository euroCoinStorageRepository;
     private final DataSource dataSource;
 
+    @Autowired
     public EuroCoinStorageServiceImpl(EuroCoinStorageRepository euroCoinStorageRepository, DataSource dataSource){
         this.euroCoinStorageRepository = euroCoinStorageRepository;
         this.dataSource = dataSource;

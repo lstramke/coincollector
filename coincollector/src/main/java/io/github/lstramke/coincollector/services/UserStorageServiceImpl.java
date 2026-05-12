@@ -5,6 +5,9 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import io.github.lstramke.coincollector.exceptions.userExceptions.UserDeleteException;
 import io.github.lstramke.coincollector.exceptions.userExceptions.UserNotFoundException;
 import io.github.lstramke.coincollector.exceptions.userExceptions.UserSaveException;
@@ -16,12 +19,14 @@ import io.github.lstramke.coincollector.repositories.UserStorageRepository;
  * Thin service implementation of {@link UserStorageService} that delegates to
  * {@link UserStorageRepository} and handles connection/transaction boundaries
  * when no {@link Connection} is supplied by the caller. 
- */
+*/
+@Service
 public class UserStorageServiceImpl implements UserStorageService {
 
     private final UserStorageRepository userStorageRepository;
     private final DataSource dataSource;
 
+    @Autowired
     public UserStorageServiceImpl(UserStorageRepository userStorageRepository, DataSource dataSource){
         this.userStorageRepository = userStorageRepository;
         this.dataSource = dataSource;

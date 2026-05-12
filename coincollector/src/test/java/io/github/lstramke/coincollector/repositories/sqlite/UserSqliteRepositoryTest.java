@@ -16,13 +16,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import io.github.lstramke.coincollector.configuration.DatabaseTableProperties;
 import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.model.UserFactory;
 
 @ExtendWith(MockitoExtension.class)
 public class UserSqliteRepositoryTest {
-    private static final String tableName = "test_users";
+
     private static final User dummyUser = new User("Bob");
+    private static final DatabaseTableProperties properties = new DatabaseTableProperties("test_users", "coins", "collections", "groups");
+
 
 
     private record CreateTestcase(
@@ -53,7 +56,7 @@ public class UserSqliteRepositoryTest {
     @MethodSource("createTestcases")
     void testCreate(CreateTestcase testcase){
         UserFactory userFactory = mock(UserFactory.class);
-        UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
+        UserSqliteRepository repository = new UserSqliteRepository(properties, userFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         try{
@@ -118,7 +121,7 @@ public class UserSqliteRepositoryTest {
     @MethodSource("readTestcases")
     void testRead(ReadTestcase testcase) throws SQLException {
         UserFactory userFactory = mock(UserFactory.class);
-        UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
+        UserSqliteRepository repository = new UserSqliteRepository(properties, userFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
@@ -200,7 +203,7 @@ public class UserSqliteRepositoryTest {
     @MethodSource("updateTestcases")
     void testUpdate(UpdateTestcase testcase){
         UserFactory userFactory = mock(UserFactory.class);
-        UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
+        UserSqliteRepository repository = new UserSqliteRepository(properties, userFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
@@ -265,7 +268,7 @@ public class UserSqliteRepositoryTest {
     @MethodSource("deleteTestcases")
     void testDelete(DeleteTestcase testcase){
         UserFactory userFactory = mock(UserFactory.class);
-        UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
+        UserSqliteRepository repository = new UserSqliteRepository(properties, userFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
@@ -334,7 +337,7 @@ public class UserSqliteRepositoryTest {
     @MethodSource("existsTestcases")
     void testExists(ExistsTestcase testcase) {
         UserFactory userFactory = mock(UserFactory.class);
-        UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
+        UserSqliteRepository repository = new UserSqliteRepository(properties, userFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
@@ -407,7 +410,7 @@ public class UserSqliteRepositoryTest {
     @MethodSource("getByUsernameTestcases")
     void testGetByUsername(GetByUsernameTestcase testcase){
         UserFactory userFactory = mock(UserFactory.class);
-        UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
+        UserSqliteRepository repository = new UserSqliteRepository(properties, userFactory);
 
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
         ResultSet resultSet = mock(ResultSet.class);
@@ -491,7 +494,7 @@ public class UserSqliteRepositoryTest {
     @MethodSource("validateUserTestcases")
     void testValidateUser(ValidationTestcase testcase) {
         UserFactory userFactory = mock(UserFactory.class);
-        UserSqliteRepository repository = new UserSqliteRepository(tableName, userFactory);
+        UserSqliteRepository repository = new UserSqliteRepository(properties, userFactory);
 
         User user = null;
         if (!testcase.isNullUser) {

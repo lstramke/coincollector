@@ -1,110 +1,108 @@
 package io.github.lstramke.coincollector.handler;
 
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URI;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import io.github.lstramke.coincollector.exceptions.userExceptions.UserNotFoundException;
 import io.github.lstramke.coincollector.model.User;
-import io.github.lstramke.coincollector.model.DTOs.Requests.LoginRequest;
+import io.github.lstramke.coincollector.security.SecurityConfig;
 import io.github.lstramke.coincollector.services.SessionManager;
 import io.github.lstramke.coincollector.services.UserStorageService;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(value = LoginHandler.class)
+@Import(SecurityConfig.class)
 class LoginHandlerTest {
+
+    @MockitoBean
+    UserStorageService userService;
+
+    @MockitoBean
+    SessionManager sessionManager;
+
+    @Autowired
+    MockMvc mockMvc;
 
     @FunctionalInterface
     interface MockSetup {
-        void setup(UserStorageService service, SessionManager sessionManager, ObjectMapper mapper) throws Exception;
+        void setup(UserStorageService service, SessionManager sessionManager) throws Exception;
     }
 
 	private record LoginHandleTestcase(
 		String method,
-        String path,
 		String requestBody,
 		MockSetup mockSetup,
 		int expectedStatus,
 		String expectedResponseBody,
+		String expectedCookie,
 		String description
 	) {
 		@Override
 		public String toString() { return description; }
 	}
 
-
     private static Stream<LoginHandleTestcase> loginHandleTestcases() {
         return Stream.of(
             new LoginHandleTestcase(
                 "POST",
-                "/api/login",
                 "{\"username\":\"test.user\"}",
-                (service, sessionManager, mapper) -> {
+                (service, sessionManager) -> {
                     var user = mock(User.class);
-                    when(mapper.readValue(any(String.class), eq(LoginRequest.class)))
-                        .thenReturn(new LoginRequest("test.user"));
                     when(service.getByUsername("test.user")).thenReturn(user);
                     when(user.getId()).thenReturn("user-1");
                     when(sessionManager.createSession("user-1")).thenReturn("session-abc");
                 },
                 200,
                 null,
+                "sessionId=session-abc; Path=/; HttpOnly; SameSite=Strict",
                 "Happy path: valid login returns 200, sets cookie and content-type"
             ),
             new LoginHandleTestcase(
                 "GET",
-                "/api/login",
                 null,
-                (service, sessionManager, mapper) -> {},
+                (service, sessionManager) -> {},
                 405,
+                null,
                 null,
                 "Unsupported method: GET returns 405"
             ),
             new LoginHandleTestcase(
                 "POST",
-                "/api/login",
-                "{\"username\":\"broken\"}",
-                (service, sessionManager, mapper) -> {
-                    when(mapper.readValue(any(String.class), eq(LoginRequest.class)))
-                        .thenThrow(new JacksonException("fail"){});
-                },
+                "{\"username\":",
+                (service, sessionManager) -> {},
                 400,
                 "{\"error\":\"Request is not valid\"}",
-                "JacksonException: returns 400 and error json"
+                null,
+                "Invalid JSON: returns 400 and error json"
             ),
             new LoginHandleTestcase(
                 "POST",
-                "/api/login",
                 "{\"username\":\"notfound\"}",
-                (service, sessionManager, mapper) -> {
-                    when(mapper.readValue(any(String.class), eq(LoginRequest.class)))
-                        .thenReturn(new LoginRequest("notfound"));
+                (service, sessionManager) -> {
                     when(service.getByUsername("notfound"))
                         .thenThrow(new UserNotFoundException("not found"));
                 },
                 400,
                 "{\"error\":\"Request is not valid\"}",
+                null,
                 "UserNotFoundException: returns 400 and error json"
             )
         );
@@ -112,39 +110,33 @@ class LoginHandlerTest {
 
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("loginHandleTestcases")
-    void TestHandle(LoginHandleTestcase testcase) throws IOException {
-        var service = mock(UserStorageService.class);
-        var manager = mock(SessionManager.class);
-        var mapper = mock(ObjectMapper.class);
-        LoginHandler handler = new LoginHandler(service, manager, mapper);
-        var responseStream = new ByteArrayOutputStream();
-
-        HttpExchange exchange = mock(HttpExchange.class);
-        Headers headers = new Headers();
-        lenient().when(exchange.getResponseHeaders()).thenReturn(headers);
-        lenient().when(exchange.getRequestMethod()).thenReturn(testcase.method());
-        lenient().when(exchange.getRequestURI()).thenReturn(URI.create(testcase.path()));
-        lenient().when(exchange.getResponseBody()).thenReturn(responseStream);
-
-        if(testcase.requestBody != null){
-            when(exchange.getRequestBody()).thenReturn(new ByteArrayInputStream(testcase.requestBody.getBytes()));
-        }
-
+    void TestLoginHandler(LoginHandleTestcase testcase) throws Exception {
         try {
-            testcase.mockSetup.setup(service, manager, mapper);
+            testcase.mockSetup.setup(userService, sessionManager);
         } catch (Exception e) {
             fail(" due to unexcpected exception in setup");
         }
 
-        handler.handle(exchange);
+        var requestBuilder = switch (testcase.method()) {
+            case "POST" -> post("/api/v1/login")
+                .contentType("application/json")
+                .content(testcase.requestBody == null ? "" : testcase.requestBody);
+            case "GET" -> get("/api/v1/login");
+            default -> throw new IllegalArgumentException("Unsupported method: " + testcase.method());
+        };
 
-        verify(exchange).sendResponseHeaders(eq(testcase.expectedStatus), anyLong());
-        if (testcase.expectedStatus == 200) {
-            assertEquals("sessionId=session-abc; Path=/; HttpOnly; SameSite=Strict", headers.getFirst("Set-Cookie"));
-        } else if (testcase.expectedStatus == 400) {
-            assertEquals(testcase.expectedResponseBody, responseStream.toString());
-        } else if (testcase.expectedStatus == 405) {
-            assertEquals(0, headers.size(), "No headers should be set for 405");
+        var resultActions = mockMvc.perform(requestBuilder).andExpect(status().is(testcase.expectedStatus));
+
+        if (testcase.expectedCookie != null) {
+            resultActions.andExpect(header().string("Set-Cookie", testcase.expectedCookie));
+            verify(userService, times(1)).getByUsername("test.user");
+            verify(sessionManager, times(1)).createSession("user-1");
+        } else {
+            resultActions.andExpect(header().doesNotExist("Set-Cookie"));
+        }
+
+        if (testcase.expectedResponseBody != null) {
+            resultActions.andExpect(content().json(testcase.expectedResponseBody));
         }
     }
 
