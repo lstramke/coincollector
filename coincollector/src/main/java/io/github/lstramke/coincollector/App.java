@@ -32,14 +32,14 @@ public class App {
         var env = context.getEnvironment();
         final int PORT = Integer.parseInt(env.getProperty("coincollector.port"));
 
-        var dbInitializer = context.getBean(SqliteInitializer.class);
-        try {
-            dbInitializer.init();
-        } catch (StorageInitializeException e) {
-            logger.error("Database initialization failed: {}", e.getMessage());
-            System.exit(1);
-            return;
-        }
+        //var dbInitializer = context.getBean(SqliteInitializer.class);
+        //try {
+        //    dbInitializer.init();
+        //} catch (StorageInitializeException e) {
+        //    logger.error("Database initialization failed: {}", e.getMessage());
+        //    System.exit(1);
+        //    return;
+        //}
         
         if (Desktop.isDesktopSupported()) {
             try {

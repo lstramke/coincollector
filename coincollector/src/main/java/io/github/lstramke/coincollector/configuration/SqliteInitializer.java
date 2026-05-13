@@ -13,13 +13,11 @@ import org.springframework.stereotype.Component;
 
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 
-@Component
 public class SqliteInitializer implements StorageInitializer{
     private final DataSource dataSource;
     private static final Logger logger = LoggerFactory.getLogger(SqliteInitializer.class);
     private final DatabaseTableProperties tableProperties;
 
-    @Autowired
     public SqliteInitializer(DataSource dataSource, DatabaseTableProperties tableProperties) {
         this.dataSource = dataSource;
         this.tableProperties = tableProperties;
