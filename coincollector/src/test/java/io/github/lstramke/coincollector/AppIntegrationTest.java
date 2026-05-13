@@ -11,7 +11,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -28,8 +27,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
-import io.github.lstramke.coincollector.configuration.SqliteInitializer;
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -41,9 +38,6 @@ public class AppIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
-
-    @Autowired
-    SqliteInitializer sqliteInitializer;
 
     private record AppTestcase(
         String method,
@@ -67,11 +61,6 @@ public class AppIntegrationTest {
     private String collectionId = "";
     private String coinId = "";
     private String storedCookie = null;
-
-    @BeforeAll
-    void initDb() throws Exception {
-        sqliteInitializer.init();
-    }
 
     @AfterAll
     void cleanup() {

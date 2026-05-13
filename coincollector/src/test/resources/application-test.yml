@@ -5,3 +5,13 @@ coincollector:
     euroCoin: euroCoins
     euroCoinCollection: euroCoinCollections
     euroCoinCollectionGroup: euroCoinCollectionGroups
+
+spring:
+  datasource:
+    url: jdbc:sqlite:./${coincollector.db-file}?foreign_keys=on
+    driver-class-name: org.sqlite.JDBC
+
+flyway:
+  enabled: true
+  locations: classpath:db/migration
+  baseline-on-migrate: true

@@ -8,21 +8,22 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 
+@Deprecated
 public class SqliteInitializer implements StorageInitializer{
     private final DataSource dataSource;
     private static final Logger logger = LoggerFactory.getLogger(SqliteInitializer.class);
     private final DatabaseTableProperties tableProperties;
 
+    @Deprecated
     public SqliteInitializer(DataSource dataSource, DatabaseTableProperties tableProperties) {
         this.dataSource = dataSource;
         this.tableProperties = tableProperties;
     }
 
+    @Deprecated
     @Override
     public void init() throws StorageInitializeException  {
         try (Connection connection = dataSource.getConnection()) {
