@@ -13,8 +13,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import io.github.lstramke.coincollector.configuration.DatabaseTableProperties;
-import io.github.lstramke.coincollector.configuration.SqliteInitializer;
-import io.github.lstramke.coincollector.exceptions.StorageInitializeException;
 
 @EnableConfigurationProperties(DatabaseTableProperties.class)
 @SpringBootApplication
@@ -31,15 +29,6 @@ public class App {
         context = app.run(args);
         var env = context.getEnvironment();
         final int PORT = Integer.parseInt(env.getProperty("coincollector.port"));
-
-        var dbInitializer = context.getBean(SqliteInitializer.class);
-        try {
-            dbInitializer.init();
-        } catch (StorageInitializeException e) {
-            logger.error("Database initialization failed: {}", e.getMessage());
-            System.exit(1);
-            return;
-        }
         
         if (Desktop.isDesktopSupported()) {
             try {
