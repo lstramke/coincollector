@@ -1,5 +1,3 @@
 package io.github.lstramke.coincollector.model.DTOs.Responses;
 
-public record GroupMetadataResponse(String name) {
-    
-}
+public record GroupMetadataResponse(String name) {}
