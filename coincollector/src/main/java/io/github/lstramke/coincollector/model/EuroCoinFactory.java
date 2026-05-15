@@ -2,6 +2,7 @@ package io.github.lstramke.coincollector.model;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,7 @@ public class EuroCoinFactory {
     public EuroCoin fromDataBaseEntry(ResultSet resultSet) throws SQLException{
         try {
             return new EuroCoinBuilder()
-                .setId(resultSet.getString("coin_id"))
+                .setId(UUID.fromString(resultSet.getString("coin_id")))
                 .setYear(resultSet.getInt("year"))
                 .setValue(CoinValue.fromCentValue(resultSet.getInt("coin_value")))
                 .setMintCountry(CoinCountry.fromIsoCode(resultSet.getString("mint_country")))

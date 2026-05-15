@@ -1,10 +1,12 @@
 package io.github.lstramke.coincollector.model.DTOs.Responses;
 
+import java.util.UUID;
+
 import io.github.lstramke.coincollector.model.EuroCoin;
 import io.github.lstramke.coincollector.model.Mint;
 
 public record CoinResponse(
-    String id,
+    UUID id,
     int year,
     int value,
     String country,
