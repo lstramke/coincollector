@@ -7,6 +7,4 @@ public record CoinActionRequest(
     String collectionId,
     String mint,
     String description
-) {
-    
-}
+) {}

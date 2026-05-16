@@ -1,11 +1,13 @@
 package io.github.lstramke.coincollector.model;
 
+import java.util.UUID;
+
 /**
  * Concrete implementation of a Euro coin including mint country, mint mark and
  * optional generated description.
  */
 public class EuroCoin implements Coin {
-    private final String id;
+    private final UUID id;
     private final int year;
     private final CoinValue value;
     private final CoinCountry mintCountry;
@@ -72,7 +74,7 @@ public class EuroCoin implements Coin {
     }
 
     @Override
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
