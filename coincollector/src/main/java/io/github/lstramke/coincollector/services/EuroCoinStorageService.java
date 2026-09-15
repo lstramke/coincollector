@@ -2,6 +2,7 @@ package io.github.lstramke.coincollector.services;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.UUID;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinAlreadyExistsException;
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinDeleteException;
@@ -68,22 +69,22 @@ public interface EuroCoinStorageService {
      * Retrieves a {@link EuroCoin} by its id and manages connection/transaction
      * boundaries internally.
      *
-     * @param coinId the coin id to load; must not be {@code null} or blank
+     * @param coinId the coin id to load; must not be {@code null}
      * @return the found coin
      * @throws EuroCoinNotFoundException if no coin with the given id exists
      */
-    EuroCoin getById(String coinId) throws EuroCoinNotFoundException;
+    EuroCoin getById(UUID coinId) throws EuroCoinNotFoundException;
 
     /**
      * Retrieves a {@link EuroCoin} by its id using a caller-managed open JDBC
      * {@link Connection}. The implementation does not manage the connection lifecycle.
      *
-     * @param coinId the coin id to load; must not be {@code null} or blank
+     * @param coinId the coin id to load; must not be {@code null}
      * @param connection open JDBC connection; must not be {@code null}
      * @return the found coin
      * @throws EuroCoinNotFoundException if no coin with the given id exists
      */
-    EuroCoin getById(String coinId, Connection connection) throws EuroCoinNotFoundException;
+    EuroCoin getById(UUID coinId, Connection connection) throws EuroCoinNotFoundException;
 
     /**
      * Updates an existing {@link EuroCoin} and manages connection/transaction
@@ -110,20 +111,20 @@ public interface EuroCoinStorageService {
      * Deletes a {@link EuroCoin} by its id and manages connection/transaction
      * boundaries internally.
      *
-     * @param coinId the coin id to delete; must not be {@code null} or blank
+     * @param coinId the coin id to delete; must not be {@code null}
      * @throws EuroCoinDeleteException if the delete operation fails
      */
-    void delete(String coinId) throws EuroCoinDeleteException;
+    void delete(UUID coinId) throws EuroCoinDeleteException;
 
     /**
      * Deletes a {@link EuroCoin} by its id using a caller-managed open JDBC
      * {@link Connection}. The implementation does not manage the connection lifecycle.
      *
-     * @param coinId the coin id to delete; must not be {@code null} or blank
+     * @param coinId the coin id to delete; must not be {@code null}
      * @param connection open JDBC connection; must not be {@code null}
      * @throws EuroCoinDeleteException if the delete operation fails
      */
-    void delete(String coinId, Connection connection) throws EuroCoinDeleteException;
+    void delete(UUID coinId, Connection connection) throws EuroCoinDeleteException;
 
     /**
      * Retrieves all {@link EuroCoin} rows and manages connection/transaction

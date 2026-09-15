@@ -2,7 +2,7 @@ package io.github.lstramke.coincollector.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +17,6 @@ public class AdminHandler {
     private static final Logger logger = LoggerFactory.getLogger(AdminHandler.class);
     private final ApplicationContext context;
 
-    @Autowired
     public AdminHandler(ApplicationContext context) {
         this.context = context;
     }

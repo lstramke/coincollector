@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -43,12 +43,11 @@ public class GroupHandler {
     private final EuroCoinCollectionGroupStorageService groupStorageService;
     private final static Logger logger = LoggerFactory.getLogger(GroupHandler.class);
 
-/**
+    /**
      * Constructs a new GroupHandler.
      *
      * @param groupStorageService service for group storage
      */
-    @Autowired
     public GroupHandler(EuroCoinCollectionGroupStorageService groupStorageService) {
         this.groupStorageService = groupStorageService;
     }

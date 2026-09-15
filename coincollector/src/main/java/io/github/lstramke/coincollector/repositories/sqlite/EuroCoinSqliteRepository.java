@@ -13,9 +13,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -38,7 +39,6 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
     private final String tableName;
     private final EuroCoinFactory euroCoinFactory;
 
-    @Autowired
     public EuroCoinSqliteRepository(DatabaseTableProperties tableProperties, EuroCoinFactory euroCoinFactory) {
         this.tableName = tableProperties.euroCoin();
         this.euroCoinFactory = euroCoinFactory;
@@ -60,7 +60,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
                 tableName);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, coin.getId());
+            preparedStatement.setString(1, coin.getId().toString());
             preparedStatement.setInt(2, coin.getYear());
             preparedStatement.setInt(3, coin.getValue().getCentValue());
             preparedStatement.setString(4, coin.getMintCountry().getIsoCode());
@@ -86,13 +86,13 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     /** {@inheritDoc} */
     @Override
-    public Optional<EuroCoin> read(Connection connection, String coinId) throws SQLException {
+    public Optional<EuroCoin> read(Connection connection, UUID coinId) throws SQLException {
         if (connection == null) {
             throw new IllegalArgumentException("connection must not be null (read)");
         }
-        if (coinId == null || coinId.isBlank()) {
-            logger.warn("EuroCoin read aborted: coinId null/blank");
-            throw new IllegalArgumentException("coinId must not be null or blank (read)");
+        if (coinId == null) {
+            logger.warn("EuroCoin read aborted: coinId null");
+            throw new IllegalArgumentException("coinId must not be null (read)");
         }
 
         String sql = String.format(
@@ -104,10 +104,11 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         );
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, coinId);
+            var coinIdString = coinId.toString();
+            preparedStatement.setString(1, coinIdString);
             try (ResultSet queryResult = preparedStatement.executeQuery()) {
                 if (queryResult.next()) {
-                    return createEuroCoinFromResultSet(coinId, queryResult);
+                    return createEuroCoinFromResultSet(coinIdString, queryResult);
                 } else {
                     logger.debug("EuroCoin not found: coinId={}", coinId);
                     return Optional.empty();
@@ -169,7 +170,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             preparedStatement.setString(4, coin.getMintCountry().equals(CoinCountry.GERMANY) ? coin.getMint().getMintMark() : null);
             preparedStatement.setString(5, coin.getDescription().toString());
             preparedStatement.setString(6, coin.getCollectionId());
-            preparedStatement.setString(7, coin.getId());
+            preparedStatement.setString(7, coin.getId().toString());
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
@@ -186,13 +187,13 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     /** {@inheritDoc} */
     @Override
-    public void delete(Connection connection, String coinId)  throws SQLException{
+    public void delete(Connection connection, UUID coinId)  throws SQLException{
         if (connection == null) {
             throw new IllegalArgumentException("connection must not be null (delete)");
         }
-        if (coinId == null || coinId.isBlank()) {
-            logger.warn("EuroCoin delete aborted: coinId null/blank");
-            throw new IllegalArgumentException("coinId must not be null or blank (delete)");
+        if (coinId == null) {
+            logger.warn("EuroCoin delete aborted: coinId null");
+            throw new IllegalArgumentException("coinId must not be null (delete)");
         }
 
         String sql = String.format(
@@ -203,7 +204,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         );
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, coinId);
+            preparedStatement.setString(1, coinId.toString());
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
@@ -236,6 +237,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             try(ResultSet rs = preparedStatement.executeQuery()){
                 while (rs.next()) {
+                    logger.error(rs.getString("coin_id"));
                     String coinId = rs.getString("coin_id");
                     Optional<EuroCoin> readCoin = createEuroCoinFromResultSet(coinId, rs);
                     if (readCoin.isPresent()) {
@@ -255,13 +257,13 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     /** {@inheritDoc} */
     @Override
-    public boolean exists(Connection connection, String coinId) throws SQLException{
+    public boolean exists(Connection connection, UUID coinId) throws SQLException{
         if (connection == null) {
             throw new IllegalArgumentException("connection must not be null (exists)");
         }
-        if (coinId == null || coinId.isBlank()) {
-            logger.warn("EuroCoin exists check aborted: coinId null/blank");
-            throw new IllegalArgumentException("coinId must not be null or blank (exists)");
+        if (coinId == null) {
+            logger.warn("EuroCoin exists check aborted: coinId null");
+            throw new IllegalArgumentException("coinId must not be null (exists)");
         }
 
         String sql = String.format(
@@ -273,7 +275,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         );
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, coinId);
+            preparedStatement.setString(1, coinId.toString());
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 return rs.next();
             }
@@ -285,7 +287,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     /**
      * Internal (package-private) validation of minimal {@link EuroCoin} invariants.
-     * Current rules: non-null object, non-blank id, year >= EURO_COIN_START_YEAR and
+     * Current rules: non-null object, non-null id, year >= EURO_COIN_START_YEAR and
      * non-null mandatory fields (value, mint country, mint, collectionId not blank).
      * Extend here if domain constraints evolve.
      *
@@ -297,7 +299,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             return false;
         }
 
-        if (coin.getId() == null || coin.getId().isBlank()) {
+        if (coin.getId() == null) {
             return false;
         }
 

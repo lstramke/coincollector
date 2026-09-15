@@ -11,7 +11,6 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinCollectionException.EuroCoinCollectionAlreadyExistsException;
@@ -43,7 +42,6 @@ public class EuroCoinCollectionGroupStorageServiceImpl implements EuroCoinCollec
     private final EuroCoinCollectionGroupStorageRepository groupStorageRepository;
     private final EuroCoinCollectionStorageService euroCoinCollectionStorageService;
 
-    @Autowired
     public EuroCoinCollectionGroupStorageServiceImpl(DataSource dataSource, 
         EuroCoinCollectionGroupStorageRepository groupStorageRepository, 
         EuroCoinCollectionStorageService euroCoinCollectionStorageService) 

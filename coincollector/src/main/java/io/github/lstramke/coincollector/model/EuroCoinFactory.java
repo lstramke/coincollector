@@ -42,7 +42,7 @@ public class EuroCoinFactory {
                 .setCollectionId(resultSet.getString("collection_id"))
                 .build();
             
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException | NullPointerException e){
             logger.error("Invalid data in database entry: {}", e.getMessage());
             throw new SQLException("Invalid database entry data", e);
         } catch (IllegalStateException e){

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
@@ -130,12 +131,12 @@ public class EuroCoinCollectionStorageServiceImplTest {
                     doNothing().when(repository).create(connection, testcase.collection);
 
                     if(testcase.coinServiceSaveThrows){
-                        doThrow(new EuroCoinSaveException("coinId")).when(coinStorageService).save(any(EuroCoin.class), eq(connection));
+                        doThrow(new EuroCoinSaveException(UUID.fromString("11111111-1111-1111-1111-111111111111"))).when(coinStorageService).save(any(EuroCoin.class), eq(connection));
                     } else {
                         if (testcase.simulateCoinAlreadyExists) {
-                            doThrow(new EuroCoinAlreadyExistsException("coinId")).when(coinStorageService).save(any(EuroCoin.class), eq(connection));
+                            doThrow(new EuroCoinAlreadyExistsException(UUID.fromString("11111111-1111-1111-1111-111111111111"))).when(coinStorageService).save(any(EuroCoin.class), eq(connection));
                             if(testcase.coinServiceUpdateThrows){
-                                doThrow(new EuroCoinUpdateException("coinId")).when(coinStorageService).update(any(EuroCoin.class), eq(connection));
+                                doThrow(new EuroCoinUpdateException(UUID.fromString("11111111-1111-1111-1111-111111111111"))).when(coinStorageService).update(any(EuroCoin.class), eq(connection));
                             } else {
                                 doNothing().when(coinStorageService).update(any(EuroCoin.class), eq(connection));
                             }
@@ -208,12 +209,12 @@ public class EuroCoinCollectionStorageServiceImplTest {
             } else {
                 doNothing().when(repository).create(connection, testcase.collection);
                 if(testcase.coinServiceSaveThrows){
-                    doThrow(new EuroCoinSaveException("coinId")).when(coinStorageService).save(any(EuroCoin.class), eq(connection));
+                    doThrow(new EuroCoinSaveException(UUID.fromString("11111111-1111-1111-1111-111111111111"))).when(coinStorageService).save(any(EuroCoin.class), eq(connection));
                 } else {
                     if (testcase.simulateCoinAlreadyExists) {
-                        doThrow(new EuroCoinAlreadyExistsException("coinId")).when(coinStorageService).save(any(EuroCoin.class), eq(connection));
+                        doThrow(new EuroCoinAlreadyExistsException(UUID.fromString("11111111-1111-1111-1111-111111111111"))).when(coinStorageService).save(any(EuroCoin.class), eq(connection));
                         if(testcase.coinServiceUpdateThrows){
-                            doThrow(new EuroCoinUpdateException("coinId")).when(coinStorageService).update(any(EuroCoin.class), eq(connection));
+                            doThrow(new EuroCoinUpdateException(UUID.fromString("11111111-1111-1111-1111-111111111111"))).when(coinStorageService).update(any(EuroCoin.class), eq(connection));
                         } else {
                             doNothing().when(coinStorageService).update(any(EuroCoin.class), eq(connection));
                         }

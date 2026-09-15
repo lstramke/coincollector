@@ -2,7 +2,7 @@ package io.github.lstramke.coincollector.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +37,6 @@ public class LoginHandler {
     * @param userStorageService Service for user access
     * @param sessionManager Service for session management
     */
-    @Autowired
     public LoginHandler(UserStorageService userStorageService, SessionManager sessionManager) {
         this.userStorageService = userStorageService;
         this.sessionManager = sessionManager;
