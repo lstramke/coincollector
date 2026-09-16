@@ -2,11 +2,11 @@ coincollector:
   db-file: coincollector_test.db
   port: 8080
   table:
-    user: users_test
-    euroCoin: euroCoins_test
-    euroCoinType: euroCoinTypes_test
-    euroCoinCollection: euroCoinCollections_test
-    euroCoinCollectionGroup: euroCoinCollectionGroups_test
+    user: users
+    euroCoin: euroCoins
+    euroCoinType: euroCoinTypes
+    euroCoinCollection: euroCoinCollections
+    euroCoinCollectionGroup: euroCoinCollectionGroups
 
 spring:
   main:
