@@ -30,8 +30,13 @@ import io.github.lstramke.coincollector.model.EuroCoinCollectionFactory;
 public class EuroCoinCollectionSqliteRepositoryTest {
     
     private static final EuroCoinCollection dummyCollection = new EuroCoinCollection("dummy collection", "test_group");
-        private static final DatabaseTableProperties properties = new DatabaseTableProperties("users", "euroCoins", "test_collections", "groups");
-
+    private static final DatabaseTableProperties properties = new DatabaseTableProperties(
+        "users_test", 
+        "euroCoins_test", 
+        "euroCoinTypes_test", 
+        "euroCoinCollections_test", 
+        "test_groups_test"
+    );
 
     record CreateTestcase(
         EuroCoinCollection collection,

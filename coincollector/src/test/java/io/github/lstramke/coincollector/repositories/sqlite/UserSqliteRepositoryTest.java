@@ -24,9 +24,13 @@ import io.github.lstramke.coincollector.model.UserFactory;
 public class UserSqliteRepositoryTest {
 
     private static final User dummyUser = new User("Bob");
-    private static final DatabaseTableProperties properties = new DatabaseTableProperties("test_users", "coins", "collections", "groups");
-
-
+    private static final DatabaseTableProperties properties = new DatabaseTableProperties(
+        "users_test", 
+        "euroCoins_test", 
+        "euroCoinTypes_test", 
+        "euroCoinCollections_test", 
+        "test_groups_test"
+    );
 
     private record CreateTestcase(
         User user,

@@ -1,12 +1,12 @@
 coincollector:
-  db-file: coincollector_test.db
+  db-file: coincollector.db
   port: 8080
   table:
-    user: users_test
-    euroCoin: euroCoins_test
-    euroCoinType: euroCoinTypes_test
-    euroCoinCollection: euroCoinCollections_test
-    euroCoinCollectionGroup: euroCoinCollectionGroups_test
+    user: users
+    euroCoin: euroCoins
+    euroCoinType: euroCoinTypes
+    euroCoinCollection: euroCoinCollections
+    euroCoinCollectionGroup: euroCoinCollectionGroups
 
 spring:
   main:
@@ -14,7 +14,7 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 30s
   datasource:
-    url: jdbc:sqlite:${coincollector.db-file}?foreign_keys=on
+    url: jdbc:sqlite:./${coincollector.db-file}?foreign_keys=on
     driver-class-name: org.sqlite.JDBC
   flyway:
     enabled: true

@@ -36,8 +36,13 @@ class EuroCoinSqliteRepositoryTest {
                                     .setMint(Mint.BERLIN)
                                     .setCollectionId("dummy collection")
                                     .build();
-    private static final DatabaseTableProperties properties = new DatabaseTableProperties("users", "test_coins", "collections", "groups");
-    private final static UUID VALID_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final DatabaseTableProperties properties = new DatabaseTableProperties(
+        "users_test", 
+        "euroCoins_test", 
+        "euroCoinTypes_test", 
+        "euroCoinCollections_test", 
+        "test_groups_test"
+    );    private final static UUID VALID_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     private record CreateTestcase(
         EuroCoin coin,
@@ -93,8 +98,8 @@ class EuroCoinSqliteRepositoryTest {
                     "Unexpected exception thrown for: " + testcase.description
                 );
 
-                verify(testcase.connection).prepareStatement(anyString());
-                verify(preparedStatement).executeUpdate();
+                verify(testcase.connection, times(2)).prepareStatement(anyString());
+                verify(preparedStatement, times(2)).executeUpdate();
             }
         } catch (SQLException e) {
             fail("SQLException should not occur with mocks: " + e.getMessage());
@@ -354,8 +359,8 @@ class EuroCoinSqliteRepositoryTest {
                     "Unexpected exception thrown for: " + testcase.description
                 );
 
-                verify(testcase.connection).prepareStatement(anyString());
-                verify(preparedStatement).executeUpdate();
+                verify(testcase.connection, times(2)).prepareStatement(anyString());
+                verify(preparedStatement, times(2)).executeUpdate();
             }
         } catch (SQLException e) {
             fail("SQLException should not occur with mocks: " + e.getMessage());

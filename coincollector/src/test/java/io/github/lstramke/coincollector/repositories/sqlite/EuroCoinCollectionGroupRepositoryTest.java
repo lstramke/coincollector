@@ -29,7 +29,13 @@ import io.github.lstramke.coincollector.model.EuroCoinCollectionGroupFactory;
 @ExtendWith(MockitoExtension.class)
 public class EuroCoinCollectionGroupRepositoryTest {
     private static final EuroCoinCollectionGroup dummyCollectionGroup = new EuroCoinCollectionGroup("dummy group", "test_owner");
-    private static final DatabaseTableProperties properties = new DatabaseTableProperties("users", "euroCoins", "euroCoinCollections", "test_groups");
+    private static final DatabaseTableProperties properties = new DatabaseTableProperties(
+        "users_test", 
+        "euroCoins_test", 
+        "euroCoinTypes_test", 
+        "euroCoinCollections_test", 
+        "test_groups_test"
+    );
 
     record CreateTestcase(
         EuroCoinCollectionGroup group,
