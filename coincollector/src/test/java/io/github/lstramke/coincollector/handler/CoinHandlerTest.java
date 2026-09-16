@@ -1,7 +1,7 @@
 package io.github.lstramke.coincollector.handler;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -16,7 +16,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.UUID;
 import java.util.stream.Stream;
+
+import com.jayway.jsonpath.JsonPath;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -84,7 +87,7 @@ public class CoinHandlerTest {
 
     private static final String PREFIX = "/api/v1/coins";
     private static final String USER_ID = "user-1";
-    private static final String VALID_ID = "mock-id";
+    private static final UUID VALID_ID = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
     private static final String SESSION_ID = "session-abc";
 
     private record CoinHandlerTestcase(
@@ -104,7 +107,7 @@ public class CoinHandlerTest {
     }
 
     private static EuroCoin createMockCoin(
-        String id, 
+        UUID id, 
         int year, 
         CoinValue value, 
         CoinCountry country, 
@@ -212,7 +215,7 @@ public class CoinHandlerTest {
                 PREFIX + "/" + VALID_ID,
                 USER_ID,
                 (coinService, collectionService, groupService, sessionManager) -> {
-                    when(coinService.getById(VALID_ID)).thenThrow(new EuroCoinNotFoundException("not found"));
+                    when(coinService.getById(VALID_ID)).thenThrow(new EuroCoinNotFoundException(VALID_ID));
                     when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
@@ -361,9 +364,9 @@ public class CoinHandlerTest {
         if(testcase.expectedResponseBody != null) {
             actionResult.andExpect(content().json(testcase.expectedResponseBody));
             if (testcase.expectedStatus == 401) {
-                verify(coinService, times(0)).getById(anyString());
+                verify(coinService, times(0)).getById(any());
             } else {
-                verify(coinService, times(1)).getById(anyString());
+                verify(coinService, times(1)).getById(VALID_ID);
             }
         }
     }
@@ -424,7 +427,7 @@ public class CoinHandlerTest {
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
                 201, 
-                "{\"id\":\"GERMANY_ONE_EURO_2022_BERLIN\",\"year\":2022,\"value\":100,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"test coin\"}", 
+                "{\"year\":2022,\"value\":100,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"test coin\"}", 
                 "POST: happy path"
             ),
             new CoinHandlerTestcase(
@@ -459,7 +462,7 @@ public class CoinHandlerTest {
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 201, 
-                "{\"id\":\"FRANCE_FIFTY_CENTS_2022_UNKOWN\",\"year\":2022,\"value\":50,\"country\":\"FR\",\"collectionId\":\"collection-1\",\"mint\":null,\"description\":\"50 Cent Münze aus Frankreich aus dem Jahr 2022\"}", 
+                "{\"year\":2022,\"value\":50,\"country\":\"FR\",\"collectionId\":\"collection-1\",\"mint\":null,\"description\":\"50 Cent Münze aus Frankreich aus dem Jahr 2022\"}",
                 "POST: happy path with non-german coin, no description, no mint"
             ),
             new CoinHandlerTestcase(
@@ -575,7 +578,7 @@ public class CoinHandlerTest {
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doThrow(new EuroCoinAlreadyExistsException("already exists")).when(coinService).save(any(EuroCoin.class));
+                    doThrow(new EuroCoinAlreadyExistsException(VALID_ID)).when(coinService).save(any(EuroCoin.class));
                     when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
@@ -665,7 +668,7 @@ public class CoinHandlerTest {
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doThrow(new EuroCoinSaveException("fail")).when(coinService).save(any(EuroCoin.class));
+                    doThrow(new EuroCoinSaveException(VALID_ID)).when(coinService).save(any(EuroCoin.class));
                     when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 }, 
@@ -793,6 +796,10 @@ public class CoinHandlerTest {
         }
 
         if(testcase.expectedStatus == 201) {
+            actionResult.andExpect(result -> {
+                String id = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+                assertDoesNotThrow(() -> UUID.fromString(id));
+            });
             verify(coinService, times(1)).save(any(EuroCoin.class));
         }
     }
@@ -864,7 +871,7 @@ public class CoinHandlerTest {
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 200,
-                "{\"id\":\"GERMANY_TWO_EUROS_2023_BERLIN\",\"year\":2023,\"value\":200,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"Updated description\"}",
+                "{\"year\":2023,\"value\":200,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"Updated description\"}",
                 "PATCH: happy path"
             ),
             new CoinHandlerTestcase(
@@ -907,7 +914,7 @@ public class CoinHandlerTest {
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 200,
-                "{\"id\":\"FRANCE_TWO_EUROS_2023_UNKOWN\",\"year\":2023,\"value\":200,\"country\":\"FR\",\"collectionId\":\"collection-1\",\"mint\":null,\"description\":\"2 Euro Münze aus Frankreich aus dem Jahr 2023\"}",
+                "{\"year\":2023,\"value\":200,\"country\":\"FR\",\"collectionId\":\"collection-1\",\"mint\":null,\"description\":\"2 Euro Münze aus Frankreich aus dem Jahr 2023\"}",
                 "PATCH: happy path, non german coin without description"
             ),
             new CoinHandlerTestcase(
@@ -1056,7 +1063,7 @@ public class CoinHandlerTest {
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
                 200,
-                "{\"id\":\"GERMANY_TWO_EUROS_2023_BERLIN\",\"year\":2023,\"value\":200,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"Updated description\"}",
+                "{\"year\":2023,\"value\":200,\"country\":\"DE\",\"collectionId\":\"collection-1\",\"mint\":\"A\",\"description\":\"Updated description\"}",
                 "PATCH: happy path with two successful owner checks"
             ),
             new CoinHandlerTestcase(
@@ -1074,7 +1081,7 @@ public class CoinHandlerTest {
                 """,
                 USER_ID,
                 (coinService, collectionService, groupService, sessionManager) -> {
-                    when(coinService.getById(VALID_ID)).thenThrow(new EuroCoinNotFoundException("not found"));
+                    when(coinService.getById(VALID_ID)).thenThrow(new EuroCoinNotFoundException(VALID_ID));
                     var request = mock(CoinActionRequest.class);
                     when(request.year()).thenReturn(2023);
                     when(request.value()).thenReturn(200);
@@ -1308,7 +1315,7 @@ public class CoinHandlerTest {
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doThrow(new EuroCoinDeleteException("fail")).when(coinService).delete(VALID_ID);
+                    doThrow(new EuroCoinDeleteException(VALID_ID)).when(coinService).delete(VALID_ID);
                     when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
@@ -1355,7 +1362,7 @@ public class CoinHandlerTest {
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
                     doNothing().when(coinService).delete(VALID_ID);
-                    doThrow(new EuroCoinSaveException("fail")).when(coinService).save(any());
+                    doThrow(new EuroCoinSaveException(VALID_ID)).when(coinService).save(any());
                     when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
@@ -1457,11 +1464,15 @@ public class CoinHandlerTest {
         }
 
         if (testcase.expectedStatus == 401) {
-            verify(coinService, times(0)).getById(anyString());
+            verify(coinService, times(0)).getById(any());
         } else {
             verify(coinService).getById(VALID_ID);
 
             if (testcase.expectedStatus == 200) {
+                actionResult.andExpect(result -> {
+                    String id = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+                    assertDoesNotThrow(() -> UUID.fromString(id));
+                });
                 verify(coinService, times(1)).delete(VALID_ID);
                 verify(coinService, times(1)).save(any(EuroCoin.class));
             }
@@ -1515,7 +1526,7 @@ public class CoinHandlerTest {
                 PREFIX + "/" + VALID_ID,
                 USER_ID,
                 (coinService, collectionService, groupService, sessionManager) -> {
-                    when(coinService.getById(VALID_ID)).thenThrow(new EuroCoinNotFoundException("not found"));
+                    when(coinService.getById(VALID_ID)).thenThrow(new EuroCoinNotFoundException(VALID_ID));
                     when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
@@ -1669,7 +1680,7 @@ public class CoinHandlerTest {
                     var mockGroup = mock(EuroCoinCollectionGroup.class);
                     when(mockGroup.getOwnerId()).thenReturn(USER_ID);
                     when(groupService.getById("group-1")).thenReturn(mockGroup);
-                    doThrow(new EuroCoinDeleteException("fail")).when(coinService).delete(VALID_ID);
+                    doThrow(new EuroCoinDeleteException(VALID_ID)).when(coinService).delete(VALID_ID);
                     when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
                     when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
                 },
@@ -1699,7 +1710,7 @@ public class CoinHandlerTest {
         }
 
         if (testcase.expectedStatus == 401) {
-            verify(coinService, times(0)).getById(anyString());
+            verify(coinService, times(0)).getById(any());
         } else {
             verify(coinService).getById(VALID_ID);
 

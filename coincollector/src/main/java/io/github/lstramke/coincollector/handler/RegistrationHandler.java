@@ -2,7 +2,6 @@ package io.github.lstramke.coincollector.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -38,7 +37,6 @@ public class RegistrationHandler {
     * @param userStorageService Service for user persistence
     * @param sessionManager Service for session management
     */
-    @Autowired
     public RegistrationHandler(UserStorageService userStorageService, SessionManager sessionManager) {
         this.userStorageService = userStorageService;
         this.sessionManager = sessionManager;

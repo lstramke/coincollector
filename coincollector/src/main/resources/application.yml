@@ -1,5 +1,5 @@
 coincollector:
-  db-file: coincollector_test.db
+  db-file: coincollector.db
   port: 8080
   table:
     user: users
@@ -14,7 +14,7 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 30s
   datasource:
-    url: jdbc:sqlite:${coincollector.db-file}?foreign_keys=on
+    url: jdbc:sqlite:./${coincollector.db-file}?foreign_keys=on
     driver-class-name: org.sqlite.JDBC
   flyway:
     enabled: true

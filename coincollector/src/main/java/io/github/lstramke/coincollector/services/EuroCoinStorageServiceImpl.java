@@ -3,10 +3,10 @@ package io.github.lstramke.coincollector.services;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinAlreadyExistsException;
@@ -29,7 +29,6 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     private final EuroCoinStorageRepository euroCoinStorageRepository;
     private final DataSource dataSource;
 
-    @Autowired
     public EuroCoinStorageServiceImpl(EuroCoinStorageRepository euroCoinStorageRepository, DataSource dataSource){
         this.euroCoinStorageRepository = euroCoinStorageRepository;
         this.dataSource = dataSource;
@@ -83,7 +82,7 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
 
     /** {@inheritDoc} */
     @Override
-    public EuroCoin getById(String coinId) throws EuroCoinNotFoundException {
+    public EuroCoin getById(UUID coinId) throws EuroCoinNotFoundException {
         try (Connection connection = dataSource.getConnection()) {
             return executeGetById(coinId, connection);
         } catch (SQLException e) {
@@ -93,7 +92,7 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
 
     /** {@inheritDoc} */
     @Override
-    public EuroCoin getById(String coinId, Connection connection) throws EuroCoinNotFoundException {
+    public EuroCoin getById(UUID coinId, Connection connection) throws EuroCoinNotFoundException {
         try {
             return executeGetById(coinId, connection);
         } catch (SQLException e) {
@@ -111,7 +110,7 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
      * @throws SQLException if the read operation fails
      * @throws EuroCoinNotFoundException if the coin does not exist
      */
-    private EuroCoin executeGetById(String coinId, Connection connection) throws SQLException {
+    private EuroCoin executeGetById(UUID coinId, Connection connection) throws SQLException {
         return euroCoinStorageRepository
             .read(connection, coinId)
             .orElseThrow(() -> new EuroCoinNotFoundException(coinId));
@@ -139,7 +138,7 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
 
     /** {@inheritDoc} */
     @Override
-    public void delete(String coinId) throws EuroCoinDeleteException {
+    public void delete(UUID coinId) throws EuroCoinDeleteException {
         try (Connection connection = dataSource.getConnection()) {
             euroCoinStorageRepository.delete(connection, coinId);
         } catch (SQLException e) {
@@ -149,7 +148,7 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
 
     /** {@inheritDoc} */
     @Override
-    public void delete(String coinId, Connection connection) throws EuroCoinDeleteException {
+    public void delete(UUID coinId, Connection connection) throws EuroCoinDeleteException {
         try {
             euroCoinStorageRepository.delete(connection, coinId);
         } catch (SQLException e) {

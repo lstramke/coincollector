@@ -1,5 +1,7 @@
 package io.github.lstramke.coincollector.handler;
 
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -67,7 +69,7 @@ public class CoinHandler {
      * @throws ResponseStatusException if not found or unauthorized
      */
     @GetMapping("/{coinId}")
-    public ResponseEntity<CoinResponse> getCoin(@PathVariable String coinId, Authentication authentication) {
+    public ResponseEntity<CoinResponse> getCoin(@PathVariable UUID coinId, Authentication authentication) {
         logger.info("Coin read requested: id={}", coinId);
         String userId = requireUserId(authentication);
 
@@ -135,7 +137,7 @@ public class CoinHandler {
      */
     @PatchMapping("/{coinId}")
     public ResponseEntity<CoinResponse> updateCoin(
-        @PathVariable String coinId,
+        @PathVariable UUID coinId,
         @RequestBody CoinActionRequest request,
         Authentication authentication
     ) {
@@ -184,7 +186,7 @@ public class CoinHandler {
      * @throws ResponseStatusException if coin not found or unauthorized
      */
     @DeleteMapping("/{coinId}")
-    public ResponseEntity<Void> deleteCoin(@PathVariable String coinId, Authentication authentication) {
+    public ResponseEntity<Void> deleteCoin(@PathVariable UUID coinId, Authentication authentication) {
         logger.info("Coin delete requested: id={}", coinId);
         String userId = requireUserId(authentication);
 

@@ -1,15 +1,14 @@
 package io.github.lstramke.coincollector.model;
 
+import java.util.UUID;
+
 /**
  * Concrete implementation of a Euro coin including mint country, mint mark and
  * optional generated description.
  */
 public class EuroCoin implements Coin {
-    private final String id;
-    private final int year;
-    private final CoinValue value;
-    private final CoinCountry mintCountry;
-    private final Mint mint;
+    private final UUID id;
+    private final EuroCoinType type;
     private CoinDescription description;
     private String collectionId;
 
@@ -22,18 +21,26 @@ public class EuroCoin implements Coin {
      */
     EuroCoin(EuroCoinBuilder builder){
         this.id = builder.id;
-        this.year = builder.year;
-        this.value = builder.value;
-        this.mintCountry = builder.mintCountry;
-        this.mint = builder.mint;
+        this.type = new EuroCoinType(builder.year, builder.value, builder.mintCountry, builder.mint);
         this.description = builder.description;
         this.collectionId = builder.collectionId;
     }
 
     @Override
     public String toString() {
-        return "EuroCoin [id=" + id + ", year=" + year + ", value=" + value + ", mintCountry=" + mintCountry + ", mint="
-                + mint + ", description=" + description + ", collectionId=" + collectionId + "]";
+        return "EuroCoin [id=" + id + ", year=" + type.year() + ", value=" + type.value() + ", mintCountry=" + type.mintCountry() + ", mint="
+                + type.mint() + ", description=" + description + ", collectionId=" + collectionId + "]";
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((type == null) ? 0 : type.hashCode());
+        result = prime * result + ((description == null) ? 0 : description.hashCode());
+        result = prime * result + ((collectionId == null) ? 0 : collectionId.hashCode());
+        return result;
     }
 
     @Override
@@ -50,13 +57,10 @@ public class EuroCoin implements Coin {
                 return false;
         } else if (!id.equals(other.id))
             return false;
-        if (year != other.year)
-            return false;
-        if (value != other.value)
-            return false;
-        if (mintCountry != other.mintCountry)
-            return false;
-        if (mint != other.mint)
+        if (type == null) {
+            if (other.type != null)
+                return false;
+        } else if (!type.equals(other.type))
             return false;
         if (description == null) {
             if (other.description != null)
@@ -72,18 +76,18 @@ public class EuroCoin implements Coin {
     }
 
     @Override
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
     @Override
     public int getYear() {
-        return year;
+        return type.year();
     }
 
     @Override
     public CoinValue getValue() {
-        return value;
+        return type.value();
     }
 
     @Override
@@ -102,10 +106,14 @@ public class EuroCoin implements Coin {
     }
 
     public CoinCountry getMintCountry() {
-        return mintCountry;
+        return type.mintCountry();
     }
 
     public Mint getMint() {
-        return mint;
+        return type.mint();
+    }
+
+    public EuroCoinType getType() {
+        return this.type;
     }
 }

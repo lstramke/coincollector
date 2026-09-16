@@ -1,5 +1,7 @@
 package io.github.lstramke.coincollector.model;
 
+import java.util.UUID;
+
 /**
  * Fluent builder for {@link EuroCoin}. Performs validation and generates a
  * default description and id when not provided.
@@ -14,7 +16,7 @@ public class EuroCoinBuilder {
     CoinCountry mintCountry;
     CoinDescription description;
     Mint mint;
-    String id;
+    UUID id;
     String collectionId;
 
     public static final int EURO_COIN_START_YEAR = 1999;
@@ -53,7 +55,7 @@ public class EuroCoinBuilder {
      * Explicitly set the coin id. Intended for {@link EuroCoinFactory} and
      * persistence/import layers to preserve existing ids; not public by design.
      */
-    EuroCoinBuilder setId(String id) {
+    EuroCoinBuilder setId(UUID id) {
         this.id = id;
         return this;
     }
@@ -85,20 +87,14 @@ public class EuroCoinBuilder {
         if(mintCountry != CoinCountry.GERMANY) {
             mint = Mint.UNKOWN;
         }
-        if (id == null || id.isBlank()){
+        if (id == null){
             this.id = generateId();
         }
         
         return new EuroCoin(this);
     }
 
-    /** Generate a deterministic id based on core attributes. */
-    private String generateId() {
-        return String.format("%s_%s_%d_%s", 
-            mintCountry != null ? mintCountry.name() : "UNKNOWN",
-            value != null ? value.name() : "UNKNOWN", 
-            year,
-            mint != null ? mint.name() : "UNKNOWN"
-        );
+    private UUID generateId() {
+        return UUID.randomUUID();
     }
 }

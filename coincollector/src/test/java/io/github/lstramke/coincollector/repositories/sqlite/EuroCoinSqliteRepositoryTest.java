@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,8 +36,13 @@ class EuroCoinSqliteRepositoryTest {
                                     .setMint(Mint.BERLIN)
                                     .setCollectionId("dummy collection")
                                     .build();
-    private static final DatabaseTableProperties properties = new DatabaseTableProperties("users", "test_coins", "collections", "groups");
-
+    private static final DatabaseTableProperties properties = new DatabaseTableProperties(
+        "users_test", 
+        "euroCoins_test", 
+        "euroCoinTypes_test", 
+        "euroCoinCollections_test", 
+        "test_groups_test"
+    );    private final static UUID VALID_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     private record CreateTestcase(
         EuroCoin coin,
@@ -92,8 +98,8 @@ class EuroCoinSqliteRepositoryTest {
                     "Unexpected exception thrown for: " + testcase.description
                 );
 
-                verify(testcase.connection).prepareStatement(anyString());
-                verify(preparedStatement).executeUpdate();
+                verify(testcase.connection, times(2)).prepareStatement(anyString());
+                verify(preparedStatement, times(2)).executeUpdate();
             }
         } catch (SQLException e) {
             fail("SQLException should not occur with mocks: " + e.getMessage());
@@ -101,7 +107,7 @@ class EuroCoinSqliteRepositoryTest {
     }
 
     private record ReadTestcase(
-        String id,
+        UUID id,
         Connection connection,
         boolean shouldThrowSQLException,
         boolean hitInDB,
@@ -119,13 +125,75 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<ReadTestcase> readTestcases(){
         return Stream.of(
-            new ReadTestcase(null, mock(Connection.class), false, false, false, Optional.empty(), IllegalArgumentException.class, "Null id"),
-            new ReadTestcase("validId", null, false, false, false, Optional.empty(), IllegalArgumentException.class, "Null connection"),
-            new ReadTestcase("",mock(Connection.class), false, false, false, Optional.empty(), IllegalArgumentException.class, "Empty id"),
-            new ReadTestcase("validId",mock(Connection.class), false, true, false, Optional.of(dummyCoin), null, "Valid id - read hit, no SQLException"),
-            new ReadTestcase("validId",mock(Connection.class), false, true, true, Optional.empty(), null, "Valid id - read hit, SQLException from factory"),
-            new ReadTestcase("validId",mock(Connection.class), true, true, false, Optional.empty(), SQLException.class, "SQLException during read attempt"),
-            new ReadTestcase("validId",mock(Connection.class), false, false, false, Optional.empty(), null, "Valid id -  no read hit")
+            new ReadTestcase(
+                null, 
+                mock(Connection.class), 
+                false, 
+                false, 
+                false, 
+                Optional.empty(), 
+                IllegalArgumentException.class, 
+                "Null id"
+            ),
+            new ReadTestcase(
+                VALID_ID,
+                null,
+                false,
+                false,
+                false,
+                Optional.empty(),
+                IllegalArgumentException.class,
+                "Null connection"
+            ),
+            new ReadTestcase(
+                null,
+                mock(Connection.class),
+                false, 
+                false, 
+                false, 
+                Optional.empty(), 
+                IllegalArgumentException.class, 
+                "Null id"),
+            new ReadTestcase(
+                VALID_ID,
+                mock(Connection.class), 
+                false,
+                true, 
+                false, 
+                Optional.of(dummyCoin), 
+                null, 
+                "Valid id - read hit, no SQLException"
+            ),
+            new ReadTestcase(
+                VALID_ID,
+                mock(Connection.class), 
+                false,
+                true, 
+                true, 
+                Optional.empty(), 
+                null, 
+                "Valid id - read hit, SQLException from factory"
+            ),
+            new ReadTestcase(
+                VALID_ID,
+                mock(Connection.class), 
+                true, 
+                true,
+                false, 
+                Optional.empty(), 
+                SQLException.class, 
+                "SQLException during read attempt"
+            ),
+            new ReadTestcase(
+                VALID_ID,
+                mock(Connection.class), 
+                false,
+                false, 
+                false, 
+                Optional.empty(), 
+                null, 
+                "Valid id -  no read hit"
+            )
         );
     }
 
@@ -139,7 +207,7 @@ class EuroCoinSqliteRepositoryTest {
         ResultSet resultSet = mock(ResultSet.class);
 
         try {
-            if(testcase.id != null && !testcase.id.isBlank() && testcase.connection != null){
+            if(testcase.id != null && testcase.connection != null){
                 when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if(testcase.shouldThrowSQLException){
@@ -171,9 +239,9 @@ class EuroCoinSqliteRepositoryTest {
                 assertEquals(testcase.expectedEuroCoin, result,
                     "Result value mismatch for: " + testcase.description);
 
-                if (testcase.id != null && !testcase.id.isBlank()) {
+                if (testcase.id != null) {
                     verify(testcase.connection).prepareStatement(anyString());
-                    verify(preparedStatement).setString(1, testcase.id);
+                    verify(preparedStatement).setString(1, testcase.id.toString());
                     verify(preparedStatement).executeQuery();
 
                     if (testcase.hitInDB) {
@@ -205,11 +273,59 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<UpdateTestcase> updateTestcases(){
         return Stream.of(
-            new UpdateTestcase(dummyCoin, mock(Connection.class), false, 1, null, "Valid coin - successful update"),
-            new UpdateTestcase(dummyCoin, mock(Connection.class), false, 0, SQLException.class, "Valid coin - unsuccessful update"),
-            new UpdateTestcase(dummyCoin, mock(Connection.class), true, 0, SQLException.class, "SQLException during update attempt"),
-            new UpdateTestcase(null, mock(Connection.class), false, 0, IllegalArgumentException.class, "Null coin"),
-            new UpdateTestcase(dummyCoin, null, false, 0, IllegalArgumentException.class, "Null connection")
+            new UpdateTestcase(
+                dummyCoin, 
+                mock(Connection.class),
+                false, 
+                1, 
+                null, 
+                "Valid coin - successful update"
+            ),
+            new UpdateTestcase(
+                dummyCoin, 
+                mock(Connection.class),
+                false, 
+                0, 
+                SQLException.class, 
+                "Valid coin - unsuccessful update"
+            ),
+            new UpdateTestcase(
+                new EuroCoinBuilder()
+                .setYear(2004)
+                .setValue(CoinValue.TWO_EUROS)
+                .setMintCountry(CoinCountry.FRANCE)
+                .setCollectionId("dummy collection2")
+                .build(), 
+                mock(Connection.class),
+                false, 
+                1, 
+                null, 
+                "Valid coin - non German Coin"
+            ),
+            new UpdateTestcase(
+                dummyCoin, 
+                mock(Connection.class),
+                true, 
+                0, 
+                SQLException.class, 
+                "SQLException during update attempt"
+            ),
+            new UpdateTestcase(
+                null, 
+                mock(Connection.class),
+                false, 
+                0, 
+                IllegalArgumentException.class, 
+                "Null coin"
+            ),
+            new UpdateTestcase(
+                dummyCoin, 
+                null, 
+                false, 
+                0, 
+                IllegalArgumentException.class, 
+                "Null connection"
+            )
         );
     }
 
@@ -243,8 +359,8 @@ class EuroCoinSqliteRepositoryTest {
                     "Unexpected exception thrown for: " + testcase.description
                 );
 
-                verify(testcase.connection).prepareStatement(anyString());
-                verify(preparedStatement).executeUpdate();
+                verify(testcase.connection, times(2)).prepareStatement(anyString());
+                verify(preparedStatement, times(2)).executeUpdate();
             }
         } catch (SQLException e) {
             fail("SQLException should not occur with mocks: " + e.getMessage());
@@ -253,7 +369,7 @@ class EuroCoinSqliteRepositoryTest {
 
 
     private record DeleteTestcase(
-        String id,
+        UUID id,
         Connection connection,
         boolean shouldThrowSQLException,
         int rowsAffected,
@@ -268,12 +384,46 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<DeleteTestcase> deleteTestcases(){
         return Stream.of(
-            new DeleteTestcase(null, mock(Connection.class), false, 0, IllegalArgumentException.class, "Null Id"),
-            new DeleteTestcase("validId", null, false, 0, IllegalArgumentException.class, "Null Connection"),
-            new DeleteTestcase("", mock(Connection.class), false, 0, IllegalArgumentException.class, "Empty Id"),
-            new DeleteTestcase("validId", mock(Connection.class), false, 1, null, "Valid Id - successful delete"),
-            new DeleteTestcase("validId", mock(Connection.class), false, 0, SQLException.class, "Valid Id - unsuccessful delete"),
-            new DeleteTestcase("validId", mock(Connection.class), true, 0, SQLException.class, "SQLException during delete attempt")
+            new DeleteTestcase(
+                null,
+                mock(Connection.class),
+                false,
+                0,
+                IllegalArgumentException.class,
+                "Null Id"
+            ),
+            new DeleteTestcase(
+                VALID_ID,
+                null,
+                false,
+                0,
+                IllegalArgumentException.class,
+                "Null Connection"
+            ),
+            new DeleteTestcase(
+                VALID_ID,
+                mock(Connection.class),
+                false,
+                1,
+                null,
+                "Valid Id - successful delete"
+            ),
+            new DeleteTestcase(
+                VALID_ID,
+                mock(Connection.class),
+                false,
+                0,
+                SQLException.class,
+                "Valid Id - unsuccessful delete"
+            ),
+            new DeleteTestcase(
+                VALID_ID,
+                mock(Connection.class),
+                true,
+                0,
+                SQLException.class,
+                "SQLException during delete attempt"
+            )
         );
     }
 
@@ -286,7 +436,7 @@ class EuroCoinSqliteRepositoryTest {
         PreparedStatement preparedStatement = mock(PreparedStatement.class);
 
         try {
-            if(testcase.id != null && !testcase.id.isBlank() && testcase.connection != null){
+            if(testcase.id != null && testcase.connection != null){
                 when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
 
                 if (testcase.shouldThrowSQLException()) {
@@ -338,12 +488,60 @@ class EuroCoinSqliteRepositoryTest {
             .setCollectionId("dummy collection2")
             .build();
         return Stream.of(
-            new GetAllTestcase(null, true, List.of(), -1, List.of(), IllegalArgumentException.class, "Null connection"),
-            new GetAllTestcase(mock(Connection.class), true, List.of(), -1, List.of(), SQLException.class, "SQLException during select all attempt"),
-            new GetAllTestcase(mock(Connection.class), false, List.of(), -1, List.of(), null, "Empty ResultSet"),
-            new GetAllTestcase(mock(Connection.class), false, List.of(dummyCoin), -1, List.of(dummyCoin), null, "Single coin"),
-            new GetAllTestcase(mock(Connection.class), false, List.of(dummyCoin, dummyCoin2), -1, List.of(dummyCoin, dummyCoin2), null, "Multiple coin - all valid"),
-            new GetAllTestcase(mock(Connection.class), false, List.of(dummyCoin, dummyCoin2), 1, List.of(dummyCoin), null, "Multiple coin - with factory exception")
+            new GetAllTestcase(
+                null,
+                true,
+                List.of(),
+                -1,
+                List.of(),
+                IllegalArgumentException.class,
+                "Null connection"
+            ),
+            new GetAllTestcase(
+                mock(Connection.class),
+                true, 
+                List.of(),
+                -1,
+                List.of(),
+                SQLException.class,
+                "SQLException during select all attempt"
+            ),
+            new GetAllTestcase(
+                mock(Connection.class),
+                false, 
+                List.of(),
+                -1,
+                List.of(),
+                null,
+                "Empty ResultSet"
+            ),
+            new GetAllTestcase(
+                mock(Connection.class),
+                false, 
+                List.of(dummyCoin),
+                -1,
+                List.of(dummyCoin),
+                null,
+                "Single coin"
+            ),
+            new GetAllTestcase(
+                mock(Connection.class),
+                false, 
+                List.of(dummyCoin, dummyCoin2),
+                -1,
+                List.of(dummyCoin, dummyCoin2),
+                null,
+                "Multiple coin - all valid"
+            ),
+            new GetAllTestcase(
+                mock(Connection.class),
+                false, 
+                List.of(dummyCoin, dummyCoin2),
+                1,
+                List.of(dummyCoin),
+                null,
+                "Multiple coin - with factory exception"
+            )
         );
     }
 
@@ -368,7 +566,7 @@ class EuroCoinSqliteRepositoryTest {
 
                     AtomicInteger row = new AtomicInteger(-1);
                     lenient().when(resultSet.next()).then(hasNext -> row.incrementAndGet() < testcase.coinsInDB.size());
-                    lenient().when(resultSet.getString(eq("coin_id"))).then(coinId -> testcase.coinsInDB.get(row.get()).getId());
+                    lenient().when(resultSet.getString(eq("coin_id"))).then(coinId -> testcase.coinsInDB.get(row.get()).getId().toString());
                     lenient().when(euroCoinFactory.fromDataBaseEntry(resultSet)).then(coin -> {
                         int i = row.get();
                         if (testcase.factoryThrowsOnRow == i){
@@ -404,7 +602,7 @@ class EuroCoinSqliteRepositoryTest {
     }
 
     private record ExistsTestcase(
-        String coinId,
+        UUID coinId,
         Connection connection,
         boolean resultSetHasNext, 
         boolean expectedResult,
@@ -420,13 +618,51 @@ class EuroCoinSqliteRepositoryTest {
 
     private static Stream<ExistsTestcase> existsTestcases() {
         return Stream.of(
-            new ExistsTestcase("valid-id", mock(Connection.class), true, true, null, false, "Coin exists"),
-            new ExistsTestcase("non-existing-id", mock(Connection.class), false, false,null, false, "Coin does not exist"),
-            new ExistsTestcase(null, mock(Connection.class), false, false, IllegalArgumentException.class, false, "Null ID"),
-            new ExistsTestcase("validId", null, false, false, IllegalArgumentException.class, false, "Null Connection"),
-            new ExistsTestcase("", mock(Connection.class), false, false, IllegalArgumentException.class, false, "Empty ID"),
-            new ExistsTestcase("  ", mock(Connection.class), false, false, IllegalArgumentException.class, false, "Whitespace-only ID"),
-            new ExistsTestcase("db-error-id", mock(Connection.class), false, false, SQLException.class, true, "Database error")
+            new ExistsTestcase(
+                VALID_ID,
+                mock(Connection.class),
+                true,
+                true,
+                null,
+                false,
+                "Coin exists"
+            ),
+            new ExistsTestcase(
+                UUID.fromString("11111111-1111-1111-1111-111111111112"), 
+                mock(Connection.class),
+                false,
+                false,
+                null, 
+                false,
+                "Coin does not exist"
+            ),
+            new ExistsTestcase(
+                null, 
+                mock(Connection.class),
+                false,
+                false,
+                 IllegalArgumentException.class,
+                  false,
+                "Null ID"
+            ),
+            new ExistsTestcase(
+                VALID_ID, 
+                null,
+                false,
+                false,
+                IllegalArgumentException.class,
+                false,
+                "Null Connection"
+            ),
+            new ExistsTestcase(
+                VALID_ID, 
+                mock(Connection.class),
+                false,
+                false,
+                SQLException.class,
+                true,
+                "Database error"
+            )
         );
     }
 
@@ -440,7 +676,7 @@ class EuroCoinSqliteRepositoryTest {
         ResultSet resultSet = mock(ResultSet.class);
 
         try {
-            if (testcase.coinId() != null && !testcase.coinId().isBlank() && testcase.connection != null) {
+            if (testcase.coinId() != null && testcase.connection != null) {
                 when(testcase.connection.prepareStatement(anyString())).thenReturn(preparedStatement);
                 if (testcase.shouldThrowSQLException()) {
                     when(preparedStatement.executeQuery())
@@ -463,9 +699,9 @@ class EuroCoinSqliteRepositoryTest {
                     "Result value mismatch for: " + testcase.description
                 );
 
-                if (testcase.coinId!= null && !testcase.coinId.isBlank()) {
+                if (testcase.coinId != null) {
                     verify(testcase.connection).prepareStatement(anyString());
-                    verify(preparedStatement).setString(1, testcase.coinId);
+                    verify(preparedStatement).setString(1, testcase.coinId.toString());
                     verify(preparedStatement).executeQuery();
                     verify(resultSet).next();
                 }
@@ -476,7 +712,7 @@ class EuroCoinSqliteRepositoryTest {
     }
 
     private record ValidationTestcase(
-        String coinId, 
+        UUID coinId, 
         Integer year, 
         CoinValue coinValue,
         CoinCountry mintCountry, 
@@ -498,18 +734,115 @@ class EuroCoinSqliteRepositoryTest {
         Mint mockMint = mock(Mint.class);
 
         return Stream.of(
-            new ValidationTestcase("valid-id", 2020, mockCoinValue, mockMintCountry, mockMint, "collection-123", true, false, "Valid coin"),
-            new ValidationTestcase(null, null, null, null, null, null, false, true, "Null coin"),
-            new ValidationTestcase(null, 2020, mockCoinValue, mockMintCountry, mockMint, "collection-123", false, false, "Coin with null ID"),
-            new ValidationTestcase("", 2020, mockCoinValue, mockMintCountry, mockMint, "collection-123", false, false, "Coin with empty ID"),
-            new ValidationTestcase("   ", 2020, mockCoinValue, mockMintCountry, mockMint, "collection-123", false, false, "Coin with whitespace-only ID"),
-            new ValidationTestcase("valid-id", 1998, mockCoinValue, mockMintCountry, mockMint, "collection-123", false, false, "Coin with year before 1999"),
-            new ValidationTestcase("valid-id", 2020, null, mockMintCountry, mockMint, "collection-123", false, false, "Coin with null CoinValue"),
-            new ValidationTestcase("valid-id", 2020, mockCoinValue, null, mockMint, "collection-123", false, false, "Coin with null MintCountry"),
-            new ValidationTestcase("valid-id", 2020, mockCoinValue, mockMintCountry, null, "collection-123", false, false, "German Coin with null Mint"),
-            new ValidationTestcase("valid-id", 2020, mockCoinValue, CoinCountry.FRANCE, null, "collection-123", true, false, "Not German Coin with null Mint"),
-            new ValidationTestcase("valid-id", 2020, mockCoinValue, mockMintCountry, mockMint, null, false, false, "Coin with null CollectionId"),
-            new ValidationTestcase("valid-id", 2020, mockCoinValue, mockMintCountry, mockMint, "", false, false, "Coin with empty CollectionId")
+            new ValidationTestcase(
+                VALID_ID,
+                2020,
+                mockCoinValue,
+                mockMintCountry,
+                mockMint,
+                "collection-123", 
+                true,
+                false,
+                "Valid coin"
+            ),
+            new ValidationTestcase(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null, 
+                false,
+                true,
+                "Null coin"
+            ),
+            new ValidationTestcase(
+                null,
+                2020,
+                mockCoinValue,
+                mockMintCountry,
+                mockMint,
+                "collection-123", 
+                false,
+                false,
+                "Coin with null ID"
+            ),
+            new ValidationTestcase(
+                VALID_ID,
+                1998,
+                mockCoinValue,
+                mockMintCountry,
+                mockMint,
+                "collection-123", 
+                false,
+                false,
+                "Coin with year before 1999"
+            ),
+            new ValidationTestcase(
+                VALID_ID,
+                2020,
+                null,
+                mockMintCountry,
+                mockMint,
+                "collection-123", 
+                false,
+                false,
+                "Coin with null CoinValue"
+            ),
+            new ValidationTestcase(
+                VALID_ID,
+                2020,
+                mockCoinValue,
+                null,
+                mockMint,
+                "collection-123", 
+                false,
+                false,
+                "Coin with null MintCountry"
+            ),
+            new ValidationTestcase(
+                VALID_ID,
+                2020,
+                mockCoinValue,
+                mockMintCountry,
+                null,
+                "collection-123", 
+                false,
+                false,
+                "German Coin with null Mint"
+            ),
+            new ValidationTestcase(
+                VALID_ID,
+                2020,
+                mockCoinValue,
+                CoinCountry.FRANCE,
+                null, "collection-123", 
+                true,
+                false,
+                "Not German Coin with null Mint"
+            ),
+            new ValidationTestcase(
+                VALID_ID,
+                2020,
+                mockCoinValue,
+                mockMintCountry,
+                mockMint,
+                null, 
+                false,
+                false,
+                "Coin with null CollectionId"
+            ),
+            new ValidationTestcase(
+                VALID_ID,
+                2020,
+                mockCoinValue,
+                mockMintCountry,
+                mockMint,
+                "", 
+                false,
+                false,
+                "Coin with empty CollectionId"
+            )
         );
     }
 

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import io.github.lstramke.coincollector.model.EuroCoin;
 
@@ -29,7 +30,7 @@ public interface EuroCoinStorageRepository {
      * Persists a new {@link EuroCoin}.
      *
      * @param connection open JDBC connection; must not be {@code null}
-     * @param coin coin instance to create; must not be {@code null} and must have a non-null / non-blank coinId
+     * @param coin coin instance to create; must not be {@code null} and must have a non-null UUID coinId
      * @throws SQLException if a database access error occurs or the insert fails
      * @throws IllegalArgumentException if {@code coin} violates validation constraints
      */
@@ -39,18 +40,18 @@ public interface EuroCoinStorageRepository {
      * Reads a {@link EuroCoin} by coinId.
      *
      * @param connection open JDBC connection; must not be {@code null}
-     * @param coinId identifier of the coin; must not be {@code null} or blank
+     * @param coinId identifier (UUID) of the coin; must not be {@code null}
      * @return optional containing the coin, or empty if not found
      * @throws SQLException if a database access error occurs
-     * @throws IllegalArgumentException if {@code coinId} is {@code null} or blank
+     * @throws IllegalArgumentException if {@code coinId} is {@code null}
      */
-    Optional<EuroCoin> read(Connection connection, String coinId) throws SQLException;
+    Optional<EuroCoin> read(Connection connection, UUID coinId) throws SQLException;
 
     /**
      * Updates an existing {@link EuroCoin}.
      *
      * @param connection open JDBC connection; must not be {@code null}
-     * @param coin updated coin; must not be {@code null} and must reference an existing coinId
+     * @param coin updated coin; must not be {@code null} and must reference an existing coinId (UUID)
      * @throws SQLException if a database access error occurs or the update affects an unexpected number of rows
      * @throws IllegalArgumentException if {@code coin} violates validation constraints
      */
@@ -60,11 +61,11 @@ public interface EuroCoinStorageRepository {
      * Deletes a {@link EuroCoin} by coinId.
      *
      * @param connection open JDBC connection; must not be {@code null}
-     * @param coinId identifier of the coin to delete; must not be {@code null} or blank
+     * @param coinId identifier (UUID) of the coin to delete; must not be {@code null}
      * @throws SQLException if a database access error occurs
-     * @throws IllegalArgumentException if {@code coinId} is {@code null} or blank
+     * @throws IllegalArgumentException if {@code coinId} is {@code null}
      */
-    void delete(Connection connection, String coinId) throws SQLException;
+    void delete(Connection connection, UUID coinId) throws SQLException;
 
     /**
      * Retrieves all {@link EuroCoin} rows.
@@ -79,10 +80,10 @@ public interface EuroCoinStorageRepository {
      * Checks existence of a {@link EuroCoin} by coinId.
      *
      * @param connection open JDBC connection; must not be {@code null}
-     * @param coinId identifier to check; must not be {@code null} or blank
+     * @param coinId identifier (UUID) to check; must not be {@code null}
      * @return {@code true} if a coin with the coinId exists; {@code false} otherwise
      * @throws SQLException if a database access error occurs
-     * @throws IllegalArgumentException if {@code coinId} is {@code null} or blank
+     * @throws IllegalArgumentException if {@code coinId} is {@code null}
      */
-    boolean exists(Connection connection, String coinId) throws SQLException;
+    boolean exists(Connection connection, UUID coinId) throws SQLException;
 }

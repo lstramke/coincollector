@@ -11,5 +11,3 @@ frontend/.vite/
 
 .env
 *.db
-
-**/application.yml

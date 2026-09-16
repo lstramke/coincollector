@@ -20,6 +20,7 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRe
 import org.springframework.boot.test.context.SpringBootTest;
 
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -39,6 +40,9 @@ public class AppIntegrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @Autowired 
+    private Environment environment;
+
     private record AppTestcase(
         String method,
         String route,
@@ -53,8 +57,6 @@ public class AppIntegrationTest {
         }
     }
 
-    private static final String DB_TESTFILE = "test.db";
-
     private String sessionId = "";
     private String groupId = "";
     private String groupToUpdateAndDeleteId = "";
@@ -64,11 +66,18 @@ public class AppIntegrationTest {
 
     @AfterAll
     void cleanup() {
-        Path dbPath = Path.of(DB_TESTFILE);
+        String databaseFile = environment.getProperty("coincollector.db-file");
+    
+        if (databaseFile == null || databaseFile.isBlank()) {
+            return;
+        }
+    
         try {
-            Files.deleteIfExists(dbPath);
-        } catch (Exception e) {
-            System.err.println("WARNING: Test database could not be deleted: " + dbPath);
+            Files.deleteIfExists(Path.of(databaseFile));
+        } catch (Exception exception) {
+            System.err.println(
+                "WARNING: Test database could not be deleted: " + databaseFile
+            );
         }
     }
 

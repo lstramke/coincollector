@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record DatabaseTableProperties(
     String user,
     String euroCoin,
+    String euroCoinType,
     String euroCoinCollection,
     String euroCoinCollectionGroup
 ){}

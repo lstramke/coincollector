@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
@@ -43,7 +44,8 @@ public class EuroCoinStorageServiceImplTest {
                                                 .setMintCountry(CoinCountry.GERMANY)
                                                 .setMint(Mint.BERLIN)
                                                 .setCollectionId("COL-1")
-                                                .build();;
+                                                .build();
+    private final static UUID VALID_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     private record SaveInternalConnectionTestcase(
         EuroCoin coin,
@@ -61,11 +63,46 @@ public class EuroCoinStorageServiceImplTest {
 
     private static Stream<SaveInternalConnectionTestcase> saveInternalConnectionTestcases(){
         return Stream.of(
-            new SaveInternalConnectionTestcase(null, false, false, false, IllegalArgumentException.class, "Null coin"),
-            new SaveInternalConnectionTestcase(dummyCoin, true, false, false, EuroCoinAlreadyExistsException.class, "coin already exists"),
-            new SaveInternalConnectionTestcase(dummyCoin, false, false, false, null, "coin-save is successful"),
-            new SaveInternalConnectionTestcase(dummyCoin, false, true, false, EuroCoinSaveException.class, "get connection throws"),
-            new SaveInternalConnectionTestcase(dummyCoin, false, false, true, EuroCoinSaveException.class, "repository throws")
+            new SaveInternalConnectionTestcase(
+                null,
+                false,
+                false,
+                false,
+                IllegalArgumentException.class,
+                "Null coin"
+            ),
+            new SaveInternalConnectionTestcase(
+                dummyCoin,
+                true,
+                false,
+                false,
+                EuroCoinAlreadyExistsException.class,
+                "coin already exists"
+            ),
+            new SaveInternalConnectionTestcase(
+                dummyCoin,
+                false,
+                false,
+                false,
+                null,
+                "coin-save is successful"
+            ),
+            new SaveInternalConnectionTestcase(
+                dummyCoin,
+                false,
+                true,
+                false,
+                EuroCoinSaveException.class,
+                "get connection throws"
+            ),
+            new SaveInternalConnectionTestcase(
+                dummyCoin,
+                false,
+                false,
+                true,
+                EuroCoinSaveException.class,
+                "repository throws"
+            )
         );
     }
 
@@ -120,10 +157,34 @@ public class EuroCoinStorageServiceImplTest {
 
     private static Stream<SaveExternalConnectionTestcase> saveExternalConnectionTestcases(){
         return Stream.of(
-            new SaveExternalConnectionTestcase(null, false, false, IllegalArgumentException.class, "Null coin"),
-            new SaveExternalConnectionTestcase(dummyCoin, true, false, EuroCoinAlreadyExistsException.class, "coin already exists"),
-            new SaveExternalConnectionTestcase(dummyCoin, false, false, null, "coin-save is successful"),
-            new SaveExternalConnectionTestcase(dummyCoin, false, true, EuroCoinSaveException.class, "repository throws")
+            new SaveExternalConnectionTestcase(
+                null, 
+                false,
+                false,
+                IllegalArgumentException.class,
+                "Null coin"
+            ),
+            new SaveExternalConnectionTestcase(
+                dummyCoin, 
+                true,
+                false,
+                EuroCoinAlreadyExistsException.class,
+                "coin already exists"
+            ),
+            new SaveExternalConnectionTestcase(
+                dummyCoin, 
+                false,
+                false,
+                null,
+                "coin-save is successful"
+            ),
+            new SaveExternalConnectionTestcase(
+                dummyCoin, 
+                false,
+                true,
+                EuroCoinSaveException.class,
+                "repository throws"
+            )
         );
     }
 
@@ -158,7 +219,7 @@ public class EuroCoinStorageServiceImplTest {
     }
 
     private record GetByIdInternalConnectionTestcase(
-        String coinId,
+        UUID coinId,
         boolean getConnectionThrows,
         boolean repositoryReadThrows,
         Optional<EuroCoin> readReturn,
@@ -174,10 +235,42 @@ public class EuroCoinStorageServiceImplTest {
 
     private static Stream<GetByIdInternalConnectionTestcase> getByIdInternalConnectionTestcases(){
         return Stream.of(
-            new GetByIdInternalConnectionTestcase("validId", false, false, Optional.of(dummyCoin), dummyCoin, null, "getById is successful"),
-            new GetByIdInternalConnectionTestcase("validId", true, false, null, null, EuroCoinNotFoundException.class, "getConnection throws"),
-            new GetByIdInternalConnectionTestcase("validId", false, true, null, null, EuroCoinNotFoundException.class, "repository throws"),
-            new GetByIdInternalConnectionTestcase("validId", false, false, Optional.empty(), null, EuroCoinNotFoundException.class, "repository returns Optional.Empty")
+            new GetByIdInternalConnectionTestcase(
+                VALID_ID,
+                false,
+                false,
+                Optional.of(dummyCoin),
+                dummyCoin,
+                null,
+                "getById is successful"
+            ),
+            new GetByIdInternalConnectionTestcase(
+                VALID_ID,
+                true,
+                false,
+                null,
+                null,
+                EuroCoinNotFoundException.class,
+                "getConnection throws"
+            ),
+            new GetByIdInternalConnectionTestcase(
+                VALID_ID,
+                false,
+                true,
+                null,
+                null,
+                EuroCoinNotFoundException.class,
+                "repository throws"
+            ),
+            new GetByIdInternalConnectionTestcase(
+                VALID_ID,
+                false,
+                false,
+                Optional.empty(),
+                null,
+                EuroCoinNotFoundException.class,
+                "repository returns Optional.Empty"
+            )
         );
     }
 
@@ -217,7 +310,7 @@ public class EuroCoinStorageServiceImplTest {
     }
 
     private record GetByIdExternalConnectionTestcase(
-        String coinId,
+        UUID coinId,
         boolean repositoryReadThrows,
         Optional<EuroCoin> readReturn,
         EuroCoin expectedCoin,
@@ -232,9 +325,30 @@ public class EuroCoinStorageServiceImplTest {
 
     private static Stream<GetByIdExternalConnectionTestcase> getByIdExternalConnectionTestcases(){
         return Stream.of(
-            new GetByIdExternalConnectionTestcase("validId", false, Optional.of(dummyCoin), dummyCoin, null, "getById is successful"),
-            new GetByIdExternalConnectionTestcase("validId", true, null, null, EuroCoinNotFoundException.class, "repository throws"),
-            new GetByIdExternalConnectionTestcase("validId", false, Optional.empty(), null, EuroCoinNotFoundException.class, "repository returns Optional.Empty")
+            new GetByIdExternalConnectionTestcase(
+                VALID_ID,
+                false,
+                Optional.of(dummyCoin),
+                dummyCoin,
+                null,
+                "getById is successful"
+            ),
+            new GetByIdExternalConnectionTestcase(
+                VALID_ID,
+                true,
+                null,
+                null,
+                EuroCoinNotFoundException.class,
+                "repository throws"
+            ),
+            new GetByIdExternalConnectionTestcase(
+                VALID_ID,
+                false,
+                Optional.empty(),
+                null,
+                EuroCoinNotFoundException.class,
+                "repository returns Optional.Empty"
+            )
         );
     }
 
@@ -281,10 +395,34 @@ public class EuroCoinStorageServiceImplTest {
 
     private static Stream<UpdateInternalConnectionTestcase> updateInternalConnectionTestcases(){
         return Stream.of(
-            new UpdateInternalConnectionTestcase(dummyCoin, false, false, null, "update is successful"),
-            new UpdateInternalConnectionTestcase(null, false, false, IllegalArgumentException.class, "null coin"),
-            new UpdateInternalConnectionTestcase(dummyCoin, true, false, EuroCoinUpdateException.class, "getConnection throws"),
-            new UpdateInternalConnectionTestcase(dummyCoin, false, true, EuroCoinUpdateException.class, "repository throws")
+            new UpdateInternalConnectionTestcase(
+                dummyCoin,
+                false,
+                false,
+                null,
+                "update is successful"
+            ),
+            new UpdateInternalConnectionTestcase(
+                null,
+                false,
+                false,
+                IllegalArgumentException.class,
+                "null coin"
+            ),
+            new UpdateInternalConnectionTestcase(
+                dummyCoin,
+                true,
+                false,
+                EuroCoinUpdateException.class,
+                "getConnection throws"
+            ),
+            new UpdateInternalConnectionTestcase(
+                dummyCoin,
+                false,
+                true,
+                EuroCoinUpdateException.class,
+                "repository throws"
+            )
         );
     }
 
@@ -337,9 +475,24 @@ public class EuroCoinStorageServiceImplTest {
 
     private static Stream<UpdateExternalConnectionTestcase> updateExternalConnectionTestcases(){
         return Stream.of(
-            new UpdateExternalConnectionTestcase(dummyCoin, false, null, "update is successful"),
-            new UpdateExternalConnectionTestcase(null, false, IllegalArgumentException.class, "null coin"),
-            new UpdateExternalConnectionTestcase(dummyCoin, true, EuroCoinUpdateException.class, "repository throws")
+            new UpdateExternalConnectionTestcase(
+                dummyCoin,
+                false,
+                null,
+                "update is successful"
+            ),
+            new UpdateExternalConnectionTestcase(
+                null,
+                false,
+                IllegalArgumentException.class,
+                "null coin"
+            ),
+            new UpdateExternalConnectionTestcase(
+                dummyCoin,
+                true,
+                EuroCoinUpdateException.class,
+                "repository throws"
+            )
         );
     }
 
@@ -372,7 +525,7 @@ public class EuroCoinStorageServiceImplTest {
     }
 
     private record DeleteInternalConnectionTestcase(
-        String coinId,
+        UUID coinId,
         boolean getConnectionThrows,
         boolean repositoryDeleteThrows,
         Class<? extends Exception> expectedException,
@@ -386,10 +539,34 @@ public class EuroCoinStorageServiceImplTest {
 
     private static Stream<DeleteInternalConnectionTestcase> deleteInternalConnectionTestcases(){
         return Stream.of(
-            new DeleteInternalConnectionTestcase("validId", false, false, null, "update is successful"),
-            new DeleteInternalConnectionTestcase(null, false, false, IllegalArgumentException.class, "null coin"),
-            new DeleteInternalConnectionTestcase("validId", true, false, EuroCoinDeleteException.class, "getConnection throws"),
-            new DeleteInternalConnectionTestcase("validId", false, true, EuroCoinDeleteException.class, "repository throws")
+            new DeleteInternalConnectionTestcase(
+                VALID_ID,
+                false,
+                false,
+                null,
+                "update is successful"
+            ),
+            new DeleteInternalConnectionTestcase(
+                null,
+                false,
+                false,
+                IllegalArgumentException.class,
+                "null coin"
+            ),
+            new DeleteInternalConnectionTestcase(
+                VALID_ID,
+                true,
+                false,
+                EuroCoinDeleteException.class,
+                "getConnection throws"
+            ),
+            new DeleteInternalConnectionTestcase(
+                VALID_ID,
+                false,
+                true,
+                EuroCoinDeleteException.class,
+                "repository throws"
+            )
         );
     }
 
@@ -429,7 +606,7 @@ public class EuroCoinStorageServiceImplTest {
     }
 
     private record DeleteExternalConnectionTestcase(
-        String coinId,
+        UUID coinId,
         boolean repositoryDeleteThrows,
         Class<? extends Exception> expectedException,
         String description
@@ -442,9 +619,24 @@ public class EuroCoinStorageServiceImplTest {
 
     private static Stream<DeleteExternalConnectionTestcase> deleteExternalConnectionTestcases(){
         return Stream.of(
-            new DeleteExternalConnectionTestcase("validId", false, null, "update is successful"),
-            new DeleteExternalConnectionTestcase(null, false, IllegalArgumentException.class, "null coin"),
-            new DeleteExternalConnectionTestcase("validId", true, EuroCoinDeleteException.class, "repository throws")
+            new DeleteExternalConnectionTestcase(
+                VALID_ID,
+                false,
+                null,
+                "update is successful"
+            ),
+            new DeleteExternalConnectionTestcase(
+                null,
+                false,
+                IllegalArgumentException.class,
+                "null coin"
+            ),
+            new DeleteExternalConnectionTestcase(
+                VALID_ID,
+                true,
+                EuroCoinDeleteException.class,
+                "repository throws"
+            )
         );
     }
 

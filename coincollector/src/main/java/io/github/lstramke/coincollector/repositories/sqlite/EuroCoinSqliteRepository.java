@@ -5,6 +5,7 @@ import io.github.lstramke.coincollector.model.CoinCountry;
 import io.github.lstramke.coincollector.model.EuroCoin;
 import io.github.lstramke.coincollector.model.EuroCoinBuilder;
 import io.github.lstramke.coincollector.model.EuroCoinFactory;
+import io.github.lstramke.coincollector.model.EuroCoinType;
 import io.github.lstramke.coincollector.repositories.EuroCoinStorageRepository;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,9 +14,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -35,12 +37,13 @@ import org.springframework.stereotype.Repository;
 public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(EuroCoinSqliteRepository.class);
-    private final String tableName;
+    private final String euroCoinTableName;
+    private final String euroCoinTypeTableName;
     private final EuroCoinFactory euroCoinFactory;
 
-    @Autowired
     public EuroCoinSqliteRepository(DatabaseTableProperties tableProperties, EuroCoinFactory euroCoinFactory) {
-        this.tableName = tableProperties.euroCoin();
+        this.euroCoinTableName = tableProperties.euroCoin();
+        this.euroCoinTypeTableName = tableProperties.euroCoinType();
         this.euroCoinFactory = euroCoinFactory;
     }
 
@@ -55,18 +58,18 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             throw new IllegalArgumentException("EuroCoin validation failed (create)");
         }
 
+        EuroCoinType type = coin.getType();
+        ensureType(connection, type);
+
         String sql = String.format(
-                "INSERT INTO %s (coin_id, year, coin_value, mint_country, mint, description, collection_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                tableName);
+            "INSERT INTO %s (coin_id, description, collection_id, type_id) VALUES (?, ?, ?, ?)",
+            euroCoinTableName);
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, coin.getId());
-            preparedStatement.setInt(2, coin.getYear());
-            preparedStatement.setInt(3, coin.getValue().getCentValue());
-            preparedStatement.setString(4, coin.getMintCountry().getIsoCode());
-            preparedStatement.setString(5, coin.getMintCountry().equals(CoinCountry.GERMANY) ? coin.getMint().getMintMark() : null);
-            preparedStatement.setString(6, coin.getDescription().toString());
-            preparedStatement.setString(7, coin.getCollectionId());
+            preparedStatement.setString(1, coin.getId().toString());
+            preparedStatement.setString(2, coin.getDescription().toString());
+            preparedStatement.setString(3, coin.getCollectionId());
+            preparedStatement.setString(4, type.id());
 
             int rowsAffected = preparedStatement.executeUpdate();
 
@@ -86,28 +89,31 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     /** {@inheritDoc} */
     @Override
-    public Optional<EuroCoin> read(Connection connection, String coinId) throws SQLException {
+    public Optional<EuroCoin> read(Connection connection, UUID coinId) throws SQLException {
         if (connection == null) {
             throw new IllegalArgumentException("connection must not be null (read)");
         }
-        if (coinId == null || coinId.isBlank()) {
-            logger.warn("EuroCoin read aborted: coinId null/blank");
-            throw new IllegalArgumentException("coinId must not be null or blank (read)");
+        if (coinId == null) {
+            logger.warn("EuroCoin read aborted: coinId null");
+            throw new IllegalArgumentException("coinId must not be null (read)");
         }
 
         String sql = String.format(
             """ 
-            SELECT coin_id, year, coin_value, mint_country, mint, description, collection_id
-            FROM %s
-            WHERE coin_id = ?
-            """, tableName
+            SELECT c.coin_id, t.year, t.coin_value, t.mint_country, t.mint,
+                c.description, c.collection_id
+            FROM %s c
+            JOIN %s t ON t.type_id = c.type_id
+            WHERE c.coin_id = ?
+            """, euroCoinTableName, euroCoinTypeTableName
         );
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, coinId);
+            var coinIdString = coinId.toString();
+            preparedStatement.setString(1, coinIdString);
             try (ResultSet queryResult = preparedStatement.executeQuery()) {
                 if (queryResult.next()) {
-                    return createEuroCoinFromResultSet(coinId, queryResult);
+                    return createEuroCoinFromResultSet(coinIdString, queryResult);
                 } else {
                     logger.debug("EuroCoin not found: coinId={}", coinId);
                     return Optional.empty();
@@ -154,22 +160,21 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             throw new IllegalArgumentException("EuroCoin validation failed (update)");
         }
 
+        ensureType(connection, coin.getType());
+
         String sql = String.format(
             """
             UPDATE %s
-            SET year = ?, coin_value = ?, mint_country = ?, mint = ?, description = ?, collection_id = ?
+            SET type_id = ?, description = ?, collection_id = ?
             WHERE coin_id = ?
-            """, tableName
+            """, euroCoinTableName
         );
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setInt(1, coin.getYear());
-            preparedStatement.setInt(2, coin.getValue().getCentValue());
-            preparedStatement.setString(3, coin.getMintCountry().getIsoCode());
-            preparedStatement.setString(4, coin.getMintCountry().equals(CoinCountry.GERMANY) ? coin.getMint().getMintMark() : null);
-            preparedStatement.setString(5, coin.getDescription().toString());
-            preparedStatement.setString(6, coin.getCollectionId());
-            preparedStatement.setString(7, coin.getId());
+            preparedStatement.setString(1, coin.getType().id());
+            preparedStatement.setString(2, coin.getDescription().toString());
+            preparedStatement.setString(3, coin.getCollectionId());
+            preparedStatement.setString(4, coin.getId().toString());
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
@@ -186,24 +191,24 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     /** {@inheritDoc} */
     @Override
-    public void delete(Connection connection, String coinId)  throws SQLException{
+    public void delete(Connection connection, UUID coinId) throws SQLException {
         if (connection == null) {
             throw new IllegalArgumentException("connection must not be null (delete)");
         }
-        if (coinId == null || coinId.isBlank()) {
-            logger.warn("EuroCoin delete aborted: coinId null/blank");
-            throw new IllegalArgumentException("coinId must not be null or blank (delete)");
+        if (coinId == null) {
+            logger.warn("EuroCoin delete aborted: coinId null");
+            throw new IllegalArgumentException("coinId must not be null (delete)");
         }
 
         String sql = String.format(
             """
             DELETE FROM %s
             WHERE coin_id = ?
-            """, tableName
+            """, euroCoinTableName
         );
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, coinId);
+            preparedStatement.setString(1, coinId.toString());
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
@@ -226,9 +231,11 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         }
         String sql = String.format(
             """
-            SELECT coin_id, year, coin_value, mint_country, mint, description, collection_id
-            FROM %s
-            """, tableName
+            SELECT c.coin_id, t.year, t.coin_value, t.mint_country, t.mint,
+                c.description, c.collection_id
+            FROM %s c
+            JOIN %s t ON t.type_id = c.type_id
+            """, euroCoinTableName, euroCoinTypeTableName
         );
 
         List<EuroCoin> readCoins = new ArrayList<>();
@@ -236,6 +243,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             try(ResultSet rs = preparedStatement.executeQuery()){
                 while (rs.next()) {
+                    logger.error(rs.getString("coin_id"));
                     String coinId = rs.getString("coin_id");
                     Optional<EuroCoin> readCoin = createEuroCoinFromResultSet(coinId, rs);
                     if (readCoin.isPresent()) {
@@ -255,13 +263,13 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
     /** {@inheritDoc} */
     @Override
-    public boolean exists(Connection connection, String coinId) throws SQLException{
+    public boolean exists(Connection connection, UUID coinId) throws SQLException{
         if (connection == null) {
             throw new IllegalArgumentException("connection must not be null (exists)");
         }
-        if (coinId == null || coinId.isBlank()) {
-            logger.warn("EuroCoin exists check aborted: coinId null/blank");
-            throw new IllegalArgumentException("coinId must not be null or blank (exists)");
+        if (coinId == null) {
+            logger.warn("EuroCoin exists check aborted: coinId null");
+            throw new IllegalArgumentException("coinId must not be null (exists)");
         }
 
         String sql = String.format(
@@ -269,11 +277,11 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             SELECT 1
             FROM %s
             WHERE coin_id = ?
-            """, tableName
+            """, euroCoinTableName
         );
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, coinId);
+            preparedStatement.setString(1, coinId.toString());
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 return rs.next();
             }
@@ -283,9 +291,36 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         }
     }
 
+    private void ensureType(Connection connection, EuroCoinType type) throws SQLException {
+        String sql = String.format(
+            """
+            INSERT INTO %s (type_id, year, coin_value, mint_country, mint)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT (type_id) DO NOTHING
+            """, euroCoinTypeTableName
+        );
+
+        try {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                preparedStatement.setString(1, type.id());
+                preparedStatement.setInt(2, type.year());
+                preparedStatement.setInt(3, type.value().getCentValue());
+                preparedStatement.setString(4, type.mintCountry().getIsoCode());
+                preparedStatement.setString(5, type.mint() == null ? null : type.mint().getMintMark());
+                preparedStatement.executeUpdate();
+            }
+        } catch (SQLException exception) {
+            logger.error(
+                "EuroCoin type persistence failed: typeId={}, year={}, value={}, mintCountry={}, mint={}",
+                type.id(), type.year(), type.value(), type.mintCountry(), type.mint(), exception
+            );
+            throw exception;
+        }
+    }
+
     /**
      * Internal (package-private) validation of minimal {@link EuroCoin} invariants.
-     * Current rules: non-null object, non-blank id, year >= EURO_COIN_START_YEAR and
+     * Current rules: non-null object, non-null id, year >= EURO_COIN_START_YEAR and
      * non-null mandatory fields (value, mint country, mint, collectionId not blank).
      * Extend here if domain constraints evolve.
      *
@@ -297,7 +332,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             return false;
         }
 
-        if (coin.getId() == null || coin.getId().isBlank()) {
+        if (coin.getId() == null) {
             return false;
         }
 
