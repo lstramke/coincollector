@@ -18,6 +18,7 @@ import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.model.DTOs.Requests.LoginRequest;
 import io.github.lstramke.coincollector.services.UserStorageService;
 import io.github.lstramke.coincollector.services.SessionManager;
+import jakarta.validation.Valid;
 
 /**
  * REST controller for user login.
@@ -58,7 +59,7 @@ public class LoginHandler {
      * @return {@link ResponseEntity} with a Set-Cookie header on success
      */
     @PostMapping("/login")
-    public ResponseEntity<?> handleLogin(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> handleLogin(@Valid @RequestBody LoginRequest request) {
         logger.info("Login attempt for {}", request.username());
 
         User user = userStorageService.getByUsername(request.username());

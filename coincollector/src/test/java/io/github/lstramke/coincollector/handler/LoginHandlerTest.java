@@ -19,6 +19,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,12 +39,15 @@ class LoginHandlerTest {
     @MockitoBean
     SessionManager sessionManager;
 
+    @MockitoBean 
+    PasswordEncoder passwordEncoder;
+
     @Autowired
     MockMvc mockMvc;
 
     @FunctionalInterface
     interface MockSetup {
-        void setup(UserStorageService service, SessionManager sessionManager) throws Exception;
+        void setup(UserStorageService service, SessionManager sessionManager, PasswordEncoder passwordEncoder) throws Exception;
     }
 
 	private record LoginHandleTestcase(
@@ -63,11 +67,13 @@ class LoginHandlerTest {
         return Stream.of(
             new LoginHandleTestcase(
                 "POST",
-                "{\"username\":\"test.user\"}",
-                (service, sessionManager) -> {
+                "{\"username\":\"testuser\",\"password\":\"test-password\"}",
+                (service, sessionManager, passwordEncoder) -> {
                     var user = mock(User.class);
-                    when(service.getByUsername("test.user")).thenReturn(user);
+                    when(service.getByUsername("testuser")).thenReturn(user);
                     when(user.getId()).thenReturn("user-1");
+                    when(user.getPasswordHash()).thenReturn("stored-password-hash");
+                    when(passwordEncoder.matches("test-password", "stored-password-hash")).thenReturn(true);
                     when(sessionManager.createSession("user-1")).thenReturn("session-abc");
                 },
                 200,
@@ -78,7 +84,7 @@ class LoginHandlerTest {
             new LoginHandleTestcase(
                 "GET",
                 null,
-                (service, sessionManager) -> {},
+                (service, sessionManager, passwordEncoder) -> {},
                 405,
                 null,
                 null,
@@ -87,7 +93,7 @@ class LoginHandlerTest {
             new LoginHandleTestcase(
                 "POST",
                 "{\"username\":",
-                (service, sessionManager) -> {},
+                (service, sessionManager, passwordEncoder) -> {},
                 400,
                 "{\"error\":\"Request is not valid\"}",
                 null,
@@ -95,8 +101,17 @@ class LoginHandlerTest {
             ),
             new LoginHandleTestcase(
                 "POST",
-                "{\"username\":\"notfound\"}",
-                (service, sessionManager) -> {
+                "{\"username\":\"testuser\",\"password\":\"short\"}",
+                (service, sessionManager, passwordEncoder) -> {},
+                400,
+                "{\"error\":\"Request is not valid\"}",
+                null,
+                "To short password"
+            ),
+            new LoginHandleTestcase(
+                "POST",
+                "{\"username\":\"notfound\",\"password\":\"test-password\"}",
+                (service, sessionManager, passwordEncoder) -> {
                     when(service.getByUsername("notfound"))
                         .thenThrow(new UserNotFoundException("not found"));
                 },
@@ -112,7 +127,7 @@ class LoginHandlerTest {
     @MethodSource("loginHandleTestcases")
     void TestLoginHandler(LoginHandleTestcase testcase) throws Exception {
         try {
-            testcase.mockSetup.setup(userService, sessionManager);
+            testcase.mockSetup.setup(userService, sessionManager, passwordEncoder);
         } catch (Exception e) {
             fail(" due to unexcpected exception in setup");
         }
@@ -129,7 +144,7 @@ class LoginHandlerTest {
 
         if (testcase.expectedCookie != null) {
             resultActions.andExpect(header().string("Set-Cookie", testcase.expectedCookie));
-            verify(userService, times(1)).getByUsername("test.user");
+            verify(userService, times(1)).getByUsername("testuser");
             verify(sessionManager, times(1)).createSession("user-1");
         } else {
             resultActions.andExpect(header().doesNotExist("Set-Cookie"));
