@@ -4,12 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import io.github.lstramke.coincollector.model.User;
 import io.github.lstramke.coincollector.model.DTOs.Requests.LoginRequest;
@@ -29,6 +32,7 @@ public class LoginHandler {
 
     private final UserStorageService userStorageService;
     private final SessionManager sessionManager;
+    private final PasswordEncoder passwordEncoder;
     private final static Logger logger = LoggerFactory.getLogger(LoginHandler.class);
     
     /**
@@ -37,9 +41,10 @@ public class LoginHandler {
     * @param userStorageService Service for user access
     * @param sessionManager Service for session management
     */
-    public LoginHandler(UserStorageService userStorageService, SessionManager sessionManager) {
+    public LoginHandler(UserStorageService userStorageService, SessionManager sessionManager, PasswordEncoder passwordEncoder) {
         this.userStorageService = userStorageService;
         this.sessionManager = sessionManager;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -57,6 +62,10 @@ public class LoginHandler {
         logger.info("Login attempt for {}", request.username());
 
         User user = userStorageService.getByUsername(request.username());
+        if(!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+        }
+        
         String sessionId = sessionManager.createSession(user.getId());
         String cookie = ResponseCookie.from("sessionId", sessionId)
             .path("/")
