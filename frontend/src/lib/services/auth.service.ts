@@ -2,10 +2,12 @@ import api from '$lib/api/api';
 
 type LoginRequest = {
   username: string;
+  password: string;
 };
 
 type RegistrationRequest = {
   username: string;
+  password: string;
 };
 
 export const authService = {

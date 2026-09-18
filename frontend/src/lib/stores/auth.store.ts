@@ -13,10 +13,10 @@ export const authError = writable<string | null>(null);
  * Authenticates user and loads their groups
  * @param username - Username to login with
  */
-export async function login(username: string) {
+export async function login(username: string, password: string) {
     authError.set(null);
     try {
-        await authService.login({username});
+        await authService.login({ username, password });
         currentUser.set({username});
         isAuthenticated.set(true);
         loadGroups();
@@ -35,10 +35,10 @@ export async function login(username: string) {
  * Registers new user account
  * @param username - Username to register
  */
-export async function register(username: string) {
+export async function register(username: string, password: string) {
     authError.set(null);
     try {
-        await authService.register({username});
+        await authService.register({ username, password });
         currentUser.set({username});
         isAuthenticated.set(true);
     } catch (error) {
