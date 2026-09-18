@@ -8,7 +8,7 @@ import java.util.UUID;
 public class User {
     private final String id;
     private final String name;
-    private final String passwordHash;
+    private String passwordHash;
 
     /**
      * Create a new user with a freshly generated random id.
@@ -54,5 +54,9 @@ public class User {
 
     public String getPasswordHash() {
         return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 }

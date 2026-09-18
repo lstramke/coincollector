@@ -54,7 +54,7 @@ public class SecurityConfig {
             .httpBasic(basic -> basic.disable())
             .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(entryPoint))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/login", "/api/v1/registration", "/api/v1/shutdown", "/", "/index.html", "/static/**", "/assets/**").permitAll()
+                .requestMatchers("/api/v1/login", "/api/v1/registration", "/api/v1/password/setup", "/api/v1/shutdown", "/", "/index.html", "/static/**", "/assets/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(sessionFilter, UsernamePasswordAuthenticationFilter.class);

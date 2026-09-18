@@ -125,7 +125,7 @@ class LoginHandlerTest {
 
     @ParameterizedTest(name = "{index} - {0}")
     @MethodSource("loginHandleTestcases")
-    void TestLoginHandler(LoginHandleTestcase testcase) throws Exception {
+    void testLoginHandler(LoginHandleTestcase testcase) throws Exception {
         try {
             testcase.mockSetup.setup(userService, sessionManager, passwordEncoder);
         } catch (Exception e) {
