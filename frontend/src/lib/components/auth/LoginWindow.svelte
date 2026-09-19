@@ -6,15 +6,21 @@
 
     let fields: AuthField[] = [
         { id: 'username', label: 'Benutzername', value: '', required: true },
+        { id: 'password', label: 'Passwort', type: 'password', value: '', required: true, addVisibilityToggle: true },
     ];
 
     async function onSubmit(items: AuthField[]) {
         const username = items.find( f => f.id === "username")?.value ?? "";
+        const password = items.find( f => f.id === "password")?.value ?? "";
         if(!username.trim()) {
             authError.set("Username must be not empty");
             return;
         }
-        await login(username);     
+        if(password.length < 8) {
+            authError.set("Password must be 8 characters minimum");
+            return;
+        }
+        await login(username, password);
     }
 
 </script>

@@ -19,6 +19,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,12 +39,15 @@ class RegistrationHandlerTest {
     @MockitoBean
     SessionManager sessionManager;
 
+	@MockitoBean
+	PasswordEncoder passwordEncoder;
+
     @Autowired
     MockMvc mockMvc;
 
 	@FunctionalInterface
 	interface MockSetup {
-		void setup(UserStorageService service, SessionManager sessionManager) throws Exception;
+		void setup(UserStorageService service, SessionManager sessionManager, PasswordEncoder passwordEncoder) throws Exception;
 	}
 
 	   private record RegistrationHandleTestcase(
@@ -64,8 +68,9 @@ class RegistrationHandlerTest {
 		   return Stream.of(
 			    new RegistrationHandleTestcase(
 				    "POST",
-				    "{\"username\":\"test.user\"}",
-					(service, sessionManager) -> {
+				    "{\"username\":\"test.user\",\"password\":\"test-password\"}",
+					(service, sessionManager, passwordEncoder) -> {
+					    when(passwordEncoder.encode("test-password")).thenReturn("encoded-password");
 					    when(sessionManager.createSession(any(String.class))).thenReturn("session-abc");
 					},
 				    201,
@@ -77,7 +82,7 @@ class RegistrationHandlerTest {
 			    new RegistrationHandleTestcase(
 				    "GET",
 				    null,
-				    (service, sessionManager) -> {},
+				    (service, sessionManager, passwordEncoder) -> {},
 				    405,
 				    "{\"error\":\"Method is not allowed\"}",
 				    null,
@@ -87,7 +92,7 @@ class RegistrationHandlerTest {
 			    new RegistrationHandleTestcase(
 				    "POST",
 				    "{\"username\":",
-				    (service, sessionManager) -> {},
+				    (service, sessionManager, passwordEncoder) -> {},
 				    400,
 				    "{\"error\":\"Request is not valid\"}",
 				    null,
@@ -96,8 +101,19 @@ class RegistrationHandlerTest {
 			    ),
 			    new RegistrationHandleTestcase(
 				    "POST",
-				    "{\"username\":\"fail\"}",
-				      (service, sessionManager) -> {
+				    "{\"username\":\"test.user\",\"password\":\"short\"}",
+				    (service, sessionManager, passwordEncoder) -> {},
+				    400,
+				    "{\"error\":\"Request is not valid\"}",
+				    null,
+				    false,
+				    "Password shorter than eight characters: returns 400"
+			    ),
+			    new RegistrationHandleTestcase(
+				    "POST",
+				    "{\"username\":\"fail\",\"password\":\"test-password\"}",
+				      (service, sessionManager, passwordEncoder) -> {
+				        when(passwordEncoder.encode("test-password")).thenReturn("encoded-password");
 				    	doThrow(new UserSaveException("fail")).when(service).save(any(User.class));
 				    },
 				    500,
@@ -112,7 +128,7 @@ class RegistrationHandlerTest {
 	@ParameterizedTest(name = "{index} - {0}")
 	@MethodSource("registrationHandleTestcases")
 	void testRegistrationHandler(RegistrationHandleTestcase testcase) throws Exception {
-		testcase.mockSetup.setup(userService, sessionManager);
+		testcase.mockSetup.setup(userService, sessionManager, passwordEncoder);
 
 		var requestBuilder = switch (testcase.method()) {
 			case "POST" -> post("/api/v1/registration")

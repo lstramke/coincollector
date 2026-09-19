@@ -5,15 +5,27 @@
 
     let fields: AuthField[] = [
         { id: 'username', label: 'Benutzername', value: '', required: true },
+        { id: 'password', label: 'Passwort', type: 'password', value: '', required: true, addVisibilityToggle: true },
+        { id: 'passwordConfirm', label: 'Passwort bestätigen', type: 'password', value: '', required: true, addVisibilityToggle: true },
     ];
 
     async function onSubmit(items: AuthField[]) {
         const username = items.find( f => f.id === "username")?.value ?? "";
+        const password = items.find( f => f.id === "password")?.value ?? "";
+        const passwordConfirm = items.find( f => f.id === "passwordConfirm")?.value ?? "";
         if(!username.trim()) {
             authError.set("Username must be not empty");
             return;
         }
-        await register(username);     
+        if(password.length < 8) {
+            authError.set("Password must be 8 characters minimum");
+            return;
+        }
+        if(password !== passwordConfirm) {
+            authError.set("Passwords do not match");
+            return;
+        }
+        await register(username, password);
     }
 
 </script>

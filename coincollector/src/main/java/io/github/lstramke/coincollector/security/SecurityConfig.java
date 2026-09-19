@@ -4,6 +4,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password4j.Argon2Password4jPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import io.github.lstramke.coincollector.services.SessionManager;
@@ -33,6 +35,14 @@ public class SecurityConfig {
         return new SessionFilter(sessionManager);
     }
 
+    @Bean
+    /**
+     * Creates a password encoder.
+     */
+    public PasswordEncoder passwordEncoder() {
+        return new Argon2Password4jPasswordEncoder();
+    }
+
     /**
      * Builds the Spring Security filter chain.
      */
@@ -44,7 +54,7 @@ public class SecurityConfig {
             .httpBasic(basic -> basic.disable())
             .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(entryPoint))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/login", "/api/v1/registration", "/api/v1/shutdown", "/", "/index.html", "/static/**", "/assets/**").permitAll()
+                .requestMatchers("/api/v1/login", "/api/v1/registration", "/api/v1/password/setup", "/api/v1/shutdown", "/", "/index.html", "/static/**", "/assets/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(sessionFilter, UsernamePasswordAuthenticationFilter.class);

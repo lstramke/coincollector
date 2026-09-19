@@ -6,4 +6,5 @@ export type AuthField = {
         value: string;
         required?: boolean;
         placeholder?: string;
+        addVisibilityToggle?: boolean;
     };
