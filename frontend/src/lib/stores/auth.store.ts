@@ -8,6 +8,7 @@ import { loadGroups, setGroups } from './group.store';
 export const currentUser = writable<User | null>(null);
 export const isAuthenticated = writable<boolean>(false);
 export const authError = writable<string | null>(null);
+export const successMessage = writable<string | null>(null);
 
 /**
  * Authenticates user and loads their groups
@@ -69,5 +70,22 @@ export async function logout() {
     } finally {
         isAuthenticated.set(false);
         currentUser.set(null);
+    }
+}
+
+export async function setupPassword(username: string, newPassword: string): Promise<boolean> {
+    authError.set(null)
+    successMessage.set(null)
+    try {
+        await authService.setupPassword({username, newPassword});
+        successMessage.set('Passwort erfolgreich eingerichtet.');
+        return true;
+    } catch (error) {
+        if (isAxiosError(error)) {
+            authError.set(error.response?.data?.message || "Password setup failed");
+        } else {
+            authError.set("Unknown error");
+        }
+        return false;
     }
 }

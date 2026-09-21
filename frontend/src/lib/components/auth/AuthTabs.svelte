@@ -1,9 +1,17 @@
 <script lang="ts">
-    import { systemService } from '$lib/services/system.service';
+  import { systemService } from '$lib/services/system.service';
   import LoginWindow from './LoginWindow.svelte';
   import RegisterWindow from './RegisterWindow.svelte';
+  import SetupWindow from './PasswordSetupWindow.svelte';
+  import {authError, successMessage} from '$lib/stores/auth.store'
   
-  let activeTab: 'login' | 'register' = $state('login');
+  let activeTab: 'login' | 'register' | 'setup' = $state('login');
+  function switchTab(tabname: 'login' | 'register' | 'setup') {
+    activeTab = tabname;
+    authError.set(null);
+    successMessage.set(null);
+
+  }
 </script>
 
 <div class="min-h-screen bg-[var(--bg-main)] flex items-center justify-center px-4 py-16">
@@ -28,7 +36,7 @@
                 ? 'bg-[var(--color-primary)] text-white shadow-[0_6px_14px_rgba(212,160,23,0.35)]'
                 : 'text-[var(--text-secondary)] hover:text-[var(--color-primary)]'
             }`}
-            onclick={() => (activeTab = 'login')}
+            onclick={() => switchTab('login')}
           >
             Anmelden
           </button>
@@ -39,17 +47,30 @@
                 ? 'bg-[var(--color-primary)] text-white shadow-[0_6px_14px_rgba(212,160,23,0.35)]'
                 : 'text-[var(--text-secondary)] hover:text-[var(--color-primary)]'
             }`}
-            onclick={() => (activeTab = 'register')}
+            onclick={() => switchTab('register')}
           >
             Registrieren
+          </button>
+          <button
+            type="button"
+            class={`rounded-full px-6 py-2 text-sm font-semibold transition-all duration-200 ${
+              activeTab === 'setup'
+                ? 'bg-[var(--color-primary)] text-white shadow-[0_6px_14px_rgba(212,160,23,0.35)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--color-primary)]'
+            }`}
+            onclick={() => switchTab('setup')}
+          >
+            Passwort einrichten
           </button>
         </div>
       </div>
     </header>
     {#if activeTab === 'login'}
       <LoginWindow />
-    {:else}
+    {:else if activeTab === 'register'}
       <RegisterWindow />
+    {:else}
+      <SetupWindow onSuccess={() => switchTab('login')} />
     {/if}
     <div class="flex justify-center mt-8 items-center gap-2 rounded-full  p-1">
       <button

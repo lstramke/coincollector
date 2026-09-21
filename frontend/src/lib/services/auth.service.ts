@@ -10,6 +10,11 @@ type RegistrationRequest = {
   password: string;
 };
 
+type SetupPasswordRequest = {
+  username: string;
+  newPassword: string;
+};
+
 export const authService = {
   async login(data: LoginRequest): Promise<void> {
     await api.post('/login', data);
@@ -21,5 +26,9 @@ export const authService = {
 
   async logout(): Promise<void> {
     await api.post('/logout');
+  },
+
+  async setupPassword(data: SetupPasswordRequest): Promise<void> {
+    await api.post('/password/setup', data);
   }
 };
