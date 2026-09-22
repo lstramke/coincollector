@@ -33,13 +33,7 @@ public class UserFactory {
         try {
             String userId = resultSet.getString("user_id");
             String name = resultSet.getString("username");
-            String passwordHash = null;
-
-            try {
-                passwordHash = resultSet.getString("password_hash");
-            } catch (SQLException ignored) {
-                // password_hash column is optional for older database versions
-            }
+            String passwordHash = resultSet.getString("password_hash");
 
             return new User(userId, name, passwordHash);
         } catch (IllegalArgumentException e) {
