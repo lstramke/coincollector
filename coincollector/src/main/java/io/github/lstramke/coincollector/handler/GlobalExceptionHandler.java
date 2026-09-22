@@ -10,6 +10,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -22,7 +23,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({ 
         HttpMessageNotReadableException.class, 
-        UserNotFoundException.class 
+        UserNotFoundException.class,
+        MethodArgumentNotValidException.class
     })
     public ResponseEntity<Map<String, String>> handleInvalidRequests(Exception e) {
         logger.warn("Invalid request: {}", e.getMessage());

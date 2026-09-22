@@ -51,7 +51,7 @@ public class SessionFilter extends OncePerRequestFilter {
             for (var cookie : cookies) {
                 if ("sessionId".equals(cookie.getName()) && cookie.getValue() != null && !cookie.getValue().isBlank()) {
                     sessionId = cookie.getValue();
-                    logger.debug("Found sessionId cookie: {}", sessionId);
+                    logger.debug("Found sessionId cookie");
                     break;
                 }
             }
@@ -66,7 +66,7 @@ public class SessionFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } finally {
                 SecurityContextHolder.clearContext();
-                logger.debug("Cleared SecurityContext for request {}");
+                logger.debug("Cleared SecurityContext");
             }
         } else {
             // Leave unauthenticated requests to the security chain for a proper 401 response.

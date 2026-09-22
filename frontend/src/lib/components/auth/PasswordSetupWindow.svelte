@@ -1,7 +1,9 @@
 <script lang="ts">
     import AuthForm from './AuthForm.svelte';
     import type { AuthField } from '$lib/types/authField';
-    import { authError, register } from '$lib/stores/auth.store';
+    import { authError, successMessage, setupPassword } from '$lib/stores/auth.store';
+
+    let { onSuccess }: { onSuccess: () => void } = $props();
 
     let fields: AuthField[] = [
         { id: 'username', label: 'Benutzername', value: '', required: true },
@@ -25,15 +27,20 @@
             authError.set("Passwords do not match");
             return;
         }
-        await register(username, password);
+        const success = await setupPassword(username, password);
+        if(success) {
+            setTimeout(() => {
+                onSuccess();
+            }, 2000);
+        }
     }
 
 </script>
 
 <AuthForm
-    title="Registrieren"
-    description="Erstellen Sie ein Konto"
-    submitLabel="Registrieren"
+    title="Passwort einrichten"
+    description="Richten Sie für ihr migriertes Konto ein Passwort ein"
+    submitLabel="Password einrichten"
     {fields}
     {onSubmit}
 />
@@ -43,6 +50,15 @@
         <div class="px-4 py-2 rounded border"
             style="background-color: var(--bg-table); border-color: var(--color-destructive); color: var(--color-destructive);">
             {$authError}
+        </div>
+    </div>
+{:else if $successMessage}
+    <div class="flex justify-center mt-4">
+        <div
+            class="px-4 py-2 rounded border"
+            style="background-color: var(--bg-table); border-color: var(--color-success); color: var(--color-success);"
+        >
+            {$successMessage}
         </div>
     </div>
 {/if}

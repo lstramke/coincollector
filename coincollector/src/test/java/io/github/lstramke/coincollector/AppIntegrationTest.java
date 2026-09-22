@@ -118,18 +118,18 @@ public class AppIntegrationTest {
             () -> new AppTestcase(
                 "POST", 
                 "/api/v1/login", 
-                "{\"username\":\"testuser\"}", 
+                "{\"username\":\"testuser\",\"password\":\"test-password\"}", 
                 false,
                 response -> {
                     assertEquals(400, response.getStatusCode().value());
-                    assertTrue(response.getBody().contains("error"), "Login with empty Db should return error");
+                    assertTrue(response.getBody().contains("error"), "Login with empty DB should return error");
                 },
                 "Login fails when user does not exist"
             ),
             () -> new AppTestcase(
                 "POST", 
                 "/api/v1/registration", 
-                "{\"username\":\"testuser\"}", 
+                "{\"username\":\"testuser\",\"password\":\"test-password\"}", 
                 false,
                 response -> {
                     assertEquals(201, response.getStatusCode().value());
@@ -509,7 +509,7 @@ public class AppIntegrationTest {
             () -> new AppTestcase(
                 "POST", 
                 "/api/v1/login", 
-                "{\"username\":\"testuser\"}", 
+                "{\"username\":\"testuser\",\"password\":\"test-password\"}", 
                 false,
                 response -> {
                     assertEquals(200, response.getStatusCode().value());

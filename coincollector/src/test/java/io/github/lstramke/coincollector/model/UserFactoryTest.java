@@ -61,6 +61,7 @@ public class UserFactoryTest {
 
 			verify(rs, times(1)).getString("user_id");
 			verify(rs, times(1)).getString("username");
+			verify(rs, times(1)).getString("password_hash");
 			verifyNoMoreInteractions(rs);
 		}
 	}

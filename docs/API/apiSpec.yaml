@@ -4,7 +4,8 @@ info:
   version: "1.0"
   description: "API Spec für CoinCollector"
 
-# TODO: adjust apis after spring web refactor if neccessary
+# TODO: nicht weiter anpassen, von spring erstellen lassen
+
 
 paths:
   # Authentication
@@ -12,7 +13,7 @@ paths:
     post:
       tags:
         - Login
-      summary: Logs in a user if the username exists
+      summary: Logs in a user with username and password
       requestBody:
         required: true
         content:
@@ -31,6 +32,12 @@ paths:
 
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Invalid username or password
+          content:
+            application/json:
+              example:
+                error: "Invalid username or password"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -51,7 +58,7 @@ paths:
     post:
       tags:
         - Registration
-      summary: Creates a new user
+      summary: Creates a new user with a password
       requestBody:
         required: true
         content:
@@ -71,7 +78,49 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-# Internal
+  /api/v1/password/setup:
+    post:
+      tags:
+        - Password
+      summary: Sets the initial password for a user without a password
+      description: This endpoint is intended for users migrated without a password. It does not create a session or set a cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordSetupRequest"
+      responses:
+        "204":
+          description: Password was set successfully.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/password/change:
+    post:
+      tags:
+        - Password
+      summary: Change the password for a user
+      description: This endpoint is intended for changing the password for an authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordChangeRequest"
+      responses:
+        "204":
+          description: Password was set successfully. No session cookie is issued.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # Internal
   /api/v1/shutdown:
     post:
       tags:
@@ -489,18 +538,64 @@ components:
       type: object
       required:
         - username
+        - password
       properties:
         username:
           type: string
           description: The username for login
           example: "max.mustermann"
+        password:
+          type: string
+          minLength: 8
+          example: "correct-horse-battery-staple"
       example:
         username: "max.mustermann"
+        password: "correct-horse-battery-staple"
 
     RegistrationRequest:
       allOf:
         - $ref: "#/components/schemas/LoginRequest"
         - type: object
+
+    PasswordSetupRequest:
+      type: object
+      required:
+        - username
+        - newPassword
+      properties:
+        username:
+          type: string
+          description: The username of the user
+          example: "max.mustermann"
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          description: The initial password to set
+          example: "correct-horse-battery-staple"
+      example:
+        username: "max.mustermann"
+        newPassword: "correct-horse-battery-staple"
+
+    PasswordChangeRequest:
+      type: object
+      required:
+        - oldPassword
+        - newPassword
+      properties:
+        oldPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: "old-passsword"
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: "new-passsword"
+      example:
+        oldPassword: "old-passsword"
+        newPassword: "new-passsword"
 
     CreateGroupRequest:
       type: object

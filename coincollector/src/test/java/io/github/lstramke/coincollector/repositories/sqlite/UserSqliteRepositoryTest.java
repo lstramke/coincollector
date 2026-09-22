@@ -23,7 +23,7 @@ import io.github.lstramke.coincollector.model.UserFactory;
 @ExtendWith(MockitoExtension.class)
 public class UserSqliteRepositoryTest {
 
-    private static final User dummyUser = new User("Bob");
+    private static final User dummyUser = new User("Bob", "passwort_hash");
     private static final DatabaseTableProperties properties = new DatabaseTableProperties(
         "users_test", 
         "euroCoins_test", 

@@ -50,11 +50,15 @@ public class UserSqliteRepository implements UserStorageRepository{
             throw new IllegalArgumentException("User validation failed (create)");
         }
 
-        String sql = String.format("INSERT INTO %s (user_id, username) VALUES (?, ?)", tableName);
+        String sql = String.format(
+            "INSERT INTO %s (user_id, username, password_hash) VALUES (?, ?, ?)",
+            tableName
+        );
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, user.getId());
             preparedStatement.setString(2, user.getName());
+            preparedStatement.setString(3, user.getPasswordHash());
 
             int rowsAffected = preparedStatement.executeUpdate();
 
@@ -83,7 +87,7 @@ public class UserSqliteRepository implements UserStorageRepository{
 
         String sql = String.format(
             """
-            SELECT user_id, username
+            SELECT user_id, username, password_hash
             FROM %s
             WHERE user_id = ?
             """, tableName
@@ -144,14 +148,15 @@ public class UserSqliteRepository implements UserStorageRepository{
         String sql = String.format(
             """
             UPDATE %s
-            SET username = ?
+            SET username = ?, password_hash = ?
             WHERE user_id = ?
             """, tableName
         );
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, user.getName());
-            preparedStatement.setString(2, user.getId());
+            preparedStatement.setString(2, user.getPasswordHash());
+            preparedStatement.setString(3, user.getId());
 
             int rowsAffected = preparedStatement.executeUpdate();
 
@@ -247,7 +252,7 @@ public class UserSqliteRepository implements UserStorageRepository{
 
          String sql = String.format(
             """
-            SELECT user_id, username
+            SELECT user_id, username, password_hash
             FROM %s
             WHERE username = ?
             """, tableName

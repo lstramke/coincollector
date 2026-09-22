@@ -28,7 +28,14 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint{
         HttpServletResponse response,
         AuthenticationException authException
     ) throws IOException, ServletException {
-        logger.debug("Unauthorized request: {} {}", request.getMethod(), request.getRequestURI());
+        logger.warn(
+            "Unauthorized request: method={}, uri={}, ip={}, userAgent={}, reason={}",
+            request.getMethod(),
+            request.getRequestURI(),
+            request.getRemoteAddr(),
+            request.getHeader("User-Agent"),
+            authException.getClass().getSimpleName()
+        );   
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.getWriter().write("{\"error\":\"Unauthorized\"}");
