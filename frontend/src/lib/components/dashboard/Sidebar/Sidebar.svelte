@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Group } from "$lib/types/group";
-    import { selection, handleSelectCollection, handleGroupSelect } from "$lib/stores/selection.store";
+    import { selection, handleSelectCollection, handleGroupSelect } from "$lib/stores/selection.store.svelte";
 
     import SidebarHeader from "./SidebarHeader.svelte";
     import GroupDropdown from "./GroupDropdown.svelte";
@@ -14,7 +14,7 @@
     const groupCount = $derived(groups.length);
 
     const selectedId = $derived(
-        $selection?.type === "collection" ? $selection.id : undefined
+        selection.current?.type === "collection" ? selection.current.id : undefined
     );
 
 </script>

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { selection } from "$lib/stores/selection.store";
+    import { selection } from "$lib/stores/selection.store.svelte";
     import { collectionMap } from "$lib/stores/collection.store";
     import type { Collection } from "$lib/types/collection";
     import NewCoinForm from "./NewCoinForm.svelte";
@@ -10,8 +10,8 @@
     import type { Coin } from "$lib/types/coin";
 
     let collection = $derived((): Collection | undefined => {
-        return $selection?.type === "collection"
-            ? $collectionMap[$selection.id]
+        return selection.current?.type === "collection"
+            ? $collectionMap[selection.current.id]
             : undefined;
     });
 
