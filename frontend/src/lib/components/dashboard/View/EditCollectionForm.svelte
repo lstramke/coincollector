@@ -2,7 +2,7 @@
     import Dialog from "$lib/components/util/Dialog.svelte";
     import { coinCountryMap } from "$lib/stores/coinCountry.store";
     import { groupState } from "$lib/stores/group.store.svelte";
-    import { updateCollection } from "$lib/stores/collection.store";
+    import { updateCollection } from "$lib/stores/collection.store.svelte";
     import type { Collection } from "$lib/types/collection";
     import type { DialogField } from "$lib/types/dialogField";
 

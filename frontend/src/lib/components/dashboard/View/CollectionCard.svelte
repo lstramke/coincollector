@@ -2,7 +2,7 @@
     import type { Collection } from "$lib/types/collection";
     import { handleSelectCollection } from "$lib/stores/selection.store.svelte";
     import EditCollectionForm from "./EditCollectionForm.svelte";
-    import { deleteCollection } from "$lib/stores/collection.store";
+    import { deleteCollection } from "$lib/stores/collection.store.svelte";
 
     let { collection } = $props<{collection: Collection}>();
 

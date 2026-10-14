@@ -2,7 +2,7 @@
     import Dialog from "$lib/components/util/Dialog.svelte";
     import { groupState } from "$lib/stores/group.store.svelte";
     import type { DialogField } from "$lib/types/dialogField";
-    import { createCollection } from "$lib/stores/collection.store";
+    import { createCollection } from "$lib/stores/collection.store.svelte";
 
     let dialog: Dialog;
     let errorText = $state<string | null>(null);

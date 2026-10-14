@@ -1,6 +1,6 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
-    import { collectionMap } from "$lib/stores/collection.store";
+    import { collectionState } from "$lib/stores/collection.store.svelte";
     import { selection } from "$lib/stores/selection.store.svelte";
     import { cityMintMap } from "$lib/stores/mintCity.store";
     import type { DialogField } from "$lib/types/dialogField";
@@ -11,7 +11,7 @@
     let dialog: Dialog;
     let errorText = $state<string | null>(null);
 
-    const currentCollection = $derived(selection.current?.id ? $collectionMap[selection.current.id] : undefined);
+    const currentCollection = $derived(selection.current?.id ? collectionState.collectionMap[selection.current.id] : undefined);
 
     const countryNames = $derived(Object.keys($coinCountryMap || {}));
     const valueNames = $derived(Object.keys($stringCoinValuesMap || {}));
