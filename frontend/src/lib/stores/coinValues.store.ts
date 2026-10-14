@@ -1,6 +1,4 @@
-import { writable } from "svelte/store";
-
-export const stringCoinValuesMap = writable<Record<string, number>>({
+export const stringCoinValuesMap: Record<string, number> = {
     "2 Euro": 200,
     "1 Euro": 100,
     "50 Cent": 50,
@@ -9,9 +7,9 @@ export const stringCoinValuesMap = writable<Record<string, number>>({
     "5 Cent": 5,
     "2 Cent": 2,
     "1 Cent": 1
-});
+};
 
-export const coinValuesStringMap = writable<Record<number, string>>({
+export const coinValuesStringMap: Record<number, string> = {
     200 : "2 Euro",
     100 : "1 Euro",
     50 : "50 Cent",
@@ -20,4 +18,4 @@ export const coinValuesStringMap = writable<Record<number, string>>({
     5 : "5 Cent",
     2 : "2 Cent",
     1 : "1 Cent"
-});
+};
