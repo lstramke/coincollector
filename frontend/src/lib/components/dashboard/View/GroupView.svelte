@@ -1,12 +1,12 @@
 <script lang="ts">
     import { selection } from "$lib/stores/selection.store.svelte";
-    import { groups, deleteGroup } from "$lib/stores/group.store";
+    import { groupState, deleteGroup } from "$lib/stores/group.store.svelte";
     import CollectionCard from "./CollectionCard.svelte";
     import EditGroupForm from "./EditGroupForm.svelte";
 
     let editGroupDialog: EditGroupForm;
 
-    const group = $derived($groups.find(g => g.id === selection.current?.id));
+    const group = $derived(groupState.groups.find(g => g.id === selection.current?.id));
 </script>
 
 {#if group}

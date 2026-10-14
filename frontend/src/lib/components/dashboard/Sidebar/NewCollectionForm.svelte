@@ -1,16 +1,14 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
-    import { coinCountryMap } from "$lib/stores/coinCountry.store";
-    import { groups } from "$lib/stores/group.store";
+    import { groupState } from "$lib/stores/group.store.svelte";
     import type { DialogField } from "$lib/types/dialogField";
     import { createCollection } from "$lib/stores/collection.store";
-    import { get } from "svelte/store";
 
     let dialog: Dialog;
     let errorText = $state<string | null>(null);
 
-    const groupOptions = $derived.by(() => Object.fromEntries($groups.map(g => [g.name, g.id])));
-    const groupNames = $derived($groups.map(g => g.name));
+    const groupOptions = $derived.by(() => Object.fromEntries(groupState.groups.map(g => [g.name, g.id])));
+    const groupNames = $derived(groupState.groups.map(g => g.name));
 
     let fields = $derived.by(() => [
         {

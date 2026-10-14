@@ -1,6 +1,6 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
-    import { updateGroup } from "$lib/stores/group.store";
+    import { updateGroup } from "$lib/stores/group.store.svelte";
     import type { Group } from "$lib/types/group";
     import type { DialogField } from "$lib/types/dialogField";
 

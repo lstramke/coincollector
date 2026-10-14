@@ -1,7 +1,7 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
     import type { DialogField } from "$lib/types/dialogField";
-    import { addGroup, groupError } from "$lib/stores/group.store";
+    import { addGroup, groupState } from "$lib/stores/group.store.svelte";
 
     let dialog: Dialog;
 
@@ -18,7 +18,7 @@
     async function onSubmit(fields: DialogField[]){
         const nameField = fields.find(f => f.id === "group");
         if (!nameField || typeof nameField.value !== "string" || !nameField.value.trim()) {
-            groupError.set("Bitte einen gültigen Gruppennamen eingeben.");
+            groupState.error = "Bitte einen gültigen Gruppennamen eingeben.";
             return;
         }
         const success = await addGroup({ name: nameField.value.trim() });
@@ -45,5 +45,5 @@
     {fields}
     buttonText="Gruppe erstellen"
     {onSubmit}
-    errorText={$groupError}
+    errorText={groupState.error}
 />

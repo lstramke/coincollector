@@ -1,7 +1,7 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
     import { coinCountryMap } from "$lib/stores/coinCountry.store";
-    import { groups, groupMap } from "$lib/stores/group.store";
+    import { groupState } from "$lib/stores/group.store.svelte";
     import { updateCollection } from "$lib/stores/collection.store";
     import type { Collection } from "$lib/types/collection";
     import type { DialogField } from "$lib/types/dialogField";
@@ -11,7 +11,7 @@
 
     let collection = $state<Collection | undefined>(undefined);
 
-    const groupOptions = $derived.by(() => Object.fromEntries($groups.map(g => [g.name, g.id])));
+    const groupOptions = $derived.by(() => Object.fromEntries(groupState.groups.map(g => [g.name, g.id])));
     const groupNames = $derived(Object.keys(groupOptions));
     
     let fields: DialogField[] = $derived.by(() => {
@@ -20,7 +20,7 @@
             {
                 id: "group",
                 label: "Gruppe*",
-                value: $groupMap[collection.groupId].name,
+                value: groupState.groupMap[collection.groupId].name,
                 type: "select",
                 required: true,
                 options: groupNames

@@ -2,7 +2,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { Collection } from '$lib/types/collection';
 import { collectionService } from '$lib/services/collection.service';
-import { loadGroup, groups } from './group.store';
+import { loadGroup } from './group.store.svelte';
 
 export const collections = writable<Collection[]>([]);
 
