@@ -44,10 +44,10 @@
                 id: "mintCity",
                 label: "Prägestadt",
                 value: coin.mint
-                    ? `${$mintCityMap[coin.mint]} (${coin.mint})`
+                    ? `${mintCityMap[coin.mint]} (${coin.mint})`
                     : "",
                 type: "select",
-                options: Object.entries($cityMintMap).map(([name, code]) => `${name} (${code})`),
+                options: Object.entries(cityMintMap).map(([name, code]) => `${name} (${code})`),
                 placeholder: "Prägestadt wählen",
                 description: "Aktuell nur für Deutschland unterstützt"
             },
@@ -102,7 +102,7 @@
         let mint: string | undefined;
         if (mintCityDisplay) {
             const cityName = mintCityDisplay.split(' (')[0];
-            mint = $cityMintMap[cityName];
+            mint = cityMintMap[cityName];
         }
 
         const success = await updateCoin(coin.id, {

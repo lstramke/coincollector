@@ -15,7 +15,7 @@
 
     const countryNames = $derived(Object.keys($coinCountryMap || {}));
     const valueNames = $derived(Object.keys($stringCoinValuesMap || {}));
-    const mintCityNames = $derived(Object.entries($cityMintMap || {}).map(([name, code]) => `${name} (${code})`));
+    const mintCityNames = $derived(Object.entries(cityMintMap || {}).map(([name, code]) => `${name} (${code})`));
 
     let fields = $derived.by(() => [
         {
@@ -112,7 +112,7 @@
         let mint: string | undefined;
         if (mintCityDisplay) {
             const cityName = mintCityDisplay.split(' (')[0];
-            mint = $cityMintMap[cityName];
+            mint = cityMintMap[cityName];
         }
 
         const success = await createCoin({
