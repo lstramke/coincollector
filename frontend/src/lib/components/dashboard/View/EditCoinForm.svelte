@@ -14,7 +14,7 @@
 
     let fields: DialogField[] = $derived.by(() => {
         if (!coin) return [];
-        const countryName = Object.entries($coinCountryMap).find(([_, code]) => code === coin?.country)?.[0] || "";
+        const countryName = Object.entries(coinCountryMap).find(([_, code]) => code === coin?.country)?.[0] || "";
         return [
             {
                 id: "country",
@@ -22,15 +22,15 @@
                 value: countryName,
                 type: "select",
                 required: true,
-                options: Object.entries($coinCountryMap).map(([name, code]) => name).sort()
+                options: Object.entries(coinCountryMap).map(([name, code]) => name).sort()
             },
             {
                 id: "value",
                 label: "Wert*",
-                value: $coinValuesStringMap[coin.value] ?? "",
+                value: coinValuesStringMap[coin.value] ?? "",
                 type: "select",
                 required: true,
-                options: Object.values($coinValuesStringMap)
+                options: Object.values(coinValuesStringMap)
             },
             {
                 id: "year",
@@ -82,8 +82,8 @@
             return;
         }
 
-        const countryCode = $coinCountryMap[countryName];
-        const value = $stringCoinValuesMap[valueName];
+        const countryCode = coinCountryMap[countryName];
+        const value = stringCoinValuesMap[valueName];
         const year = parseInt(String(yearRaw), 10);
 
         if (!countryCode) {

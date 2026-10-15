@@ -13,8 +13,8 @@
 
     const currentCollection = $derived(selection.current?.id ? collectionState.collectionMap[selection.current.id] : undefined);
 
-    const countryNames = $derived(Object.keys($coinCountryMap || {}));
-    const valueNames = $derived(Object.keys($stringCoinValuesMap || {}));
+    const countryNames = $derived(Object.keys(coinCountryMap || {}));
+    const valueNames = $derived(Object.keys(stringCoinValuesMap || {}));
     const mintCityNames = $derived(Object.entries(cityMintMap || {}).map(([name, code]) => `${name} (${code})`));
 
     let fields = $derived.by(() => [
@@ -92,8 +92,8 @@
             return;
         }
 
-        const countryCode = $coinCountryMap[countryName];
-        const value = $stringCoinValuesMap[valueName];
+        const countryCode = coinCountryMap[countryName];
+        const value = stringCoinValuesMap[valueName];
         const year = parseInt(String(yearRaw), 10);
 
         if (!countryCode) {

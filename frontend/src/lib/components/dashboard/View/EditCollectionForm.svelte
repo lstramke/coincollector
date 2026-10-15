@@ -31,7 +31,7 @@
                 value: "",
                 type: "select",
                 required: true,
-                options: Object.entries($coinCountryMap).map(([name, code]) => name).sort()
+                options: Object.entries(coinCountryMap).map(([name, code]) => name).sort()
             },
             {
                 id: "year",
@@ -62,7 +62,7 @@
         }
 
         const groupId = groupOptions[groupName];
-        const countryCode = $coinCountryMap[countryName];
+        const countryCode = coinCountryMap[countryName];
         const year = parseInt(String(yearRaw), 10);
 
         if (!groupId) {
