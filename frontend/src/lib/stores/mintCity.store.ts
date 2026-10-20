@@ -1,5 +1,3 @@
-import { writable } from "svelte/store";
-
 export const cityMintMap : Record<string, string> = {
     "Berlin": "A",
     "München": "D",

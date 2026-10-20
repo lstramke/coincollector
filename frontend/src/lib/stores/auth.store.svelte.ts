@@ -1,4 +1,3 @@
-import { writable } from 'svelte/store';
 import type { User } from '$lib/types/user';
 import { authService } from '$lib/services/auth.service';
 import { isAxiosError } from 'axios';
