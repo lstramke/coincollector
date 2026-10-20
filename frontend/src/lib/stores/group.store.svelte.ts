@@ -1,5 +1,5 @@
-import { collectionState, setCollections } from './collection.store.svelte';
-import { coins } from './coin.store';
+import { setCollections } from './collection.store.svelte';
+import { setCoins } from './coin.store.svelte';
 import { isAxiosError } from 'axios';
 import type { Group } from '$lib/types/group';
 import type { Collection } from "$lib/types/collection";
@@ -35,7 +35,7 @@ export function setGroups(data: Group[]) {
     );
 
     const allCoins: Coin[] = sortedGroups.flatMap(g => g.collections.flatMap(c => c.coins));
-    coins.set(allCoins);
+    setCoins(allCoins);
 
     const allCollections: Collection[] = sortedGroups.flatMap(g => g.collections);
     setCollections(allCollections);

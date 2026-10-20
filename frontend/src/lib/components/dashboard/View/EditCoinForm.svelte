@@ -4,7 +4,7 @@
     import type { DialogField } from "$lib/types/dialogField";
     import { coinValuesStringMap, stringCoinValuesMap } from "$lib/stores/coinValues.store";
     import { coinCountryMap } from "$lib/stores/coinCountry.store";
-    import { updateCoin } from "$lib/stores/coin.store";
+    import { updateCoin } from "$lib/stores/coin.store.svelte";
     import type { Coin } from "$lib/types/coin";
 
     let dialog: Dialog;

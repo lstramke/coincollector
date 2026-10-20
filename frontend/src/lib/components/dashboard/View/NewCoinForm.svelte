@@ -6,7 +6,7 @@
     import type { DialogField } from "$lib/types/dialogField";
     import { stringCoinValuesMap } from "$lib/stores/coinValues.store";
     import { coinCountryMap } from "$lib/stores/coinCountry.store";
-    import { createCoin } from "$lib/stores/coin.store";
+    import { createCoin } from "$lib/stores/coin.store.svelte";
 
     let dialog: Dialog;
     let errorText = $state<string | null>(null);
