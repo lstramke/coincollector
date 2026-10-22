@@ -4,7 +4,7 @@
     import type { DialogField } from "$lib/types/dialogField";
     import { coinValuesStringMap, stringCoinValuesMap } from "$lib/stores/coinValues.store";
     import { coinCountryMap } from "$lib/stores/coinCountry.store";
-    import { updateCoin } from "$lib/stores/coin.store";
+    import { updateCoin } from "$lib/stores/coin.store.svelte";
     import type { Coin } from "$lib/types/coin";
 
     let dialog: Dialog;
@@ -14,7 +14,7 @@
 
     let fields: DialogField[] = $derived.by(() => {
         if (!coin) return [];
-        const countryName = Object.entries($coinCountryMap).find(([_, code]) => code === coin?.country)?.[0] || "";
+        const countryName = Object.entries(coinCountryMap).find(([_, code]) => code === coin?.country)?.[0] || "";
         return [
             {
                 id: "country",
@@ -22,15 +22,15 @@
                 value: countryName,
                 type: "select",
                 required: true,
-                options: Object.entries($coinCountryMap).map(([name, code]) => name).sort()
+                options: Object.entries(coinCountryMap).map(([name, code]) => name).sort()
             },
             {
                 id: "value",
                 label: "Wert*",
-                value: $coinValuesStringMap[coin.value] ?? "",
+                value: coinValuesStringMap[coin.value] ?? "",
                 type: "select",
                 required: true,
-                options: Object.values($coinValuesStringMap)
+                options: Object.values(coinValuesStringMap)
             },
             {
                 id: "year",
@@ -44,10 +44,10 @@
                 id: "mintCity",
                 label: "Prägestadt",
                 value: coin.mint
-                    ? `${$mintCityMap[coin.mint]} (${coin.mint})`
+                    ? `${mintCityMap[coin.mint]} (${coin.mint})`
                     : "",
                 type: "select",
-                options: Object.entries($cityMintMap).map(([name, code]) => `${name} (${code})`),
+                options: Object.entries(cityMintMap).map(([name, code]) => `${name} (${code})`),
                 placeholder: "Prägestadt wählen",
                 description: "Aktuell nur für Deutschland unterstützt"
             },
@@ -82,8 +82,8 @@
             return;
         }
 
-        const countryCode = $coinCountryMap[countryName];
-        const value = $stringCoinValuesMap[valueName];
+        const countryCode = coinCountryMap[countryName];
+        const value = stringCoinValuesMap[valueName];
         const year = parseInt(String(yearRaw), 10);
 
         if (!countryCode) {
@@ -102,7 +102,7 @@
         let mint: string | undefined;
         if (mintCityDisplay) {
             const cityName = mintCityDisplay.split(' (')[0];
-            mint = $cityMintMap[cityName];
+            mint = cityMintMap[cityName];
         }
 
         const success = await updateCoin(coin.id, {

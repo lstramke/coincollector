@@ -3,13 +3,13 @@
   import LoginWindow from './LoginWindow.svelte';
   import RegisterWindow from './RegisterWindow.svelte';
   import SetupWindow from './PasswordSetupWindow.svelte';
-  import {authError, successMessage} from '$lib/stores/auth.store'
+  import {authState} from '$lib/stores/auth.store.svelte'
   
   let activeTab: 'login' | 'register' | 'setup' = $state('login');
   function switchTab(tabname: 'login' | 'register' | 'setup') {
     activeTab = tabname;
-    authError.set(null);
-    successMessage.set(null);
+    authState.authError = null;
+    authState.successMessage = null;
 
   }
 </script>

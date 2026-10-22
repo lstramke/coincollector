@@ -1,18 +1,20 @@
 <script lang="ts">
-    import { selection } from "$lib/stores/selection.store";
-    import { collectionMap } from "$lib/stores/collection.store";
+    import { selection } from "$lib/stores/selection.store.svelte";
+    import { collectionState } from "$lib/stores/collection.store.svelte";
     import type { Collection } from "$lib/types/collection";
     import NewCoinForm from "./NewCoinForm.svelte";
     import EditCoinForm from "./EditCoinForm.svelte";
     import { mintCityMap } from "$lib/stores/mintCity.store";
-    import { deleteCoin } from "$lib/stores/coin.store";
+    import { deleteCoin } from "$lib/stores/coin.store.svelte";
     import { coinCountryCodeMap } from "$lib/stores/coinCountry.store";
     import type { Coin } from "$lib/types/coin";
 
-    let collection = $derived((): Collection | undefined => {
-        return $selection?.type === "collection"
-            ? $collectionMap[$selection.id]
-            : undefined;
+    let collection = $derived.by((): Collection | undefined => {
+        if (selection.current?.type !== "collection") {
+            return undefined;
+        }
+
+        return collectionState.collectionMap[selection.current.id];
     });
 
     function formatValue(value: number) {
@@ -29,8 +31,8 @@
     let editCoinDialog: EditCoinForm;
 </script>
 
-{#if collection()}
-    {@const col = collection()}
+{#if collection}
+    {@const col = collection}
 
     <div class="mb-6 flex items-start justify-between">
         <div>
@@ -78,7 +80,7 @@
             </thead>
 
             <tbody>
-                {#each col?.coins.sort((a: Coin, b: Coin) => sortAsc ? a.value - b.value : b.value - a.value) as coin, i (coin.id)}
+                {#each [...col?.coins].sort((a: Coin, b: Coin) => sortAsc ? a.value - b.value : b.value - a.value) as coin, i (coin.id)}
                     <tr class="border-b border-[var(--border-table)] {i % 2 === 0 ? 'bg-[var(--bg-white)]' : 'bg-[var(--bg-table)]'}">
                         <td class="px-4 py-3 align-middle">
                             <span class="inline-block rounded-full border border-[var(--border-table)] bg-[var(--bg-table-header)] px-3 py-1 text-xs font-medium text-[var(--text-primary)]">
@@ -87,7 +89,7 @@
                         </td>
 
                         <td class="px-4 py-3 align-middle text-[var(--text-primary)]">
-                            {$coinCountryCodeMap[coin.country]}
+                            {coinCountryCodeMap[coin.country]}
                         </td>
 
                         <td class="px-4 py-3 align-middle text-[var(--text-primary)]">
@@ -95,7 +97,7 @@
                         </td>
 
                         <td class="px-4 py-3 align-middle text-[var(--text-primary)]">
-                            {coin.mint ? $mintCityMap[coin.mint] : '-'}
+                            {coin.mint ? mintCityMap[coin.mint] : '-'}
                         </td>
 
                         <td class="px-4 py-3 align-middle text-[var(--text-primary)]">

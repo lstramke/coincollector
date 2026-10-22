@@ -1,21 +1,21 @@
 <script lang="ts">
     import Dialog from "$lib/components/util/Dialog.svelte";
-    import { collectionMap } from "$lib/stores/collection.store";
-    import { selection } from "$lib/stores/selection.store";
+    import { collectionState } from "$lib/stores/collection.store.svelte";
+    import { selection } from "$lib/stores/selection.store.svelte";
     import { cityMintMap } from "$lib/stores/mintCity.store";
     import type { DialogField } from "$lib/types/dialogField";
     import { stringCoinValuesMap } from "$lib/stores/coinValues.store";
     import { coinCountryMap } from "$lib/stores/coinCountry.store";
-    import { createCoin } from "$lib/stores/coin.store";
+    import { createCoin } from "$lib/stores/coin.store.svelte";
 
     let dialog: Dialog;
     let errorText = $state<string | null>(null);
 
-    const currentCollection = $derived($selection?.id ? $collectionMap[$selection.id] : undefined);
+    const currentCollection = $derived(selection.current?.id ? collectionState.collectionMap[selection.current.id] : undefined);
 
-    const countryNames = $derived(Object.keys($coinCountryMap || {}));
-    const valueNames = $derived(Object.keys($stringCoinValuesMap || {}));
-    const mintCityNames = $derived(Object.entries($cityMintMap || {}).map(([name, code]) => `${name} (${code})`));
+    const countryNames = $derived(Object.keys(coinCountryMap || {}));
+    const valueNames = $derived(Object.keys(stringCoinValuesMap || {}));
+    const mintCityNames = $derived(Object.entries(cityMintMap || {}).map(([name, code]) => `${name} (${code})`));
 
     let fields = $derived.by(() => [
         {
@@ -92,8 +92,8 @@
             return;
         }
 
-        const countryCode = $coinCountryMap[countryName];
-        const value = $stringCoinValuesMap[valueName];
+        const countryCode = coinCountryMap[countryName];
+        const value = stringCoinValuesMap[valueName];
         const year = parseInt(String(yearRaw), 10);
 
         if (!countryCode) {
@@ -112,7 +112,7 @@
         let mint: string | undefined;
         if (mintCityDisplay) {
             const cityName = mintCityDisplay.split(' (')[0];
-            mint = $cityMintMap[cityName];
+            mint = cityMintMap[cityName];
         }
 
         const success = await createCoin({
