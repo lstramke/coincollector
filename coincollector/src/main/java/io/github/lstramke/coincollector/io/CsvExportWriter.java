@@ -28,6 +28,7 @@ public class CsvExportWriter implements ExportWriter{
             "Prägestätte",
             "Beschreibung"
         )
+        .setRecordSeparator(System.lineSeparator())
         .get();
 
     @Override
