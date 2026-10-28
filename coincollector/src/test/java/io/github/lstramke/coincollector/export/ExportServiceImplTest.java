@@ -103,15 +103,15 @@ public class ExportServiceImplTest {
             new ExportTestcase(
                 UUID.fromString("11111111-1111-1111-1111-111111111111"),
                 ExportFormat.JSON,
-                 List.of(ExportFormat.CSV),
+                List.of(ExportFormat.CSV),
                 (service, writers) -> {
                     when(service.getAllByUser(
                         "11111111-1111-1111-1111-111111111111"
                     )).thenReturn(List.of());
                 },
                 null,
-                NullPointerException.class,
-                "storage service throws on getAllByUserId"
+                UnsupportedOperationException.class,
+                "format has no writer registered"
             )
         );
     }

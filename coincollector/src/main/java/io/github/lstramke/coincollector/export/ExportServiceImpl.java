@@ -34,8 +34,13 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public ExportResult export(UUID userId, ExportFormat exportFormat) throws EuroCoinCollectionGroupGetAllException {
+        var writer = writers.get(exportFormat);
+        if (writer == null) {
+            throw new UnsupportedOperationException("Export format " + exportFormat + " is not supported via a registered writer");
+        }
+        
         var wholeCollection = this.groupStorageService.getAllByUser(userId.toString());
-        byte[] content = writers.get(exportFormat).write(wholeCollection);
+        byte[] content = writer.write(wholeCollection);
         return new ExportResult(
             content,
             exportFormat

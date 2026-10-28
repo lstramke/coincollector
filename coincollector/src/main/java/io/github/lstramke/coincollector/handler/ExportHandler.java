@@ -45,7 +45,7 @@ public class ExportHandler {
         ExportResult exportResult;
         try {
             exportResult = this.exportService.export(UUID.fromString(userId), format);
-        } catch (EuroCoinCollectionGroupGetAllException e) {
+        } catch (EuroCoinCollectionGroupGetAllException | UnsupportedOperationException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
 
