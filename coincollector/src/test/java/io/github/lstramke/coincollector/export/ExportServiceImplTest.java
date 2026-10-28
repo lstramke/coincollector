@@ -24,7 +24,7 @@ import io.github.lstramke.coincollector.services.EuroCoinCollectionGroupStorageS
 public class ExportServiceImplTest {
     
     @FunctionalInterface
-    interface MockSetup {
+    private interface MockSetup {
         void setup(EuroCoinCollectionGroupStorageService service, List<ExportWriter> writers) throws Exception;
     }
 
