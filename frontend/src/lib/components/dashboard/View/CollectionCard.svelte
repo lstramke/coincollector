@@ -4,7 +4,7 @@
     import EditCollectionForm from "./EditCollectionForm.svelte";
     import { deleteCollection } from "$lib/stores/collection.store.svelte";
 
-    let { collection } = $props<{collection: Collection}>();
+    let { collection } : {collection: Collection} = $props();
 
     let editCollectionDialog: EditCollectionForm
 </script>

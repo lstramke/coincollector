@@ -4,13 +4,13 @@
     import eyeClosedIcon from '../../../assets/icons/eye-closed.svg';
     import eyeOpenIcon from '../../../assets/icons/eye-open.svg';
 
-    const { title, description, submitLabel, fields, onSubmit } = $props<{
+    const { title, description, submitLabel, fields, onSubmit } : {
         title: string;
         description: string;
         submitLabel: string;
         fields: AuthField[];
         onSubmit: (fields: AuthField[]) => void;
-    }>();
+    } = $props();
 
     let visibleFields = $state<Record<string, boolean>>({});
 

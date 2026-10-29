@@ -243,7 +243,6 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             try(ResultSet rs = preparedStatement.executeQuery()){
                 while (rs.next()) {
-                    logger.error(rs.getString("coin_id"));
                     String coinId = rs.getString("coin_id");
                     Optional<EuroCoin> readCoin = createEuroCoinFromResultSet(coinId, rs);
                     if (readCoin.isPresent()) {
