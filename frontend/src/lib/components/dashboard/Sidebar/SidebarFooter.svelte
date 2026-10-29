@@ -1,14 +1,15 @@
 <script lang="ts">
+    import ExportButton from "$lib/components/util/ExportButton.svelte";
     import NewCollectionForm from "./NewCollectionForm.svelte";
     import NewGroupForm from "./NewGroupForm.svelte";
 
     const {
         collectionCount,
         groupCount,
-    } = $props<{
+    } : {
         collectionCount: number;
         groupCount: number;
-    }>();
+    } = $props();
 
     let newCollectionDialog: NewCollectionForm;
     let newGroupDialog: NewGroupForm;
@@ -36,7 +37,7 @@
             <span class="flex h-6 w-6 items-center justify-center rounded-md text-base leading-none text-[var(--text-white)]">+</span>
             Neue Collection
         </button>
-
+        <ExportButton/>
     </div>
 
     <div class="mt-4 border-t border-[var(--border-transparent)] pt-3 text-xs leading-5 text-[var(--text-white)]/70">
