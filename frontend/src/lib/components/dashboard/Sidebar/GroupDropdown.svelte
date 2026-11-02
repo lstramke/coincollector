@@ -1,12 +1,12 @@
 <script lang="ts">
     import type { Group } from '$lib/types/group';
 
-    const { group, selectedId, onCollectionSelect, onGroupSelect } = $props<{
+    const { group, selectedId, onCollectionSelect, onGroupSelect } : {
         group: Group;
         selectedId?: string;
         onCollectionSelect: (id: string) => void;
         onGroupSelect: () => void;
-    }>();
+    } = $props();
 
     let open = $state(false);
 

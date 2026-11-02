@@ -1,14 +1,14 @@
 <script lang="ts">
     import type { DialogField } from "$lib/types/dialogField";
 
-    let {title , description, fields, buttonText, onSubmit, errorText} = $props<{
+    let {title , description, fields, buttonText, onSubmit, errorText} : {
         title: string;
         description: string;
         fields: DialogField[];
         buttonText: string;
         onSubmit?: (fields: DialogField[]) => void;
         errorText?: string | null;
-    }>();
+    } = $props();
 
     let isOpen = $state(false);
 

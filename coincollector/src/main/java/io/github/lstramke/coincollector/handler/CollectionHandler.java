@@ -184,7 +184,7 @@ public class CollectionHandler {
         }
     }
 
-        /**
+    /**
      * Extracts the user ID from authentication.
      *
      * @param authentication the Spring Security authentication

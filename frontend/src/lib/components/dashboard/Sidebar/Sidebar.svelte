@@ -6,7 +6,7 @@
     import GroupDropdown from "./GroupDropdown.svelte";
     import SidebarFooter from "./SidebarFooter.svelte";
 
-    let { groups } = $props<{ groups: Group[] }>();
+    let { groups } : { groups: Group[] } = $props();
 
     const collectionCount = $derived(
         groups.reduce((sum: any, group: { collections: string | any[]; }) => sum + group.collections.length, 0)
