@@ -32,12 +32,6 @@
       <groupId>org.odftoolkit</groupId>
       <artifactId>odfdom-java</artifactId>
       <version>1.0.0-BETA1</version>
-      <exclusions>
-        <exclusion>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-        </exclusion>
-    </exclusions>
     </dependency>
 
 
@@ -57,6 +51,12 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc-test</artifactId>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.vaadin.external.google</groupId>
+          <artifactId>android-json</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>

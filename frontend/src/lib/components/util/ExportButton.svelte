@@ -30,6 +30,9 @@
         <option value="json" class="bg-[var(--bg-sidebar)] text-white">
             JSON
         </option>
+        <option value="ods" class="bg-[var(--bg-sidebar)] text-white">
+            ODS
+        </option>
     </select>
     <label for="fileType" class="shrink-0 font-medium">
         Dateiformat
