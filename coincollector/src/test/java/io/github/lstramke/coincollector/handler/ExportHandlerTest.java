@@ -79,6 +79,8 @@ public class ExportHandlerTest {
             [{"id":test,"name":"test-coin"}]
             """.getBytes(StandardCharsets.UTF_8);
 
+        byte[] odsContent = "ods-content".getBytes(StandardCharsets.UTF_8);
+
         return Stream.of(
             new ExportWholeCollectionTestcase(
                 "GET",
@@ -106,6 +108,20 @@ public class ExportHandlerTest {
                 200,
                 csvContent,
                 "happy path csv"
+
+            ),
+            new ExportWholeCollectionTestcase(
+                "GET",
+                PREFIX,
+                "ods",
+                (exportService, sessionManager) -> {
+                    when(sessionManager.validateSession(SESSION_ID)).thenReturn(true);
+                    when(sessionManager.getUserId(SESSION_ID)).thenReturn(USER_ID);
+                    when(exportService.export(eq(UUID.fromString(USER_ID)), any())).thenReturn(new ExportResult(odsContent, ExportFormat.ODS));
+                },
+                200,
+                odsContent,
+                "happy path ods"
 
             ),
             new ExportWholeCollectionTestcase(
