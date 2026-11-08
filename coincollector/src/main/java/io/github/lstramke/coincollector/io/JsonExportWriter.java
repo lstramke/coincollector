@@ -15,7 +15,7 @@ import io.github.lstramke.coincollector.model.EuroCoinCollectionGroup;
 import io.github.lstramke.coincollector.model.DTOs.Exports.EuroCoinCollectionGroupExportDto;
 
 @Component 
-public class JsonExportWriter implements ExportWriter{
+public class JsonExportWriter implements ExportWriter {
 
     private final ObjectMapper objectMapper;
 

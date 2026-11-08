@@ -16,7 +16,7 @@ import io.github.lstramke.coincollector.model.DTOs.Exports.EuroCoinCollectionGro
 import io.github.lstramke.coincollector.model.DTOs.Exports.ExportCsvRow;
 
 @Component 
-public class CsvExportWriter implements ExportWriter{
+public class CsvExportWriter implements ExportWriter {
 
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT.builder()
         .setHeader(
