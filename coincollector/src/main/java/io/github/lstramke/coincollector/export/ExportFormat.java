@@ -5,7 +5,8 @@ import java.util.Optional;
 public enum ExportFormat {
 
     CSV("text/csv", "csv"),
-    JSON("application/json", "json");
+    JSON("application/json", "json"),
+    ODS("application/vnd.oasis.opendocument.spreadsheet", "ods");
 
     private final String mimeType;
     private final String fileExtension;
@@ -31,6 +32,7 @@ public enum ExportFormat {
         return switch(value.toLowerCase()){
             case "csv" -> Optional.of(CSV);
             case "json" -> Optional.of(JSON);
+            case "ods" -> Optional.of(ODS);
             default -> Optional.empty();
         };
     }
