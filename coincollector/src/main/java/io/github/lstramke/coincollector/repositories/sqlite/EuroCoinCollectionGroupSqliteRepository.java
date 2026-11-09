@@ -67,7 +67,7 @@ public class EuroCoinCollectionGroupSqliteRepository implements EuroCoinCollecti
 
             int rowsAffected = preparedStatement.executeUpdate();
             if(rowsAffected == 1){
-                logger.info("EuroCoinCollectionGroup created: groupId={}, ownerId={}", group.getId(), group.getOwnerId());
+                logger.debug("EuroCoinCollectionGroup created: groupId={}, ownerId={}", group.getId(), group.getOwnerId());
             } else {
                 logger.warn("EuroCoinCollectionGroup not created (rowsAffected={}): groupId={}, ownerId={}", rowsAffected, group.getId(), group.getOwnerId());
                 throw new SQLException("EuroCoinCollectionGroup create affected unexpected number of rows: " + rowsAffected);
@@ -162,7 +162,7 @@ public class EuroCoinCollectionGroupSqliteRepository implements EuroCoinCollecti
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
-                logger.info("EuroCoinCollectionGroup updated: groupId={}, ownerId={}", group.getId(), group.getOwnerId());
+                logger.debug("EuroCoinCollectionGroup updated: groupId={}, ownerId={}", group.getId(), group.getOwnerId());
             } else {
                 logger.warn("EuroCoinCollectionGroup not updated (rowsAffected={}): groupId={}, ownerId={}", rowsAffected, group.getId(), group.getOwnerId());
                 throw new SQLException("EuroCoinCollectionGroup update affected unexpected number of rows: " + rowsAffected);
@@ -195,7 +195,7 @@ public class EuroCoinCollectionGroupSqliteRepository implements EuroCoinCollecti
             preparedStatement.setString(1, groupId);
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
-                logger.info("EuroCoinCollectionGroup deleted: groupId={}", groupId);
+                logger.debug("EuroCoinCollectionGroup deleted: groupId={}", groupId);
             } else {
                 logger.warn("EuroCoinCollectionGroup not deleted (rowsAffected={}): groupId={}", rowsAffected, groupId);
                 throw new SQLException("EuroCoinCollectionGroup delete affected unexpected number of rows: " + rowsAffected);

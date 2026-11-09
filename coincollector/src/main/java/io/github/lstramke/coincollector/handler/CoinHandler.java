@@ -114,8 +114,6 @@ public class CoinHandler {
             var coin = builder.build();
             coinStorageService.save(coin);
 
-            logger.info("Coin created: collectionId={}", request.collectionId());
-
             return ResponseEntity.status(HttpStatus.CREATED).body(CoinResponse.fromDomain(coin));
         } catch (EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parent resource not found", e);
@@ -167,8 +165,6 @@ public class CoinHandler {
             coinStorageService.delete(coinId);
             coinStorageService.save(updatedCoin);
 
-            logger.info("Coin updated: id={}", coinId);
-
             return ResponseEntity.ok(CoinResponse.fromDomain(updatedCoin));
         } catch (EuroCoinNotFoundException | EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
@@ -195,8 +191,7 @@ public class CoinHandler {
             assertOwnerViaCollection(coinToDelete.getCollectionId(), userId);
 
             coinStorageService.delete(coinId);
-
-            logger.info("Coin deleted: id={}", coinId);
+            
             return ResponseEntity.noContent().build();
         } catch (EuroCoinNotFoundException | EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);

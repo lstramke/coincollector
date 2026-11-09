@@ -34,7 +34,7 @@ public class PasswordHandler {
 
     @PostMapping("/setup")
     public ResponseEntity<Void> passwordSetup(@Valid @RequestBody PasswordSetupRequest request) {
-        logger.info("Password setup attempt for user {}", request.username());
+        logger.info("Password setup requested");
 
         var user = this.userStorageService.getByUsername(request.username());
 
@@ -50,7 +50,7 @@ public class PasswordHandler {
 
     @PostMapping("/change")
     public ResponseEntity<Void> passwordChange(@AuthenticationPrincipal String userId, @Valid @RequestBody PasswordChangeRequest request) {
-        logger.info("Password change attempt for user {}", userId);
+        logger.info("Password change requested");
 
         var user = this.userStorageService.getById(userId);
 

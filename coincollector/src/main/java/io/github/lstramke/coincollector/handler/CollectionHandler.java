@@ -93,7 +93,7 @@ public class CollectionHandler {
             assertOwnerViaGroup(request.groupId(), userId);
             var requestedCollection = new EuroCoinCollection(request.name(), request.coins(), request.groupId());
             this.collectionStorageService.save(requestedCollection);
-            logger.info("Collection created: groupId={}", request.groupId());
+
             return ResponseEntity.status(HttpStatus.CREATED).body(CollectionResponse.fromDomain(requestedCollection));
         } catch (EuroCoinCollectionSaveException | EuroCoinCollectionGroupGetByIdException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
@@ -131,9 +131,8 @@ public class CollectionHandler {
             collectionToUpdate.setName(request.name());
             collectionToUpdate.setGroupId(request.groupId());
             this.collectionStorageService.updateMetadata(collectionToUpdate);
-            logger.info("Collection updated: id={}", collectionId);
-            return ResponseEntity.ok(CollectionResponse.fromDomain(collectionToUpdate));
 
+            return ResponseEntity.ok(CollectionResponse.fromDomain(collectionToUpdate));
         } catch (EuroCoinCollectionSaveException | EuroCoinCollectionGroupGetByIdException | EuroCoinCollectionCoinsLoadException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         } catch (EuroCoinCollectionGroupNotFoundException e) {
@@ -159,7 +158,7 @@ public class CollectionHandler {
             assertOwnerViaGroup(collectionToDelete.getGroupId(), userId);
 
             this.collectionStorageService.delete(collectionId);
-            logger.info("Collection deleted: id={}", collectionId);
+
             return ResponseEntity.noContent().build();
         } catch (EuroCoinCollectionNotFoundException | EuroCoinCollectionGroupNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found", e);
@@ -193,7 +192,7 @@ public class CollectionHandler {
      */
     private String requireUserId(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
-            logger.warn("Collection request failed: authentication missing");
+            logger.debug("Collection request failed: authentication missing");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
         return authentication.getPrincipal().toString();

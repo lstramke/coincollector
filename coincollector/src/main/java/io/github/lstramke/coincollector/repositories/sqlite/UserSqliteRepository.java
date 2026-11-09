@@ -63,7 +63,7 @@ public class UserSqliteRepository implements UserStorageRepository{
             int rowsAffected = preparedStatement.executeUpdate();
 
             if (rowsAffected == 1) {
-                logger.info("User created: id={}", user.getId());
+                logger.debug("User created: id={}", user.getId());
             } else {
                 logger.warn("User not created (rowsAffected={}): id={}", rowsAffected, user.getId());
                 throw new SQLException("User create affected unexpected number of rows: " + rowsAffected);
@@ -161,7 +161,7 @@ public class UserSqliteRepository implements UserStorageRepository{
             int rowsAffected = preparedStatement.executeUpdate();
 
             if (rowsAffected == 1) {
-                logger.info("User updated: id={}", user.getId());
+                logger.debug("User updated: id={}", user.getId());
             } else {
                 logger.warn("User not updated (rowsAffected={}): id={}", rowsAffected, user.getId());
                 throw new SQLException("User update affected unexpected number of rows: " + rowsAffected);
@@ -196,7 +196,7 @@ public class UserSqliteRepository implements UserStorageRepository{
             int rowsAffected = preparedStatement.executeUpdate();
 
             if (rowsAffected == 1) {
-                logger.info("User deleted: id={}", userId);
+                logger.debug("User deleted: id={}", userId);
             } else {
                 logger.warn("User not deleted (rowsAffected={}): id={}", rowsAffected, userId);
                 throw new SQLException("User delete affected unexpected number of rows: " + rowsAffected);

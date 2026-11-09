@@ -60,7 +60,7 @@ public class LoginHandler {
      */
     @PostMapping("/login")
     public ResponseEntity<?> handleLogin(@Valid @RequestBody LoginRequest request) {
-        logger.info("Login attempt for {}", request.username());
+        logger.info("Login requested");
 
         User user = userStorageService.getByUsername(request.username());
         if(!passwordEncoder.matches(request.password(), user.getPasswordHash())) {

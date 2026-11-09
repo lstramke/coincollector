@@ -66,7 +66,7 @@ public class GroupHandler {
 
         try {
             var allGroupsForUser = this.groupStorageService.getAllByUser(userId);
-            logger.info("Groups read: count={}", allGroupsForUser.size());
+
             return ResponseEntity.ok(
                 allGroupsForUser.stream()
                 .map(GroupsResponse::fromDomain)
@@ -93,7 +93,6 @@ public class GroupHandler {
         try {
             var requestedGroup = new EuroCoinCollectionGroup(request.name(), userId);
             this.groupStorageService.save(requestedGroup);
-            logger.info("Group created: id={}", requestedGroup.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(GroupsResponse.fromDomain(requestedGroup));
         } catch (EuroCoinCollectionGroupSaveException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
@@ -148,7 +147,6 @@ public class GroupHandler {
 
             groupToUpdate.setName(request.name());
             this.groupStorageService.updateMetadata(groupToUpdate);
-            logger.info("Group updated: id={}", groupId);
 
             var response = new GroupMetadataResponse(groupToUpdate.getName());
             return ResponseEntity.ok(response);
@@ -178,7 +176,7 @@ public class GroupHandler {
             assertOwnerViaGroup(groupToDelete, userId);
 
             this.groupStorageService.delete(groupId);
-            logger.info("Group deleted: id={}", groupId);
+
             return ResponseEntity.noContent().build();
         } catch (EuroCoinCollectionGroupDeleteException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);

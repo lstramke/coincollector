@@ -57,7 +57,7 @@ public class RegistrationHandler {
      */
     @PostMapping("/registration")
     public ResponseEntity<?> handleRegistration(@Valid @RequestBody RegistrationRequest request) {
-        logger.info("Registration attempt with username: {}", request.username());
+        logger.info("Registration requested");
         String passwordHash = passwordEncoder.encode(request.password());
         User user = new User(request.username(), passwordHash);
         userStorageService.save(user);

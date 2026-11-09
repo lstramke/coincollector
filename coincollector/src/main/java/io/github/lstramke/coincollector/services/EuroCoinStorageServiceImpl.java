@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import io.github.lstramke.coincollector.exceptions.euroCoinExceptions.EuroCoinAlreadyExistsException;
@@ -26,6 +28,7 @@ import io.github.lstramke.coincollector.repositories.EuroCoinStorageRepository;
 @Service
 public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
 
+    private static final Logger logger = LoggerFactory.getLogger(EuroCoinStorageServiceImpl.class);
     private final EuroCoinStorageRepository euroCoinStorageRepository;
     private final DataSource dataSource;
 
@@ -38,12 +41,14 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     @Override
     public void save(EuroCoin euroCoin) throws EuroCoinSaveException, EuroCoinAlreadyExistsException {
         if(euroCoin == null){
+            logger.warn("EuroCoin save aborted: validation failed");
             throw new IllegalArgumentException("euroCoin must not be null (save)");
         }
 
         try (Connection connection = dataSource.getConnection()) {
             executeSave(euroCoin, connection);
         } catch (SQLException e) {
+            logger.error("EuroCoin save failed: id={}", euroCoin.getId(), e);
             throw new EuroCoinSaveException(euroCoin.getId(), e);
         }
     }
@@ -52,12 +57,14 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     @Override
     public void save(EuroCoin euroCoin, Connection connection) throws EuroCoinSaveException, EuroCoinAlreadyExistsException {
         if(euroCoin == null){
+            logger.warn("EuroCoin save aborted: validation failed");
             throw new IllegalArgumentException("euroCoin must not be null (save)");
         }
 
         try {
             executeSave(euroCoin, connection);
         } catch (SQLException e) {
+            logger.error("EuroCoin save failed: id={}", euroCoin.getId(), e);
             throw new EuroCoinSaveException(euroCoin.getId(), e);
         }
     }
@@ -75,7 +82,9 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     private void executeSave(EuroCoin euroCoin, Connection connection) throws SQLException, EuroCoinAlreadyExistsException {
         if(!euroCoinStorageRepository.exists(connection, euroCoin.getId())){
             euroCoinStorageRepository.create(connection, euroCoin);
+            logger.info("EuroCoin created: id={}", euroCoin.getId());
         } else {
+            logger.warn("EuroCoin save aborted: already exists, id={}", euroCoin.getId());
             throw new EuroCoinAlreadyExistsException(euroCoin.getId());
         }
     }
@@ -86,6 +95,7 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
         try (Connection connection = dataSource.getConnection()) {
             return executeGetById(coinId, connection);
         } catch (SQLException e) {
+            logger.error("EuroCoin read failed: id={}", coinId, e);
             throw new EuroCoinNotFoundException(coinId, e);
         }
     }
@@ -96,6 +106,7 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
         try {
             return executeGetById(coinId, connection);
         } catch (SQLException e) {
+            logger.error("EuroCoin read failed: id={}", coinId, e);
             throw new EuroCoinNotFoundException(coinId, e);
         }
     }
@@ -111,9 +122,13 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
      * @throws EuroCoinNotFoundException if the coin does not exist
      */
     private EuroCoin executeGetById(UUID coinId, Connection connection) throws SQLException {
-        return euroCoinStorageRepository
-            .read(connection, coinId)
-            .orElseThrow(() -> new EuroCoinNotFoundException(coinId));
+        var euroCoin = euroCoinStorageRepository.read(connection, coinId);
+        euroCoin.ifPresentOrElse(
+            coin -> logger.debug("EuroCoin read: id={}", coinId),
+            () -> logger.warn("EuroCoin not found: id={}", coinId)
+        );
+
+        return euroCoin.orElseThrow(() -> new EuroCoinNotFoundException(coinId));
     }
 
     /** {@inheritDoc} */
@@ -121,7 +136,9 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     public void update(EuroCoin euroCoin) throws EuroCoinUpdateException {
         try (Connection connection = dataSource.getConnection()) {
             euroCoinStorageRepository.update(connection, euroCoin);
+            logger.info("EuroCoin updated: id={}", euroCoin.getId());
         } catch (SQLException e) {
+            logger.error("EuroCoin update failed: id={}", euroCoin.getId(), e);
             throw new EuroCoinUpdateException(euroCoin.getId(), e);
         }
     }
@@ -131,7 +148,9 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     public void update(EuroCoin euroCoin, Connection connection) throws EuroCoinUpdateException {
         try {
             euroCoinStorageRepository.update(connection, euroCoin);
+            logger.info("EuroCoin updated: id={}", euroCoin.getId());
         } catch (SQLException e) {
+            logger.error("EuroCoin update failed: id={}", euroCoin.getId(), e);
             throw new EuroCoinUpdateException(euroCoin.getId(), e);
         }
     }
@@ -141,7 +160,9 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     public void delete(UUID coinId) throws EuroCoinDeleteException {
         try (Connection connection = dataSource.getConnection()) {
             euroCoinStorageRepository.delete(connection, coinId);
+            logger.info("EuroCoin deleted: id={}", coinId);
         } catch (SQLException e) {
+            logger.error("EuroCoin delete failed: id={}", coinId, e);
             throw new EuroCoinDeleteException(coinId, e);
         }
     }
@@ -151,7 +172,9 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     public void delete(UUID coinId, Connection connection) throws EuroCoinDeleteException {
         try {
             euroCoinStorageRepository.delete(connection, coinId);
+            logger.info("EuroCoin deleted: id={}", coinId);
         } catch (SQLException e) {
+            logger.error("EuroCoin delete failed: id={}", coinId, e);
             throw new EuroCoinDeleteException(coinId, e);
         }
     }
@@ -160,8 +183,11 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     @Override
     public List<EuroCoin> getAll() throws EuroCoinGetAllException {
         try (Connection connection = dataSource.getConnection()) {
-            return euroCoinStorageRepository.getAll(connection);
+            var euroCoins = euroCoinStorageRepository.getAll(connection);
+            logger.info("EuroCoin list read: count={}", euroCoins.size());
+            return euroCoins;
         } catch (SQLException e) {
+            logger.error("EuroCoin list read failed", e);
             throw new EuroCoinGetAllException(e);
         }
     }
@@ -170,8 +196,11 @@ public class EuroCoinStorageServiceImpl implements EuroCoinStorageService {
     @Override
     public List<EuroCoin> getAll(Connection connection) throws EuroCoinGetAllException {
         try {
-            return euroCoinStorageRepository.getAll(connection);
+            var euroCoins = euroCoinStorageRepository.getAll(connection);
+            logger.info("EuroCoin list read: count={}", euroCoins.size());
+            return euroCoins;
         } catch (SQLException e) {
+            logger.error("EuroCoin list read failed", e);
             throw new EuroCoinGetAllException(e);
         }
     }
