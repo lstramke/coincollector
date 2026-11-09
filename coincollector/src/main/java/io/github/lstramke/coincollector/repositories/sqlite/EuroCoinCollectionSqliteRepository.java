@@ -64,7 +64,7 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
-                logger.info("EuroCoinCollection created: collectionId={}, groupId={}", collection.getId(), collection.getGroupId());
+                logger.debug("EuroCoinCollection created: collectionId={}, groupId={}", collection.getId(), collection.getGroupId());
             } else {
                 logger.warn("EuroCoinCollection not created (rowsAffected={}): collectionId={}, groupId={}", rowsAffected, collection.getId(), collection.getGroupId());
                 throw new SQLException("EuroCoinCollection create affected unexpected number of rows: " + rowsAffected);
@@ -159,7 +159,7 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
-                logger.info("EuroCoinCollection updated: collectionId={}, groupId={}", collection.getId(), collection.getGroupId());
+                logger.debug("EuroCoinCollection updated: collectionId={}, groupId={}", collection.getId(), collection.getGroupId());
             } else {
                 logger.warn("EuroCoinCollection not updated (rowsAffected={}): collectionId={}, groupId={}", rowsAffected, collection.getId(), collection.getGroupId());
                 throw new SQLException("EuroCoinCollection update affected unexpected number of rows: " + rowsAffected);
@@ -193,7 +193,7 @@ public class EuroCoinCollectionSqliteRepository implements EuroCoinCollectionSto
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
-                logger.info("EuroCoinCollection deleted: collectionId={}", collectionId);
+                logger.debug("EuroCoinCollection deleted: collectionId={}", collectionId);
             } else {
                 logger.warn("EuroCoinCollection not deleted (rowsAffected={}): collectionId={}", rowsAffected, collectionId);
                 throw new SQLException("EuroCoinCollection delete affected unexpected number of rows: " + rowsAffected);

@@ -147,3 +147,26 @@ Guidelines:
 ---
 ## 6. Summary
 Log concise, contextual events with correct levels using placeholders; throw purposeful, contextual exceptions; prefer Optional for normal absence; never expose sensitive data; remain consistent.
+
+---
+## 7. Layer Responsibilities
+To keep logs traceable and avoid noise, each layer has a distinct responsibility:
+
+- **Handler layer**
+  - Log inbound request intent and access/authentication outcomes.
+  - Use **INFO** for meaningful request events and **WARN** for recoverable request issues.
+  - Do not log credentials, session tokens, or raw sensitive request values.
+
+- **Service layer**
+  - Log business-level state transitions and orchestration failures with domain identifiers.
+  - Use **INFO** for successful domain transitions and **ERROR** for unexpected technical failures.
+
+- **Repository layer**
+  - Log persistence details (validation irregularities, row-count mismatches, mapping issues).
+  - Use **DEBUG** for successful CRUD persistence events to reduce production noise.
+  - Use **WARN** for recoverable irregularities and **ERROR** for SQL failures.
+
+---
+## 8. Environment Log Levels
+- Default/production configuration uses **INFO** as root log level.
+- Development profile (`dev`) enables **DEBUG** root level for deeper diagnostics.

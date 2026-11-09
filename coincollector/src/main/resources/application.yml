@@ -24,3 +24,7 @@ spring:
 
 server:
   shutdown: graceful
+
+logging:
+  level:
+    root: INFO
