@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument;
 import org.odftoolkit.odfdom.doc.table.OdfTable;
@@ -18,6 +20,8 @@ import io.github.lstramke.coincollector.model.DTOs.Exports.EuroCoinCollectionGro
 
 @Component 
 public class OdsExportWriter implements ExportWriter {
+
+    private static final Logger logger = LoggerFactory.getLogger(OdsExportWriter.class);
 
     @Override
     public ExportFormat format() {
@@ -49,10 +53,14 @@ public class OdsExportWriter implements ExportWriter {
             }
 
             document.save(output);
-            return output.toByteArray();
+            var result = output.toByteArray();
+            logger.debug("ODS export written: groups={}, bytes={}", wholeCollection.size(), result.length);
+            return result;
         } catch (IOException e) {
+            logger.error("ODS export failed: groups={}", wholeCollection.size(), e);
             throw new UncheckedIOException("ODS export failed", e);
         } catch (Exception e) {
+            logger.error("ODS export failed: groups={}", wholeCollection.size(), e);
             throw new IllegalStateException("ODS document could not be written", e);
         } 
     }

@@ -7,6 +7,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.commons.csv.CSVFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import io.github.lstramke.coincollector.export.ExportFormat;
@@ -17,6 +19,8 @@ import io.github.lstramke.coincollector.model.DTOs.Exports.ExportCsvRow;
 
 @Component 
 public class CsvExportWriter implements ExportWriter {
+
+    private static final Logger logger = LoggerFactory.getLogger(CsvExportWriter.class);
 
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT.builder()
         .setHeader(
@@ -65,10 +69,13 @@ public class CsvExportWriter implements ExportWriter {
                 );
             }
         } catch (IOException e) {
+            logger.error("CSV export failed: groups={}", wholeCollection.size(), e);
             throw new UncheckedIOException("CSV export failed", e);
         }
         
-        return output.toString().getBytes(StandardCharsets.UTF_8);
+        var result = output.toString().getBytes(StandardCharsets.UTF_8);
+        logger.debug("CSV export written: groups={}, bytes={}", wholeCollection.size(), result.length);
+        return result;
     }
 
 }
