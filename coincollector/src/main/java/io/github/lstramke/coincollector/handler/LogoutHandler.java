@@ -55,7 +55,7 @@ public class LogoutHandler {
         
         try {
             sessionManager.invalidateSession(sessionId);
-            logger.info("User logged out: userId={}, sessionId={}", userId, sessionId);
+            logger.info("User logged out: userId={}", userId);
             String cookie = ResponseCookie.from("sessionId", "")
             .path("/")
             .httpOnly(true)
@@ -65,7 +65,7 @@ public class LogoutHandler {
             .toString();
             return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cookie).build();
         } catch (Exception e) {
-            logger.warn("Session invalidation failed: userId={}, sessionId={}", userId, sessionId);
+            logger.warn("Session invalidation failed: userId={}", userId);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", e);
         }
     }

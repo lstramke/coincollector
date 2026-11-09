@@ -74,7 +74,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
             int rowsAffected = preparedStatement.executeUpdate();
 
             if (rowsAffected == 1) {
-                logger.info("EuroCoin created: coinId={}, collectionId={}", coin.getId(), coin.getCollectionId());
+                logger.debug("EuroCoin created: coinId={}, collectionId={}", coin.getId(), coin.getCollectionId());
             } else {
                 logger.warn("EuroCoin not created (rowsAffected={}): coinId={}, collectionId={}", rowsAffected, coin.getId(), coin.getCollectionId());
                 throw new SQLException("EuroCoin create affected unexpected number of rows: " + rowsAffected);
@@ -178,7 +178,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
-                logger.info("EuroCoin updated: coinId={}, collectionId={}", coin.getId(), coin.getCollectionId());
+                logger.debug("EuroCoin updated: coinId={}, collectionId={}", coin.getId(), coin.getCollectionId());
             } else {
                 logger.warn("EuroCoin not updated (rowsAffected={}): coinId={}, collectionId={}", rowsAffected, coin.getId(), coin.getCollectionId());
                 throw new SQLException("EuroCoin update affected unexpected number of rows: " + rowsAffected);
@@ -212,7 +212,7 @@ public class EuroCoinSqliteRepository implements EuroCoinStorageRepository {
 
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 1) {
-                logger.info("EuroCoin deleted: coinId={}", coinId);
+                logger.debug("EuroCoin deleted: coinId={}", coinId);
             } else {
                 logger.warn("EuroCoin not deleted (rowsAffected={}): coinId={}", rowsAffected, coinId);
                 throw new SQLException("EuroCoin delete affected unexpected number of rows: " + rowsAffected);

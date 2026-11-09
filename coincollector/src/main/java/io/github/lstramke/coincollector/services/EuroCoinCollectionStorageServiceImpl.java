@@ -68,7 +68,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     @Override
     public void save(EuroCoinCollection euroCoinCollection) throws EuroCoinCollectionSaveException, EuroCoinCollectionAlreadyExistsException {
         if(euroCoinCollection == null){
-            logger.error("save() called with null collection");
+            logger.warn("EuroCoinCollection save aborted: collection null");
             throw new IllegalArgumentException();
         }
         logger.info("Saving collection with id: {}", euroCoinCollection.getId());
@@ -80,11 +80,11 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
                 logger.info("Collection saved successfully: {}", euroCoinCollection.getId());
             } catch (SQLException | EuroCoinSaveException | EuroCoinUpdateException e) {
                 connection.rollback();
-                logger.error("Error saving collection {}: {}", euroCoinCollection.getId(), e.getMessage(), e);
+                logger.error("EuroCoinCollection save failed: collectionId={}", euroCoinCollection.getId(), e);
                 throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
             }
         } catch (SQLException e) {
-            logger.error("SQL error saving collection {}: {}", euroCoinCollection.getId(), e.getMessage(), e);
+            logger.error("EuroCoinCollection save failed: collectionId={}", euroCoinCollection.getId(), e);
             throw new EuroCoinCollectionSaveException(euroCoinCollection.getId(), e);
         }
     }
@@ -134,10 +134,10 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
             logger.info("Collection fetched successfully: {}", collectionId);
             return collection;
         } catch(EuroCoinGetAllException e) {
-            logger.error("Error fetching coins for collection {}: {}", collectionId, e.getMessage(), e);
+            logger.error("EuroCoinCollection load failed while reading coins: collectionId={}", collectionId, e);
             throw new EuroCoinCollectionCoinsLoadException(collectionId, e);
         } catch (SQLException e) {
-            logger.error("SQL error fetching collection {}: {}", collectionId, e.getMessage(), e);
+            logger.error("EuroCoinCollection read failed: collectionId={}", collectionId, e);
             throw new EuroCoinCollectionGetByIdException(collectionId, e);
         }
     }
@@ -180,7 +180,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
     @Override
     public void updateMetadata(EuroCoinCollection euroCoinCollection) throws EuroCoinCollectionUpdateException {
         if(euroCoinCollection == null){
-            logger.error("updateMetadata() called with null collection");
+            logger.warn("EuroCoinCollection metadata update aborted: collection null");
             throw new IllegalArgumentException();
         }
         logger.info("Updating collection metadata for id: {}", euroCoinCollection.getId());
@@ -188,7 +188,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
             euroCoinCollectionStorageRepository.update(connection, euroCoinCollection);
             logger.info("Collection metadata updated: {}", euroCoinCollection.getId());
         } catch (SQLException e) {
-            logger.error("SQL error updating collection {}: {}", euroCoinCollection.getId(), e.getMessage(), e);
+            logger.error("EuroCoinCollection metadata update failed: collectionId={}", euroCoinCollection.getId(), e);
            throw new EuroCoinCollectionUpdateException(euroCoinCollection.getId(), e);
         }
     }
@@ -211,7 +211,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
             euroCoinCollectionStorageRepository.delete(connection, collectionId);
             logger.info("Collection deleted: {}", collectionId);
         } catch (SQLException e) {
-            logger.error("SQL error deleting collection {}: {}", collectionId, e.getMessage(), e);
+            logger.error("EuroCoinCollection delete failed: collectionId={}", collectionId, e);
            throw new EuroCoinCollectionDeleteException(collectionId, e);
         }
     }
@@ -235,7 +235,7 @@ public class EuroCoinCollectionStorageServiceImpl implements EuroCoinCollectionS
             logger.info("Fetched {} collections", collections.size());
             return collections;
         } catch (SQLException | EuroCoinGetAllException e) {
-            logger.error("Error fetching collections: {}", e.getMessage(), e);
+            logger.error("EuroCoinCollection list read failed", e);
             throw new EuroCoinCollectionGetAllException(e);
         }
     }
