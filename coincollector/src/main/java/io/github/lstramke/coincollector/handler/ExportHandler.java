@@ -70,7 +70,7 @@ public class ExportHandler {
      */
     private String requireUserId(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
-            logger.warn("Collection request failed: authentication missing");
+            logger.debug("Collection request failed: authentication missing");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
         return authentication.getPrincipal().toString();

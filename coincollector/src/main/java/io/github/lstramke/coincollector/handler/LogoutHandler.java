@@ -55,7 +55,6 @@ public class LogoutHandler {
         
         try {
             sessionManager.invalidateSession(sessionId);
-            logger.info("User logged out: userId={}", userId);
             String cookie = ResponseCookie.from("sessionId", "")
             .path("/")
             .httpOnly(true)
