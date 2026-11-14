@@ -121,15 +121,39 @@ jobs:
     - name: Analyze required modules
       shell: powershell
       run: |
-        jdeps --ignore-missing-deps --print-module-deps --multi-release 21 "target/$env:JAR_FILE" > modules.txt
-        type modules.txt
+        Copy-Item "target/$env:JAR_FILE" app.zip
+        Expand-Archive -Path app.zip -DestinationPath exploded -Force
+
+        $libraries = (Get-ChildItem "exploded/BOOT-INF/lib/*.jar" |
+          ForEach-Object { $_.FullName }) -join ";"
+        $inputs = @("exploded/BOOT-INF/classes") +
+          (Get-ChildItem "exploded/BOOT-INF/lib/*.jar" |
+          ForEach-Object { $_.FullName })
+
+        & jdeps `
+          --multi-release 21 `
+          --recursive `
+          --ignore-missing-deps `
+          --print-module-deps `
+          --class-path $libraries `
+          $inputs |
+          Out-File -Encoding ascii modules.txt
+
+        $modules = (Get-Content modules.txt -Raw).Trim()
+        if ([string]::IsNullOrWhiteSpace($modules)) {
+          Write-Error "jdeps did not detect any required Java modules"
+          exit 1
+        }
+
+        Write-Output "Detected modules: $modules"
 
     - name: Create custom JRE with jlink
       shell: powershell
       run: |
-        $modules = Get-Content modules.txt
+        $modules = (Get-Content modules.txt -Raw).Trim()
         jlink `
           --add-modules $modules `
+          --bind-services `
           --strip-debug `
           --no-man-pages `
           --no-header-files `
