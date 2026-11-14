@@ -174,11 +174,12 @@ jobs:
           --input target `
           --name CoinCollector `
           --main-jar $env:JAR_FILE `
-          --main-class io.github.lstramke.coincollector.App `
+          --main-class org.springframework.boot.loader.launch.JarLauncher `
           --type msi `
           --app-version $env:APP_VERSION `
           --vendor "lstramke" `
           --runtime-image custom-jre `
+          --win-console `
           --win-menu `
           --win-shortcut `
           --win-dir-chooser `
