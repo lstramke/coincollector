@@ -139,12 +139,19 @@ jobs:
           $inputs |
           Out-File -Encoding ascii modules.txt
 
-        $modules = (Get-Content modules.txt -Raw).Trim()
-        if ([string]::IsNullOrWhiteSpace($modules)) {
+        $modules = Get-Content modules.txt |
+          ForEach-Object { $_ -split "," } |
+          ForEach-Object { $_.Trim() } |
+          Where-Object { $_ -match "^(java|jdk)\.[A-Za-z0-9_.]+$" } |
+          Sort-Object -Unique
+
+        if ($modules.Count -eq 0) {
           Write-Error "jdeps did not detect any required Java modules"
           exit 1
         }
 
+        $modules = $modules -join ","
+        Set-Content -Path modules.txt -Value $modules -Encoding ascii
         Write-Output "Detected modules: $modules"
 
     - name: Create custom JRE with jlink
