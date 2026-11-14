@@ -1,54 +1,93 @@
 @startuml coincollector_structure
-title CoinCollector — vereinfachte Architektur (Spring Boot)
 
-skinparam packageStyle rectangle
-skinparam linetype ortho
 left to right direction
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam componentStyle rectangle
+skinparam componentFontSize 10
+skinparam componentPadding 12
+skinparam packageFontSize 12
+skinparam packagePadding 16
+skinparam actorFontSize 11
+skinparam arrowFontSize 8
+skinparam noteFontSize 10
+skinparam nodesep 35
+skinparam ranksep 45
 
-actor Browser
-
-package "Web Layer" {
-	component "Embedded Tomcat\n(HTTP Server)" as Tomcat
-	package "Frontend / Static" {
-		[index.html\n/static/*] as StaticFiles
-	}
-	package "Controller / Handler (Web)" {
-		[REST Controllers / Handlers] as Controllers
-	}
+skinparam actor {
+    BackgroundColor #E8F1FB
+    BorderColor #356A9A
 }
 
-package "Application Layer" {
-	component "ApplicationContext\n(Spring Boot)" as AppCtx
-	component "SessionManager\n(session bean)" as SessionManager
-	component "SecurityFilter\n(SessionFilter, AuthEntryPoint)" as SecurityFilter
-	component "SqliteInitializer\n(schema init)" as SqliteInitializer
-	package "Service" {
-		[Application Services] as Services
-	}
+skinparam package {
+    BackgroundColor #F8FAFC
+    BorderColor #64748B
+    FontColor #1E293B
+    FontStyle bold
 }
 
-package "Persistence Layer" {
-	package "Repository (SQLite)" {
-		[SQLite Repositories] as Repos
-	}
-	database "SQLite DB\n(coincollector.db)" as SQLite
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #475569
+    FontColor #1E293B
 }
 
-Browser --> Tomcat : HTTP request
-Tomcat --> StaticFiles : serves static content
-Tomcat --> Browser : HTTP response
-Tomcat --> Controllers : forwards requests
+skinparam database {
+    BackgroundColor #FFF7ED
+    BorderColor #C2410C
+    FontColor #7C2D12
+}
+
+skinparam note {
+    BackgroundColor #FFFBEB
+    BorderColor #D97706
+    FontColor #78350F
+}
+
+actor "Browser" as Browser
+
+package "Web Layer" #E8F1FB {
+    component "Embedded Tomcat\nHTTP server" as Tomcat #DBEAFE
+
+    package "Frontend / Static" #EFF6FF {
+        component "index.html\n/static/*" as StaticFiles
+    }
+
+    package "Controller / Handler"  as Controllers #EFF6FF {
+    }
+}
+
+package "Application Layer" #ECFDF5 {
+    component "ApplicationContext\nSpring Boot" as AppCtx #D1FAE5
+    component "SecurityFilterChain" as SecurityFilter #D1FAE5
+    component "Application\nservices" as Services #D1FAE5
+}
+
+package "Persistence Layer" #FFF7ED {
+    component "SQLite\nrepositories" as Repos #FFEDD5
+    component "Flyway" as Flyway #FFEDD5
+    database "SQLite database\ncoincollector.db" as SQLite
+}
+
+Browser --> Tomcat
+Tomcat --> Browser
+Tomcat -> StaticFiles
+Tomcat --> Controllers
+
 Controllers --> Services
 Services --> Repos
 Repos --> SQLite
+Flyway --> SQLite : schema migration
 
-AppCtx --> Controllers
-AppCtx --> Services
-AppCtx --> Repos
-AppCtx --> SecurityFilter
-AppCtx --> SessionManager
-AppCtx --> SqliteInitializer
-
-Tomcat ..> AppCtx : embedded
+AppCtx ..> SecurityFilter
+AppCtx ...> Tomcat
+AppCtx ...> Controllers
+AppCtx ..> Services
+AppCtx ..> Repos
+AppCtx ..> Flyway
 
 @enduml
