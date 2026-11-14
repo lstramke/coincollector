@@ -179,7 +179,6 @@ jobs:
           --app-version $env:APP_VERSION `
           --vendor "lstramke" `
           --runtime-image custom-jre `
-          --win-console `
           --win-menu `
           --win-shortcut `
           --win-dir-chooser `
